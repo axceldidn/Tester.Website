@@ -267,7 +267,7 @@ button{font-family:'Inter',sans-serif;}
       </div>
       <div class="field">
         <label>Password</label>
-        <input id="loginPass" type="password" placeholder="••••••••">
+        <div style="position:relative;"><input id="loginPass" type="password" placeholder="••••••••" style="padding-right:56px;"><button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;cursor:pointer;padding:6px;">👁️</button></div>
       </div>
       <div class="mini-note" style="margin-top:-4px;">Belum punya akun? Minta Admin daftarkan di tab Kelola Pengguna.</div>
     </div>
@@ -275,7 +275,7 @@ button{font-family:'Inter',sans-serif;}
     <div id="adminLoginFields" class="hide">
       <div class="field">
         <label>Password Admin</label>
-        <input id="adminPassInput" type="password" placeholder="••••••••">
+        <div style="position:relative;"><input id="adminPassInput" type="password" placeholder="••••••••" style="padding-right:56px;"><button type="button" onclick="togglePass('adminPassInput',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;cursor:pointer;padding:6px;">👁️</button></div>
       </div>
       <div class="mini-note" style="margin-top:-4px;">Login khusus untuk mengelola akun teknisi/staff. Pakai password admin yang sudah dibuat di Supabase.</div>
     </div>
@@ -1282,6 +1282,12 @@ function renderPeta(){
   mapObj.invalidateSize();
 }
 
+function togglePass(id, btn){
+  const el = document.getElementById(id);
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁️';
+}
 /* ---- Pilih titik di peta (tanpa perlu link share) ---- */
 const PICK = {};
 function coordLink_(lat,lng){ return `https://www.google.com/maps?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`; }
