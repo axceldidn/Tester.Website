@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>AIS.NET — Pemasangan &amp; Maintenance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0B3D66;
+  --surface:#0F4C81;
+  --surface2:#135C99;
+  --line:#2578B5;
+  --text:#EAF4FF;
+  --text-dim:#AFD3F0;
+  --accent:#FF7A1A;
+  --accent-dim:#7A3D14;
+  --good:#21C77A;
+  --good-bg:#12301F;
+  --warn:#F5B942;
+  --warn-bg:#332B10;
+  --bad:#E5484D;
+  --bad-bg:#331414;
+  --info:#4FA3E3;
+  --radius:10px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  padding-bottom:78px;
+}
+h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
+::selection{background:var(--accent);color:#fff;}
+
+/* ---------- Fiber line motif ---------- */
+.fiberline{
+  height:3px;width:100%;
+  background:repeating-linear-gradient(90deg,var(--accent) 0 10px, transparent 10px 18px);
+  opacity:.55;
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  background:var(--bg);
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),#c95c0f);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Grotesk';font-weight:700;color:#0F1B2B;font-size:15px;
+}
+.brand .name{font-family:'Space Grotesk';font-weight:700;font-size:17px;letter-spacing:.2px;}
+.brand .sub{font-size:11.5px;color:var(--text-dim);margin-top:1px;}
+.who{margin-left:auto;text-align:right;font-size:12px;color:var(--text-dim);}
+.who b{color:var(--text);font-weight:600;}
+.who button{
+  background:none;border:1px solid var(--line);color:var(--text-dim);
+  font-size:11px;padding:3px 8px;border-radius:20px;margin-top:4px;cursor:pointer;
+}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:640px;margin:0 auto;padding:14px 16px 20px;}
+.hide{display:none !important;}
+
+/* ---------- Stat pills ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 18px;}
+.stat{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 6px;text-align:center;
+}
+.stat b{display:block;font-family:'Space Grotesk';font-size:19px;line-height:1.1;}
+.stat span{font-size:10.5px;color:var(--text-dim);}
+.stat.good b{color:var(--good);}
+.stat.warn b{color:var(--warn);}
+.stat.bad b{color:var(--bad);}
+
+/* ---------- Section heading ---------- */
+.sect-h{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;}
+.sect-h h2{font-size:15px;margin:0;font-weight:600;}
+.sect-h .count{font-size:11px;color:var(--text-dim);background:var(--surface);padding:2px 8px;border-radius:20px;}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-left:3px solid var(--line);
+  border-radius:var(--radius);
+  padding:13px 14px;
+  margin-bottom:10px;
+  position:relative;
+}
+.card.st-baru{border-left-color:var(--bad);}
+.card.st-konfirmasi{border-left-color:var(--warn);}
+.card.st-mikrotik{border-left-color:var(--info);}
+.card.st-selesai{border-left-color:var(--good);}
+.card .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.card .nm{font-weight:600;font-size:14.5px;}
+.card .meta{font-size:12px;color:var(--text-dim);margin-top:3px;line-height:1.5;}
+.badge{
+  font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;
+}
+.badge.baru{background:var(--bad-bg);color:var(--bad);}
+.badge.konfirmasi{background:var(--warn-bg);color:var(--warn);}
+.badge.mikrotik{background:#12263f;color:var(--info);}
+.badge.selesai{background:var(--good-bg);color:var(--good);}
+.card .actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ---------- Buttons ---------- */
+button{font-family:'Inter',sans-serif;}
+.btn{
+  border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+}
+.btn-primary{background:var(--accent);color:#1a0e04;}
+.btn-primary:active{background:#e06d15;}
+.btn-outline{background:transparent;border:1px solid var(--line);color:var(--text);}
+.btn-outline.sel{border-color:var(--accent);color:var(--accent);background:var(--surface2);}
+.btn-good{background:var(--good);color:#06210f;}
+.btn-info{background:var(--info);color:#062036;}
+.btn-block{width:100%;justify-content:center;padding:12px;font-size:14px;}
+.btn:disabled{opacity:.4;}
+
+/* ---------- Forms ---------- */
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px;font-weight:500;}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--text);
+  padding:10px 11px;border-radius:8px;font-size:14px;font-family:inherit;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:56px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.form-card h3{margin:0 0 14px;font-size:14.5px;}
+.mini-note{font-size:11.5px;color:var(--text-dim);margin:-6px 0 14px;}
+
+/* ---------- Photo ---------- */
+.pickmap{height:270px;border-radius:10px;border:1px solid var(--line);margin-top:8px;z-index:0;}
+.photo-box{
+  border:1.5px dashed var(--line);border-radius:10px;padding:16px;text-align:center;
+  color:var(--text-dim);font-size:12.5px;cursor:pointer;margin-bottom:12px;position:relative;overflow:hidden;
+}
+.photo-box img{max-width:100%;border-radius:8px;display:block;margin-top:8px;}
+.photo-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.file-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12.5px;}
+.file-item img{width:38px;height:38px;object-fit:cover;border-radius:6px;margin:0;}
+.file-item .ico{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--surface);border-radius:6px;flex:none;}
+.file-item .fi{flex:1;min-width:0;}
+.file-item .fi b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+.file-item .fi span{color:var(--text-dim);font-size:11px;}
+.file-item button{background:none;border:none;color:var(--danger,#E5484D);font-size:16px;cursor:pointer;padding:4px 8px;}
+
+/* ---------- Log timeline ---------- */
+.log-item{display:flex;gap:10px;margin-bottom:14px;}
+.log-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(255,122,26,.18);
+}
+.log-item .lbody{flex:1;border-bottom:1px solid var(--line);padding-bottom:12px;}
+.log-item .ltxt{font-size:13px;line-height:1.5;}
+.log-item .ltxt b{color:var(--accent);}
+.log-item .ltime{font-size:11px;color:var(--text-dim);margin-top:3px;}
+
+/* ---------- Bottom nav ---------- */
+.navbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:var(--surface);border-top:1px solid var(--line);
+  display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));
+  scrollbar-width:none;
+}
+.navbar::-webkit-scrollbar{display:none;}
+.navbar button{
+  flex:0 0 auto;background:none;border:none;color:var(--text-dim);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:10px;padding:6px 14px;border-radius:8px;cursor:pointer;
+  white-space:nowrap;
+}
+.navbar button .ic{font-size:18px;line-height:1;}
+.navbar button.active{color:var(--accent);}
+
+/* ---------- Login ---------- */
+.login-wrap{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;
+}
+.login-wrap .mark-big{
+  width:64px;height:64px;border-radius:16px;margin-bottom:16px;
+  background:linear-gradient(135deg,var(--accent),#c95c0f);
+  display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#1a0e04;
+}
+.login-wrap h1{font-size:21px;margin:0 0 4px;}
+.login-wrap p{color:var(--text-dim);font-size:13px;margin:0 0 26px;}
+.login-card{width:100%;max-width:340px;text-align:left;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.role-opt{
+  border:1px solid var(--line);background:var(--surface);border-radius:10px;
+  padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-dim);
+}
+.role-opt .ic{font-size:20px;display:block;margin-bottom:4px;}
+.role-opt.sel{border-color:var(--accent);color:var(--text);background:var(--surface2);}
+
+.empty{text-align:center;padding:34px 10px;color:var(--text-dim);font-size:13px;}
+.empty .ic{font-size:28px;display:block;margin-bottom:8px;}
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--line);color:var(--text);
+  padding:10px 16px;border-radius:20px;font-size:13px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.35);
+  opacity:0;transition:opacity .25s;pointer-events:none;
+}
+.toast.show{opacity:1;}
+.sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;background:var(--good);}
+.sync-dot.off{background:var(--bad);}
+
+/* ---------- Map ---------- */
+#mapView{width:100%;height:52vh;min-height:320px;border-radius:var(--radius);border:1px solid var(--line);}
+.map-legend{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 16px;font-size:11.5px;color:var(--text-dim);}
+.map-legend span{display:inline-flex;align-items:center;gap:5px;}
+.map-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.leaflet-popup-content-wrapper{background:var(--surface2);color:var(--text);border-radius:8px;}
+.leaflet-popup-tip{background:var(--surface2);}
+.leaflet-popup-content b{color:var(--accent);}
+
+/* ---------- User management ---------- */
+.user-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px;margin-bottom:8px;
+}
+.user-row .u-info b{display:block;font-size:14px;}
+.user-row .u-info span{font-size:11.5px;color:var(--text-dim);}
+.user-row .u-actions{display:flex;gap:6px;}
+.user-row .u-actions button{
+  background:var(--surface2);border:1px solid var(--line);color:var(--text-dim);
+  font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;
+}
+.tag-off{color:var(--bad) !important;}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen" class="login-wrap">
+  <div class="mark-big">A</div>
+  <h1>AIS.NET</h1>
+  <p>Pemasangan &amp; Maintenance Teknisi</p>
+  <div class="login-card">
+    <div class="grid2" style="margin-bottom:16px;">
+      <button type="button" class="btn btn-outline" id="modeStaffBtn" onclick="setLoginMode('staff')">🧑‍🔧 Teknisi / CS</button>
+      <button type="button" class="btn btn-outline" id="modeAdminBtn" onclick="setLoginMode('admin')">🔐 Admin</button>
+    </div>
+
+    <div id="staffLoginFields">
+      <div class="field">
+        <label>Nama pengguna</label>
+        <input id="loginName" placeholder="cth: Burhan">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="loginPass" type="password" placeholder="••••••••">
+      </div>
+      <div class="mini-note" style="margin-top:-4px;">Belum punya akun? Minta Admin daftarkan di tab Kelola Pengguna.</div>
+    </div>
+
+    <div id="adminLoginFields" class="hide">
+      <div class="field">
+        <label>Password Admin</label>
+        <input id="adminPassInput" type="password" placeholder="••••••••">
+      </div>
+      <div class="mini-note" style="margin-top:-4px;">Login khusus untuk mengelola akun teknisi/staff. Pakai password admin yang sudah dibuat di Supabase.</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="doLogin()" id="loginBtn" style="margin-top:6px;">Masuk</button>
+  </div>
+
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hide">
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">A</div>
+      <div>
+        <div class="name">AIS.NET</div>
+        <div class="sub"><span id="syncDot" class="sync-dot"></span><span id="syncTxt">Tersambung</span></div>
+      </div>
+      <div class="who">
+        <div>Halo, <b id="whoName">-</b></div>
+        <div id="whoRole" style="margin-bottom:4px;"></div>
+        <button onclick="doGantiPassword()" id="btnGantiPw" style="margin-right:4px;">🔑 Ganti PW</button>
+        <button onclick="logout()">Ganti akun</button>
+      </div>
+    </div>
+  </div>
+  <div class="fiberline"></div>
+
+  <div class="wrap">
+
+    <!-- ---- TAB: BERANDA ---- -->
+    <div id="tab-beranda" class="tabpane">
+      <div class="sect-h"><h2>Ringkasan Hari Ini</h2></div>
+      <div class="stats">
+        <div class="stat bad"><b id="cntBaru">0</b><span>Baru Daftar</span></div>
+        <div class="stat warn"><b id="cntProses">0</b><span>Diproses</span></div>
+        <div class="stat"><b id="cntMikrotik">0</b><span>Set Mikrotik</span></div>
+        <div class="stat good"><b id="cntSelesai">0</b><span>Selesai</span></div>
+      </div>
+      <div class="sect-h"><h2>Perlu Ditindak</h2></div>
+      <div id="berandaList"></div>
+    </div>
+
+    <!-- ---- TAB: PENDAFTARAN ---- -->
+    <div id="tab-daftar" class="tabpane hide">
+      <div class="form-card">
+        <h3>📝 Pendaftaran Aisnet</h3>
+        <div class="field"><label>Nama (sesuai KTP)</label><input id="f_nama"></div>
+        <div class="field"><label>Alamat sesuai KTP</label><textarea id="f_alamatktp"></textarea></div>
+        <div class="field"><label>Alamat pasang</label><textarea id="f_alamatpasang"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label>No HP</label><input id="f_hp" type="tel"></div>
+          <div class="field"><label>Tgl pemasangan</label><input id="f_tgl" type="date"></div>
+        </div>
+        <div class="field">
+          <label>Paket</label>
+          <select id="f_paket" onchange="togglePaketManual()"></select>
+          <input id="f_paket_manual" placeholder="Tulis nama paket" class="hide" style="margin-top:8px;">
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Nama WiFi (SSID)</label><input id="f_ssid"></div>
+          <div class="field"><label>Password WiFi</label><input id="f_pass"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>No ODC</label><input id="f_odc"></div>
+          <div class="field"><label>No ODP</label><input id="f_odp"></div>
+        </div>
+        <div class="field">
+          <label>Status tempat tinggal</label>
+          <select id="f_status">
+            <option>Milik Sendiri</option>
+            <option>Sewa/Kontrak</option>
+            <option>Kos</option>
+            <option>Menumpang / Keluarga</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>📍 Lokasi Rumah Client</label>
+          <div class="mini-note" style="margin-top:-2px;margin-bottom:8px;">Titik ini yang bikin rumah client muncul di tab Peta. Isi salah satu cara di bawah.</div>
+          <button type="button" class="btn btn-outline btn-block" onclick="ambilLokasi()" id="btnLokasi">📍 Ambil Lokasi Saat Ini (GPS)</button>
+          <button type="button" class="btn btn-outline btn-block" style="margin-top:8px;" onclick="bukaPicker('daftar')">🗺️ Pilih Titik di Peta</button>
+          <div id="pickWrap_daftar" class="hide">
+            <div class="mini-note" style="margin:8px 0 0;">Ketuk peta buat taruh pin, geser pin biar pas. Link Google Maps dibuat otomatis dan ikut masuk laporan/Excel.</div>
+            <div id="pickMap_daftar" class="pickmap"></div>
+          </div>
+          <div class="mini-note" style="margin-top:10px;margin-bottom:4px;">Atau tempel link share Google Maps dari CS/Sales:</div>
+          <div style="display:flex;gap:8px;">
+            <input id="f_mapslink" oninput="this.dataset.auto='';infoLinkMaps()" placeholder="https://maps.app.goo.gl/..." style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+            <button type="button" class="btn btn-info" onclick="ambilDariLinkMaps()" id="btnLinkMaps" style="white-space:nowrap;">🔗 Ambil</button>
+          </div>
+          <div class="mini-note" id="lokasiInfo" style="margin-top:10px;margin-bottom:0;">⚪ Lokasi belum diisi.</div>
+          <input id="f_lat" type="hidden"><input id="f_lng" type="hidden">
+        </div>
+        <div class="field">
+          <label>Lampiran (foto rumah, KTP, dll)</label>
+          <div class="photo-box">
+            <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
+            <input type="file" multiple id="f_files" onchange="tambahFiles('daftar', event)">
+          </div>
+          <div id="fileListDaftar"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitPendaftaran()">Kirim Pendaftaran</button>
+      </div>
+      <div class="sect-h"><h2>Daftar Terbaru</h2><span class="count" id="daftarCount">0</span></div>
+      <div id="daftarList"></div>
+    </div>
+
+    <!-- ---- TAB: KONFIRMASI/MIKROTIK ---- -->
+    <div id="tab-proses" class="tabpane hide">
+      <div id="prosesKonfirmasiWrap">
+        <div class="sect-h"><h2>🛠️ Konfirmasi Teknisi</h2><span class="count" id="konfirmasiCount">0</span></div>
+        <div id="konfirmasiList"></div>
+      </div>
+      <div id="prosesMikrotikWrap">
+        <div class="sect-h"><h2>🌐 Setup Mikrotik</h2><span class="count" id="mikrotikCount">0</span></div>
+        <div id="mikrotikList"></div>
+      </div>
+    </div>
+
+    <!-- ---- TAB: TIKET MASUK ---- -->
+    <div id="tab-tiket" class="tabpane hide">
+      <div class="form-card" id="tiketFormCard">
+        <h3>🎫 Laporan Gangguan Masuk</h3>
+        <div class="field"><label>Nama Pelanggan / Mikrotik</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
+        <div class="field"><label>No HP</label><input id="t_hp" type="tel"></div>
+        <div class="field"><label>Alamat</label><input id="t_alamat" placeholder="Alamat rumah/lokasi client"></div>
+        <div class="field"><label>Link Google Maps (opsional)</label>
+          <input id="t_mapslink" oninput="this.dataset.auto=''" onchange="resolveTiketLink()" placeholder="https://maps.app.goo.gl/..."><input type="hidden" id="t_lat"><input type="hidden" id="t_lng">
+          <button type="button" class="btn btn-outline btn-block" style="margin-top:8px;" onclick="bukaPicker('tiket')">🗺️ Pilih Titik di Peta</button>
+          <div id="pickWrap_tiket" class="hide">
+            <div class="mini-note" style="margin:8px 0 0;">Ketuk peta buat taruh pin, link Maps terisi otomatis.</div>
+            <div id="pickMap_tiket" class="pickmap"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Kendala</label>
+          <select id="t_kendala" onchange="toggleKendalaManual()"></select>
+          <input id="t_kendala_manual" placeholder="Tulis kendalanya" class="hide" style="margin-top:8px;">
+        </div>
+        <div class="field"><label>Jam Laporan</label><input id="t_jamlaporan" type="time"></div>
+        <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamLaporSekarang()">🕐 Isi Jam = Sekarang</button>
+        <button class="btn btn-primary btn-block" onclick="submitTiket()">Kirim Laporan Gangguan</button>
+      </div>
+      <div class="sect-h"><h2>Tiket Berjalan</h2><span class="count" id="tiketCount">0</span></div>
+      <div id="tiketList"></div>
+    </div>
+
+    <!-- ---- TAB: REALISASI PEMASANGAN ---- -->
+    <div id="tab-pasang" class="tabpane hide">
+      <div class="form-card">
+        <h3>📶 Pemasangan Ais.net</h3>
+        <div class="mini-note" style="margin-top:-6px;">Khusus buat nutup pendaftaran baru yang udah siap dipasang. Bukan buat laporan gangguan/perbaikan — itu di tab Maintenance.</div>
+        <div class="field">
+          <label>Pendaftaran yang dipasang</label>
+          <select id="rp_link" onchange="isiDariPendaftaran()"><option value="">— Pilih dari daftar siap pasang —</option></select>
+        </div>
+        <div class="field"><label>Nama Client</label><input id="rp_client" readonly></div>
+        <div class="field">
+          <label>STTS</label>
+          <select id="rp_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Teknisi</label><input id="rp_teknisi" placeholder="cth: Alan,Burhan,didink,Sahel"></div>
+          <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
+        </div>
+        <div class="field"><label>Redaman (dB)</label><input id="rp_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
+        <h3 style="margin-top:18px;">Material Terpakai</h3>
+        <div class="grid2">
+          <div class="field"><label>Modem</label><input id="rp_modem" type="number" value="0"></div>
+          <div class="field"><label>Adaptor</label><input id="rp_adaptor" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Patchcore</label><input id="rp_patchcore" type="number" value="0"></div>
+          <div class="field"><label>Barrel</label><input id="rp_barrel" type="number" value="0"></div>
+        </div>
+        <div class="field"><label>Kabel (meter)</label><input id="rp_kabel" type="number" value="0"></div>
+        <div class="field"><label>Keterangan (Ket)</label><textarea id="rp_ket" placeholder="cth: psb"></textarea></div>
+        <div class="field">
+          <label>Lampiran (foto, video, PDF, dll)</label>
+          <div class="photo-box">
+            <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
+            <input type="file" multiple id="rp_files" onchange="tambahFiles('pasang', event)">
+          </div>
+          <div id="fileListPasang"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitRealisasiPemasangan()">Kirim Pemasangan Ais.net</button>
+      </div>
+    </div>
+
+    <!-- ---- TAB: MAINTENANCE ---- -->
+    <div id="tab-maint" class="tabpane hide">
+      <div class="form-card">
+        <h3>#Realisasi Maintenance</h3>
+        <div class="mini-note" style="margin-top:-6px;">Khusus buat gangguan/perbaikan. Buat nutup pendaftaran baru, pakai tab Pemasangan.</div>
+        <div class="field">
+          <label>Kaitkan ke tiket gangguan (opsional)</label>
+          <select id="m_ticket" onchange="isiDariTiket()"><option value="">— Pilih dari tiket yang ditangani —</option></select>
+        </div>
+        <div class="field"><label>Nama Client</label><input id="m_client"></div>
+        <div class="field">
+          <label>ISP</label>
+          <select id="m_isp"><option>AIS.Net</option><option>BNET</option></select>
+        </div>
+        <div class="field">
+          <label>STTS</label>
+          <select id="m_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Teknisi</label><input id="m_teknisi" placeholder="cth: Alan, Deli"></div>
+          <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
+        </div>
+        <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
+        <h3 style="margin-top:18px;">⏱️ Waktu Pengerjaan</h3>
+        <div class="grid2">
+          <div class="field"><label>Jam Laporan (Admin/CS)</label><input id="m_jamlaporan" type="time" oninput="hitungDurasi()"></div>
+          <div class="field"><label>Jam Selesai (Done)</label><input id="m_jamselesai" type="time" oninput="hitungDurasi()"></div>
+        </div>
+        <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamSekarang()">🕐 Isi Jam Selesai = Sekarang</button>
+        <div class="mini-note" id="durasiInfo" style="margin-top:-6px;">Isi kedua jam buat hitung durasi pengerjaan otomatis.</div>
+        <h3 style="margin-top:18px;">Material Terpakai</h3>
+        <div class="grid2">
+          <div class="field"><label>Modem</label><input id="m_modem" type="number" value="0"></div>
+          <div class="field"><label>Adaptor</label><input id="m_adaptor" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Patchcore</label><input id="m_patchcore" type="number" value="0"></div>
+          <div class="field"><label>Barrel</label><input id="m_barrel" type="number" value="0"></div>
+        </div>
+        <div class="field"><label>Kabel (meter)</label><input id="m_kabel" type="number" value="0"></div>
+        <div class="field"><label>Keterangan</label><textarea id="m_ket"></textarea></div>
+        <div class="field">
+          <label>Lampiran (foto, video, PDF, dll)</label>
+          <div class="photo-box">
+            <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
+            <input type="file" multiple id="m_files" onchange="tambahFiles('maint', event)">
+          </div>
+          <div id="fileListMaint"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitMaintenance()">Kirim Realisasi Maintenance</button>
+      </div>
+    </div>
+
+    <!-- ---- TAB: LAPORAN ---- -->
+    <div id="tab-laporan" class="tabpane hide">
+      <button class="btn btn-outline btn-block" style="margin-bottom:14px;" onclick="exportExcel()">⬇️ Export ke Excel (.csv)</button>
+      <div class="sect-h"><h2>📦 Laporan Pemasangan</h2></div>
+      <div id="laporanPemasanganList"></div>
+      <div class="sect-h"><h2>🔧 Laporan Maintenance</h2></div>
+      <div id="laporanList"></div>
+    </div>
+
+    <!-- ---- TAB: LOG ---- -->
+    <div id="tab-log" class="tabpane hide">
+      <div class="sect-h"><h2>📜 Log Aktivitas</h2></div>
+      <div id="logList"></div>
+    </div>
+
+    <!-- ---- TAB: PETA ---- -->
+    <div id="tab-peta" class="tabpane hide">
+      <div class="sect-h"><h2>🗺️ Peta Titik Pelanggan</h2></div>
+      <div class="map-legend">
+        <span><i style="background:var(--bad);"></i>Baru</span>
+        <span><i style="background:var(--warn);"></i>Dikonfirmasi</span>
+        <span><i style="background:var(--info);"></i>Mikrotik Siap</span>
+        <span><i style="background:var(--good);"></i>Selesai</span>
+      </div>
+      <div id="mapView"></div>
+      <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="exportKML()">⬇️ Export KML (Google Earth / My Maps)</button>
+    </div>
+
+    <!-- ---- TAB: KELOLA PENGGUNA ---- -->
+    <div id="tab-users" class="tabpane hide">
+      <div class="form-card">
+        <h3>➕ Tambah Akun</h3>
+        <div class="field"><label>Nama pengguna</label><input id="u_nama"></div>
+        <div class="field"><label>Password</label><input id="u_pass" type="text" placeholder="bisa dilihat admin, minta user ganti nanti"></div>
+        <div class="field">
+          <label>Role</label>
+          <select id="u_role">
+            <option>Marketing/CS</option>
+            <option>Sales</option>
+            <option>Teknisi</option>
+            <option>Admin Server</option>
+            <option>Office</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitAddUser()">Tambah Akun</button>
+      </div>
+      <div class="sect-h"><h2>Daftar Akun</h2></div>
+      <div id="usersList"></div>
+
+      <div class="form-card" style="margin-top:22px;">
+        <h3>📦 Kelola Daftar Paket</h3>
+        <div style="display:flex;gap:8px;">
+          <input id="mp_nilai" placeholder="cth: Juare Basic 20Mbps 150K" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+          <button class="btn btn-primary" onclick="submitMasterItem('Paket','mp_nilai')">Tambah</button>
+        </div>
+        <div id="masterPaketList" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="form-card">
+        <h3>🎫 Kelola Daftar Kendala</h3>
+        <div style="display:flex;gap:8px;">
+          <input id="mk_nilai" placeholder="cth: Modem Error" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+          <button class="btn btn-primary" onclick="submitMasterItem('Kendala','mk_nilai')">Tambah</button>
+        </div>
+        <div id="masterKendalaList" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="navbar hide" id="navbar">
+  <button data-tab="beranda" class="active"><span class="ic">🏠</span>Beranda</button>
+  <button data-tab="daftar"><span class="ic">📝</span>Daftar</button>
+  <button data-tab="tiket"><span class="ic">🎫</span>Tiket</button>
+  <button data-tab="proses"><span class="ic">🌐</span>Proses</button>
+  <button data-tab="pasang"><span class="ic">📶</span>Pemasangan</button>
+  <button data-tab="maint"><span class="ic">🛠️</span>Maintenance</button>
+  <button data-tab="laporan"><span class="ic">📊</span>Laporan</button>
+  <button data-tab="peta"><span class="ic">🗺️</span>Peta</button>
+  <button data-tab="log"><span class="ic">📜</span>Log</button>
+  <button data-tab="users"><span class="ic">👤</span>Pengguna</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+/* ===== KONFIGURASI (isi sekali di sini, tidak perlu diubah dari HP) =====
+   Ambil dari Dashboard Supabase > Project Settings > API.
+   Anon key boleh terlihat publik; yang menjaga data itu aturan RLS di database. */
+const CONFIG = {
+  SUPABASE_URL: "https://hgklwpaaklcttgazktre.supabase.co/rest/v1/",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhna2x3cGFha2xjdHRnYXprdHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2OTg0NjUsImV4cCI6MjEwNzI3NDQ2NX0.Ao8sUIh1-YTdahkjECmX847aO-cydfJDJMjrp2p4zH0",
+  EMAIL_DOMAIN: "aisnet.local"   // login teknisi = nama@aisnet.local (cuma di dalam Supabase, bukan email sungguhan)
+};
+const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [] };
+let USER = null;
+const FILES = { maint: [], pasang: [], daftar: [] };
+const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar' };
+const MAX_FILE_MB = 10, MAX_TOTAL_MB = 20;
+let mapObj = null;
+let mapMarkers = [];
+let loginMode = 'staff';
+
+const ROLE_TABS = {
+  "Marketing/CS": ["beranda","daftar","tiket","laporan","peta"],
+  "Sales": ["beranda","daftar","tiket","laporan","peta"],
+  "Teknisi": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta"],
+  "Admin Server": ["beranda","proses","laporan","peta"],
+  "Office": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log"],
+  "Admin": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log","users"]
+};
+
+/* ---------------- Login ---------------- */
+function setLoginMode(mode){
+  loginMode = mode;
+  document.getElementById('modeStaffBtn').classList.toggle('sel', mode==='staff');
+  document.getElementById('modeAdminBtn').classList.toggle('sel', mode==='admin');
+  document.getElementById('staffLoginFields').classList.toggle('hide', mode!=='staff');
+  document.getElementById('adminLoginFields').classList.toggle('hide', mode!=='admin');
+}
+setLoginMode('staff');
+
+async function doLogin(){
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Memeriksa...';
+
+  if(loginMode === 'admin'){
+    const pass = document.getElementById('adminPassInput').value;
+    if(!pass){ toast('Isi password admin'); btn.disabled=false; btn.textContent='Masuk'; return; }
+    const data = await apiCall('login', { mode:'admin', password: pass });
+    btn.disabled = false; btn.textContent = 'Masuk';
+    if(!data || !data.ok){ toast('❌ '+(data && data.error ? data.error : 'Password admin salah')); return; }
+    if(!data.token){ toast('❌ Server belum versi terbaru (token tidak ada). Deploy ulang .gs dulu.'); return; }
+    USER = { name: data.nama, role: data.role, token: data.token };
+    localStorage.setItem('aisnet_user', JSON.stringify(USER));
+    enterApp();
+    return;
+  }
+
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!name || !pass){ toast('Isi nama dan password'); btn.disabled=false; btn.textContent='Masuk'; return; }
+  const data = await apiCall('login', { nama: name, password: pass });
+  btn.disabled = false; btn.textContent = 'Masuk';
+  if(!data || !data.ok){ toast('❌ '+(data && data.error ? data.error : 'Nama atau password salah')); return; }
+  if(!data.token){ toast('❌ Server belum versi terbaru (token tidak ada). Deploy ulang .gs dulu.'); return; }
+  USER = { name: data.nama, role: data.role, token: data.token };
+  localStorage.setItem('aisnet_user', JSON.stringify(USER));
+  enterApp();
+}
+async function logout(){
+  try{ await apiCall('logout', {}); }catch(e){}   // matikan token di server juga
+  localStorage.removeItem('aisnet_user');
+  location.reload();
+}
+function enterApp(){
+  document.getElementById('loginScreen').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  document.getElementById('navbar').classList.remove('hide');
+  document.getElementById('whoName').textContent = USER.name;
+  document.getElementById('whoRole').textContent = USER.role;
+  applyRoleAccess();
+  loadAll();
+}
+function applyRoleAccess(){
+  const allowed = ROLE_TABS[USER.role] || ["beranda"];
+  document.querySelectorAll('#navbar button').forEach(b=>{
+    const ok = allowed.includes(b.dataset.tab);
+    b.classList.toggle('hide', !ok);
+  });
+  // Proses tab: teknisi/office/admin lihat konfirmasi, admin server/office/admin lihat mikrotik
+  const showKonf = ['Teknisi','Office','Admin'].includes(USER.role);
+  const showMik = ['Admin Server','Office','Admin'].includes(USER.role);
+  document.getElementById('prosesKonfirmasiWrap').classList.toggle('hide', !showKonf);
+  document.getElementById('prosesMikrotikWrap').classList.toggle('hide', !showMik);
+  // Pendaftaran: yang isi form baru adalah Marketing/CS, Sales, Office, Admin
+  document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !['Marketing/CS','Sales','Office','Admin'].includes(USER.role));
+  // buka tab pertama yang diizinkan
+  document.querySelectorAll('#navbar button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.add('hide'));
+  const first = allowed[0] || 'beranda';
+  document.querySelector(`#navbar button[data-tab="${first}"]`).classList.add('active');
+  document.getElementById('tab-'+first).classList.remove('hide');
+}
+(async function initSession(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('aisnet_user') || 'null');
+    const { data } = await sb.auth.getSession();
+    if(saved && data.session){ USER = { name: saved.name, role: saved.role, token: data.session.access_token }; enterApp(); }
+    else { localStorage.removeItem('aisnet_user'); }
+  }catch(e){ localStorage.removeItem('aisnet_user'); }
+})();
+
+/* ---------------- Nav ---------------- */
+document.querySelectorAll('#navbar button').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('#navbar button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tabpane').forEach(p=>p.classList.add('hide'));
+    document.getElementById('tab-'+btn.dataset.tab).classList.remove('hide');
+    if(btn.dataset.tab==='peta') setTimeout(()=>{ renderPeta(); }, 50);
+    if(btn.dataset.tab==='users') loadUsers();
+  };
+});
+
+/* ---------------- Toast ---------------- */
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- Backend I/O ---------------- */
+/* ================= Backend: Supabase (langsung dari HTML) ================= */
+const slug_ = s => String(s||'').trim().toLowerCase().replace(/\s+/g,'.');
+const emailOf_ = n => slug_(n) + '@' + CONFIG.EMAIL_DOMAIN;
+const nowStr_ = () => new Date().toLocaleString('id-ID', { timeZone:'Asia/Jakarta' });
+const newId_ = p => p + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,6).toUpperCase();
+const num_ = v => (v===''||v==null||isNaN(Number(v))) ? null : Number(v);
+const int_ = v => { const n = parseInt(v,10); return isNaN(n) ? 0 : n; };
+const txt_ = v => (v==null ? '' : String(v)).slice(0,2000);
+function durasi_(a,b){
+  const x = hmToMinutes_(a), y = hmToMinutes_(b);
+  if(x===null || y===null) return '';
+  let d = y - x; if(d < 0) d += 1440;          // lewat tengah malam
+  return `${Math.floor(d/60)} jam ${d%60} menit`;
+}
+async function logAksi_(aksi, detail){
+  if(!USER) return;
+  await sb.from('log_aktivitas').insert({ user: USER.name, role: USER.role, aksi, detail: txt_(detail) });
+}
+async function uploadFiles_(files, prefix){
+  const urls = [];
+  for(const f of (files||[]).slice(0,6)){
+    const blob = await (await fetch(f.data)).blob();
+    if(blob.size > 10*1024*1024) continue;
+    const path = `${prefix}/${Date.now()}_${Math.random().toString(36).slice(2,6)}_${f.name.replace(/[^\w.\-]+/g,'_')}`;
+    const up = await sb.storage.from('lampiran').upload(path, blob, { contentType: blob.type || 'application/octet-stream' });
+    if(up.error) throw new Error('Upload gagal: ' + up.error.message);
+    urls.push(sb.storage.from('lampiran').getPublicUrl(path).data.publicUrl);
+  }
+  return urls.join('\n');
+}
+const fail_ = (error) => ({ ok:false, error: error.message });
+const notFound_ = () => ({ ok:false, error:'Data tidak ditemukan atau kamu tidak punya izin' });
+const ACT = {};
+
+ACT.login = async (p) => {
+  const isAdmin = p.mode === 'admin';
+  if(!isAdmin && !slug_(p.nama)) return { ok:false, error:'Nama atau password salah' };
+  const email = isAdmin ? emailOf_('admin') : emailOf_(p.nama);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: String(p.password||'') });
+  if(error || !data.session){
+    const m = (error && error.message) || 'sesi tidak dibuat';
+    // "Invalid login credentials" = password salah ATAU akun dengan email ini tidak ada
+    if(/invalid login credentials/i.test(m)) return { ok:false, error: (isAdmin ? 'Password admin salah' : 'Nama atau password salah') + ' (email dicari: ' + email + ')' };
+    return { ok:false, error: 'Login gagal: ' + m };   // kunci/URL salah, jaringan, dll tampil apa adanya
+  }
+  const { data: prof } = await sb.from('profiles').select('nama,role,status').eq('id', data.user.id).maybeSingle();
+  if(!prof || !prof.role){ await sb.auth.signOut(); return { ok:false, error:'Akun ini belum punya role, hubungi admin' }; }
+  if(prof.status === 'Nonaktif'){ await sb.auth.signOut(); return { ok:false, error:'Akun ini dinonaktifkan, hubungi admin' }; }
+  return { ok:true, nama: prof.nama, role: prof.role, token: data.session.access_token };
+};
+ACT.logout = async () => { await sb.auth.signOut(); return { ok:true }; };
+
+ACT.getAllData = async () => {
+  const q = (tabel, order) => sb.from(tabel).select('*').order(order.col, { ascending: order.asc }).limit(500);
+  const [p, m, t, l, mas] = await Promise.all([
+    q('pendaftaran', { col:'timestamp', asc:false }),
+    q('maintenance', { col:'timestamp', asc:false }),
+    q('tiket', { col:'timestamp', asc:false }),
+    sb.from('log_aktivitas').select('*').order('timestamp', { ascending:false }).limit(200),  // RLS: hanya Office/Admin dapat isi
+    sb.from('master_data').select('*').order('id')
+  ]);
+  const err = [p,m,t,l,mas].find(r => r.error);
+  if(err) return fail_(err.error);
+  return {
+    ok:true,
+    pendaftaran: p.data.reverse(), maintenance: m.data.reverse(), tiket: t.data.reverse(),
+    logs: l.data, master: mas.data
+  };
+};
+
+ACT.addPendaftaran = async (p) => {
+  const id = newId_('PDF');
+  const lampiran = await uploadFiles_(p.files, id);
+  const { error } = await sb.from('pendaftaran').insert({
+    id, nama: txt_(p.nama), alamatKtp: txt_(p.alamatKtp), alamatPasang: txt_(p.alamatPasang),
+    noHp: txt_(p.noHp), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
+    tglPemasangan: txt_(p.tglPemasangan), noOdc: txt_(p.noOdc), noOdp: txt_(p.noOdp),
+    statusTinggal: txt_(p.statusTinggal), status: 'Baru', diinputOleh: USER.name,
+    lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran
+  });
+  if(error) return fail_(error);
+  await logAksi_('mendaftarkan calon pelanggan baru', `${p.nama} — ${p.alamatPasang||''}`);
+  return { ok:true, id };
+};
+
+ACT.confirmTeknisi = async (p) => {
+  const { data, error } = await sb.from('pendaftaran')
+    .update({ status:'Dikonfirmasi', konfirmasiOleh: USER.name, tglKonfirmasi: nowStr_() })
+    .eq('id', p.id).select('nama').maybeSingle();
+  if(error) return fail_(error);
+  if(!data) return notFound_();
+  await logAksi_('konfirmasi menerima order pemasangan', `${data.nama} — done confirm`);
+  return { ok:true };
+};
+
+ACT.setMikrotik = async (p) => {
+  const { data, error } = await sb.from('pendaftaran')
+    .update({ status:'MikrotikSiap', mikrotikIp: txt_(p.mikrotikIp), mikrotikOleh: USER.name, tglMikrotik: nowStr_() })
+    .eq('id', p.id).select('nama').maybeSingle();
+  if(error) return fail_(error);
+  if(!data) return notFound_();
+  const sec = await sb.from('mikrotik_secret').upsert({
+    pendaftaranId: p.id, mikrotikUser: txt_(p.mikrotikUser), mikrotikPass: txt_(p.mikrotikPass)
+  });
+  if(sec.error) return { ok:false, error:'Data utama tersimpan, tapi kredensial gagal: ' + sec.error.message };
+  await logAksi_('menyiapkan konfigurasi Mikrotik', `${data.nama} — siap dipasang teknisi`);
+  return { ok:true };
+};
+
+ACT.addTiket = async (p) => {
+  const id = newId_('TKT');
+  const { error } = await sb.from('tiket').insert({
+    id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), alamat: txt_(p.alamat),
+    mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
+    lat: num_(p.lat), lng: num_(p.lng), status:'Baru', diinputOleh: USER.name
+  });
+  if(error) return fail_(error);
+  await logAksi_('membuat tiket gangguan', `${p.namaPelanggan} — ${p.kendala}`);
+  return { ok:true, id };
+};
+
+ACT.tanganiTiket = async (p) => {
+  const { data, error } = await sb.from('tiket')
+    .update({ status:'Ditangani', teknisiHandling: USER.name, tglDitangani: nowStr_() })
+    .eq('id', p.id).select('namaPelanggan').maybeSingle();
+  if(error) return fail_(error);
+  if(!data) return notFound_();
+  await logAksi_('menangani tiket', data.namaPelanggan);
+  return { ok:true };
+};
+
+// Dipakai untuk Realisasi Pemasangan (linkId) dan Maintenance (ticketId)
+ACT.addMaintenance = async (p) => {
+  const id = newId_('MNT');
+  const fotoUrl = await uploadFiles_(p.files, id);
+  const { error } = await sb.from('maintenance').insert({
+    id, pendaftaranId: p.linkId || null, tiketId: p.ticketId || null,
+    client: txt_(p.client), isp: txt_(p.isp), stts: txt_(p.stts), teknisi: txt_(p.teknisi),
+    stok: txt_(p.stok), redaman: txt_(p.redaman),
+    modem: int_(p.modem), adaptor: int_(p.adaptor), patchcore: int_(p.patchcore),
+    barrel: int_(p.barrel), kabel: int_(p.kabel),
+    keterangan: txt_(p.keterangan), fotoUrl, diinputOleh: USER.name,
+    jamLaporan: txt_(p.jamLaporan), jamSelesai: txt_(p.jamSelesai),
+    durasi: durasi_(p.jamLaporan, p.jamSelesai)
+  });
+  if(error) return fail_(error);
+  if(p.linkId)   await sb.from('pendaftaran').update({ status:'Selesai' }).eq('id', p.linkId);
+  if(p.ticketId) await sb.from('tiket').update({ status:'Selesai' }).eq('id', p.ticketId);
+  await logAksi_(p.linkId ? 'mengirim Realisasi Pemasangan' : 'mengirim Realisasi Maintenance', p.client);
+  return { ok:true, id };
+};
+
+// Dibaca di server (Edge Function resolve-maps), karena browser tidak boleh membuka halaman Google
+ACT.resolveMapsLink = async (p) => {
+  const { data, error } = await sb.functions.invoke('resolve-maps', { body: { link: p.link } });
+  if(error){
+    let msg = error.message;
+    try{ const j = await error.context.json(); msg = j.error || msg; }catch(e){}
+    return { ok:false, error: msg };
+  }
+  return data;
+};
+
+ACT.addMasterItem = async (p) => {
+  if(['Paket','Kendala'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
+  const nilai = txt_(p.nilai).trim();
+  if(!nilai) return { ok:false, error:'Isi nilainya dulu' };
+  const { error } = await sb.from('master_data').insert({ tipe: p.tipe, nilai });
+  if(error) return { ok:false, error: error.code === '23505' ? 'Sudah ada di daftar' : error.message };
+  return { ok:true };
+};
+ACT.deleteMasterItem = async (p) => {
+  const { error } = await sb.from('master_data').delete().eq('tipe', p.tipe).eq('nilai', p.nilai);
+  return error ? fail_(error) : { ok:true };
+};
+
+ACT.listUsers = async () => {
+  const { data, error } = await sb.from('profiles').select('nama,role,status').neq('nama','admin').order('nama');
+  return error ? fail_(error) : { ok:true, users: data };
+};
+
+// Tambah & ubah akun butuh service role, jadi lewat Edge Function (lihat supabase/functions/admin-users)
+async function callAdminFn_(body){
+  const { data, error } = await sb.functions.invoke('admin-users', { body });
+  if(error){
+    let msg = error.message;
+    try{ const j = await error.context.json(); msg = j.error || msg; }catch(e){}
+    return { ok:false, error: msg };
+  }
+  return data;
+}
+ACT.addUser = (p) => callAdminFn_({ action:'add', nama: p.nama, password: p.password, role: p.role });
+ACT.updateUser = (p) => callAdminFn_({ action:'update', nama: p.nama, newPassword: p.newPassword, newRole: p.newRole, newStatus: p.newStatus });
+
+ACT.changeOwnPassword = async (p) => {
+  if(String(p.newPassword||'').length < 6) return { ok:false, error:'Password baru minimal 6 karakter' };
+  const { data: u } = await sb.auth.getUser();
+  if(!u.user) return { ok:false, error:'Sesi habis, silakan login ulang' };
+  // Verifikasi password lama dulu, baru ganti
+  const { error: e1 } = await sb.auth.signInWithPassword({ email: u.user.email, password: String(p.oldPassword||'') });
+  if(e1) return { ok:false, error:'Password lama salah' };
+  const { error: e2 } = await sb.auth.updateUser({ password: p.newPassword });
+  if(e2) return { ok:false, error: e2.message };
+  const { data: s } = await sb.auth.getSession();
+  return { ok:true, token: s.session ? s.session.access_token : undefined };
+};
+
+// Satu pintu untuk semua pemanggilan dari tampilan (nama aksi sama seperti sebelumnya)
+async function apiCall(action, payload){
+  if(CONFIG.SUPABASE_URL.startsWith('https://GANTI')){
+    toast('⚠️ Isi SUPABASE_URL & ANON KEY di CONFIG dulu');
+    return null;
+  }
+  const fn = ACT[action];
+  if(!fn){ toast('❌ Aksi tidak dikenal: '+action); return null; }
+  try{
+    const data = await fn(payload || {});
+    if(data && data.ok === false){            // error dari aturan/validasi: bukan masalah koneksi
+      toast('❌ ' + (data.error || 'Gagal'));
+      return null;
+    }
+    setSync(true);
+    return data;
+  }catch(e){
+    setSync(false);                            // hanya gagal jaringan/server yang bikin "Offline"
+    toast('❌ Gagal terhubung ke server');
+    return null;
+  }
+}
+function setSync(ok){
+  document.getElementById('syncDot').classList.toggle('off', !ok);
+  document.getElementById('syncTxt').textContent = ok ? 'Tersambung' : 'Offline';
+}
+
+async function loadAll(){
+  const data = await apiCall('getAllData', {});
+  if(data){
+    STATE.pendaftaran = data.pendaftaran || [];
+    STATE.maintenance = data.maintenance || [];
+    STATE.tiket = data.tiket || [];
+    STATE.logs = data.logs || [];
+    STATE.master = data.master || [];
+  }
+  renderAll();
+}
+
+/* ---------------- Rendering ---------------- */
+function statusBadge(s){
+  const map = {
+    'Baru':['baru','Baru Daftar'],
+    'Dikonfirmasi':['konfirmasi','Dikonfirmasi Teknisi'],
+    'MikrotikSiap':['mikrotik','Mikrotik Siap'],
+    'Selesai':['selesai','Selesai']
+  };
+  const m = map[s] || ['baru', s];
+  return `<span class="badge ${m[0]}">${m[1]}</span>`;
+}
+function cardClass(s){
+  const map = {'Baru':'st-baru','Dikonfirmasi':'st-konfirmasi','MikrotikSiap':'st-mikrotik','Selesai':'st-selesai'};
+  return map[s] || 'st-baru';
+}
+
+function renderAll(){
+  renderBeranda();
+  renderDaftar();
+  renderProses();
+  renderTiket();
+  renderPasangLinkOptions();
+  renderMaintLinkOptions();
+  renderLaporan();
+  renderLog();
+  renderPeta();
+  renderPaketOptions();
+  renderKendalaOptions();
+  renderMasterLists();
+}
+
+function renderBeranda(){
+  const p = STATE.pendaftaran;
+  document.getElementById('cntBaru').textContent = p.filter(x=>x.status==='Baru').length;
+  document.getElementById('cntProses').textContent = p.filter(x=>x.status==='Dikonfirmasi').length;
+  document.getElementById('cntMikrotik').textContent = p.filter(x=>x.status==='MikrotikSiap').length;
+  document.getElementById('cntSelesai').textContent = p.filter(x=>x.status==='Selesai').length;
+
+  const pending = p.filter(x=>x.status!=='Selesai').slice(0,6);
+  const box = document.getElementById('berandaList');
+  if(pending.length===0){
+    box.innerHTML = `<div class="empty"><span class="ic">✅</span>Semua pendaftaran sudah beres</div>`;
+    return;
+  }
+  box.innerHTML = pending.map(x=>pendaftaranCard(x)).join('');
+}
+
+function pendaftaranCard(x){
+  let actions = '';
+  if(x.status==='Baru'){
+    actions = `<button class="btn btn-good" onclick="confirmTeknisi('${x.id}')">✅ Done Confirm</button>`;
+  } else if(x.status==='Dikonfirmasi'){
+    actions = `<button class="btn btn-info" onclick="openMikrotikPrompt('${x.id}')">🌐 Isi Mikrotik</button>`;
+  } else if(x.status==='MikrotikSiap'){
+    actions = `<span class="mini-note" style="margin:0;">Lanjut isi Pemasangan Ais.net di tab Pemasangan</span>`;
+  }
+  return `
+  <div class="card ${cardClass(x.status)}">
+    <div class="row1">
+      <div>
+        <div class="nm">${esc(x.nama)}</div>
+        <div class="meta">${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        ${lampiranLinks_(x.lampiran)}
+      </div>
+      ${statusBadge(x.status)}
+    </div>
+    <div class="actions">
+      ${mapsUrl_(x.mapsLink, x.alamatPasang) ? `<a class="btn btn-info" href="${esc(mapsUrl_(x.mapsLink, x.alamatPasang))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+      ${actions}
+    </div>
+  </div>`;
+}
+
+function renderDaftar(){
+  const list = [...STATE.pendaftaran].reverse();
+  document.getElementById('daftarCount').textContent = list.length;
+  const box = document.getElementById('daftarList');
+  box.innerHTML = list.length ? list.map(pendaftaranCard).join('') :
+    `<div class="empty"><span class="ic">📭</span>Belum ada pendaftaran</div>`;
+}
+
+function renderProses(){
+  const konf = STATE.pendaftaran.filter(x=>x.status==='Baru');
+  const mik = STATE.pendaftaran.filter(x=>x.status==='Dikonfirmasi');
+  document.getElementById('konfirmasiCount').textContent = konf.length;
+  document.getElementById('mikrotikCount').textContent = mik.length;
+  document.getElementById('konfirmasiList').innerHTML = konf.length ? konf.map(pendaftaranCard).join('') :
+    `<div class="empty"><span class="ic">👌</span>Tidak ada yang menunggu konfirmasi</div>`;
+  document.getElementById('mikrotikList').innerHTML = mik.length ? mik.map(pendaftaranCard).join('') :
+    `<div class="empty"><span class="ic">👌</span>Tidak ada yang menunggu setup Mikrotik</div>`;
+}
+
+function renderPasangLinkOptions(){
+  const sel = document.getElementById('rp_link');
+  const current = sel.value;
+  const ready = STATE.pendaftaran.filter(x=>x.status==='MikrotikSiap');
+  sel.innerHTML = '<option value="">— Pilih dari daftar siap pasang —</option>' +
+    ready.map(x=>`<option value="${x.id}">${esc(x.nama)} — ${esc(x.alamatPasang||'')}</option>`).join('');
+  if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
+}
+
+function isiDariPendaftaran(){
+  const id = document.getElementById('rp_link').value;
+  const x = STATE.pendaftaran.find(p=>p.id===id);
+  document.getElementById('rp_client').value = x ? x.nama : '';
+}
+
+function renderMaintLinkOptions(){
+  const tsel = document.getElementById('m_ticket');
+  const current = tsel.value;
+  const ditangani = STATE.tiket.filter(t=>t.status==='Ditangani');
+  tsel.innerHTML = '<option value="">— Pilih dari tiket yang ditangani —</option>' +
+    ditangani.map(t=>`<option value="${t.id}">${esc(t.namaPelanggan)} — ${esc(t.kendala)}</option>`).join('');
+  if(current && [...tsel.options].some(o=>o.value===current)) tsel.value = current;
+}
+
+function isiDariTiket(){
+  const id = document.getElementById('m_ticket').value;
+  if(!id) return;
+  const t = STATE.tiket.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('m_client').value = t.namaPelanggan;
+  if(t.jamLaporan){ document.getElementById('m_jamlaporan').value = t.jamLaporan; hitungDurasi(); }
+  document.getElementById('m_ket').value = `Keluhan: ${t.kendala}`;
+}
+
+/* ---------------- Tiket Masuk (Laporan Gangguan) ---------------- */
+function renderTiket(){
+  const berjalan = STATE.tiket.filter(t=>t.status!=='Selesai');
+  document.getElementById('tiketCount').textContent = berjalan.length;
+  document.getElementById('tiketFormCard').classList.toggle('hide', !['Marketing/CS','Sales','Office','Admin'].includes(USER.role));
+  const box = document.getElementById('tiketList');
+  if(!berjalan.length){
+    box.innerHTML = `<div class="empty"><span class="ic">🎫</span>Tidak ada tiket gangguan yang berjalan</div>`;
+    return;
+  }
+  box.innerHTML = [...berjalan].reverse().map(t=>{
+    const cls = t.status==='Baru' ? 'st-baru' : 'st-konfirmasi';
+    const badge = t.status==='Baru' ? 'baru' : 'konfirmasi';
+    const canTangani = t.status==='Baru' && ['Teknisi','Office','Admin'].includes(USER.role);
+    return `
+    <div class="card ${cls}">
+      <div class="row1">
+        <div>
+          <div class="nm">${esc(t.namaPelanggan)}</div>
+          <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
+          ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
+        </div>
+        <span class="badge ${badge}">${esc(t.status)}</span>
+      </div>
+      <div class="actions">
+        ${mapsUrl_(t.mapsLink, t.alamat) ? `<a class="btn btn-info" href="${esc(mapsUrl_(t.mapsLink, t.alamat))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+        ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
+      </div>
+      ${t.status==='Ditangani' ? `<div class="mini-note" style="margin:8px 0 0;">Ditangani ${esc(t.teknisiHandling||'-')} — lanjut isi di tab Maintenance</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function submitTiket(){
+  const payload = {
+    namaPelanggan: val('t_nama'), noHp: val('t_hp'), alamat: val('t_alamat'),
+    mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
+    lat: val('t_lat'), lng: val('t_lng'), kendala: getKendalaValue(),
+    jamLaporan: val('t_jamlaporan')
+  };
+  if(!payload.namaPelanggan){ toast('Isi nama pelanggan/mikrotik dulu'); return; }
+  if(!payload.kendala){ toast('Isi kendalanya dulu'); return; }
+  const data = await apiCall('addTiket', payload);
+  if(data && data.ok){
+    toast('✅ Laporan gangguan tercatat');
+    ['t_nama','t_hp','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual'].forEach(id=>document.getElementById(id).value='');
+    toggleKendalaManual();
+    document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
+    document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
+    loadAll();
+  }
+}
+function isiJamLaporSekarang(){
+  const now = new Date();
+  document.getElementById('t_jamlaporan').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+async function tanganiTiket(id){
+  const data = await apiCall('tanganiTiket', { id });
+  if(data && data.ok){ toast('✅ Tiket ditandai ditangani'); loadAll(); }
+}
+
+function mapsUrl_(mapsLink, alamat){
+  const l = String(mapsLink||'').trim();
+  if(/^https?:\/\//i.test(l)) return l;                       // hanya http(s) yang boleh jadi link
+  if(/^(www\.)?(maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps)/i.test(l)) return 'https://' + l;
+  if(alamat) return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(alamat);
+  return '';
+}
+function lampiranLinks_(raw){
+  const urls = String(raw||'').split(/\s+/).filter(u=>/^https?:\/\//.test(u));
+  return urls.map((u,i)=>`<a href="${esc(u)}" target="_blank" class="meta" style="color:var(--info);display:inline-block;margin-right:12px;">📎 Lampiran ${urls.length>1?i+1:''}</a>`).join('');
+}
+
+function lokasiMaintenance_(m){
+  if(m.pendaftaranId){
+    const x = STATE.pendaftaran.find(p=>p.id===m.pendaftaranId);
+    if(x) return { alamat: x.alamatPasang||'', mapsLink: x.mapsLink||'' };
+  }
+  if(m.tiketId){
+    const t = STATE.tiket.find(t=>t.id===m.tiketId);
+    if(t) return { alamat: t.alamat||'', mapsLink: t.mapsLink||'' };
+  }
+  return { alamat:'', mapsLink:'' };
+}
+
+function renderLaporan(){
+  const install = STATE.maintenance.filter(m=>m.pendaftaranId);
+  const repair = STATE.maintenance.filter(m=>!m.pendaftaranId);
+
+  const cardHtml = (m) => {
+    const lok = lokasiMaintenance_(m);
+    const sttsCls = m.stts==='Done'?'selesai':(m.stts==='Progress'?'konfirmasi':'baru');
+    return `
+    <div class="card st-${sttsCls}">
+      <div class="row1">
+        <div>
+          <div class="nm">${esc(m.client)}</div>
+          <div class="meta">${esc(m.isp)} • Teknisi: ${esc(m.teknisi||'-')} • Redaman ${esc(m.redaman||'-')}dB</div>
+        </div>
+        <span class="badge ${sttsCls}">${esc(m.stts)}</span>
+      </div>
+      <div class="meta" style="margin-top:8px;">${esc(m.keterangan||'')}</div>
+      ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
+      ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
+      ${mapsUrl_(lok.mapsLink, lok.alamat) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
+      ${lampiranLinks_(m.fotoUrl)}
+    </div>`;
+  };
+
+  const pBox = document.getElementById('laporanPemasanganList');
+  pBox.innerHTML = install.length ? [...install].reverse().map(cardHtml).join('') :
+    `<div class="empty"><span class="ic">📦</span>Belum ada realisasi pemasangan</div>`;
+
+  const mBox = document.getElementById('laporanList');
+  mBox.innerHTML = repair.length ? [...repair].reverse().map(cardHtml).join('') :
+    `<div class="empty"><span class="ic">🗂️</span>Belum ada laporan maintenance</div>`;
+}
+
+function renderLog(){
+  const list = [...STATE.logs].reverse().slice(0,60);
+  const box = document.getElementById('logList');
+  if(!list.length){
+    box.innerHTML = `<div class="empty"><span class="ic">🛰️</span>Belum ada aktivitas tercatat</div>`;
+    return;
+  }
+  box.innerHTML = list.map(l=>`
+    <div class="log-item">
+      <div class="log-dot"></div>
+      <div class="lbody">
+        <div class="ltxt"><b>${esc(l.user)}</b> (${esc(l.role||'-')}) ${esc(l.aksi)}</div>
+        <div class="ltxt" style="color:var(--text-dim);">${esc(l.detail||'')}</div>
+        <div class="ltime">${esc(l.timestamp)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function esc(s){
+  return (s===undefined||s===null) ? '' : String(s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+}
+
+const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F5B942','MikrotikSiap':'#4FA3E3','Selesai':'#21C77A' };
+
+function renderPeta(){
+  const box = document.getElementById('mapView');
+  if(!box || typeof L === 'undefined') return;
+  if(!mapObj){
+    if(box.offsetParent === null) return; // tab belum dibuka, container masih display:none — jangan init dulu
+    mapObj = L.map('mapView').setView([-6.0025, 106.0128], 12); // default: sekitar Cilegon
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+    }).addTo(mapObj);
+  }
+  mapMarkers.forEach(m=>mapObj.removeLayer(m));
+  mapMarkers = [];
+  const pts = titikPeta_();
+  pts.forEach(x=>{
+    const color = STATUS_COLOR[x.status] || '#93A9C4';
+    const icon = L.divIcon({
+      className:'', iconSize:[16,16],
+      html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0B3D66;${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484D55;':''}"></div>`
+    });
+    const marker = L.marker([parseFloat(x.lat), parseFloat(x.lng)], { icon }).addTo(mapObj);
+    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}`);
+    mapMarkers.push(marker);
+  });
+  if(pts.length){
+    const group = L.featureGroup(mapMarkers);
+    mapObj.fitBounds(group.getBounds().pad(0.2));
+  }
+  mapObj.invalidateSize();
+}
+
+/* ---- Pilih titik di peta (tanpa perlu link share) ---- */
+const PICK = {};
+function coordLink_(lat,lng){ return `https://www.google.com/maps?q=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`; }
+// isi kolom link otomatis, tapi jangan timpa link yang diketik/ditempel orang
+function isiLinkOtomatis_(inputId, lat, lng){
+  const el = document.getElementById(inputId);
+  if(!el.value.trim() || el.dataset.auto === '1'){
+    el.value = coordLink_(lat,lng); el.dataset.auto = '1';
+  }
+}
+function pinSekarang_(target){
+  if(target === 'daftar'){
+    const la = parseFloat(val('f_lat')), ln = parseFloat(val('f_lng'));
+    return (isNaN(la)||isNaN(ln)) ? null : {lat:la, lng:ln};
+  }
+  return coordsDariUrl_(val('t_mapslink'));
+}
+function taruhPin(target, lat, lng, silent){
+  const st = PICK[target];
+  if(!st) return;
+  if(!st.marker){
+    st.marker = L.marker([lat,lng], {
+      draggable:true,
+      icon: L.divIcon({ className:'', iconSize:[0,0],
+        html:'<div style="font-size:32px;line-height:32px;transform:translate(-50%,-100%);">📍</div>' })
+    }).addTo(st.map);
+    st.marker.on('dragend', ()=>{ const p = st.marker.getLatLng(); taruhPin(target, p.lat, p.lng); });
+  } else {
+    st.marker.setLatLng([lat,lng]);
+  }
+  if(silent) return;
+  if(target === 'daftar'){
+    document.getElementById('f_lat').value = Number(lat).toFixed(6);
+    document.getElementById('f_lng').value = Number(lng).toFixed(6);
+    isiLinkOtomatis_('f_mapslink', lat, lng);
+    document.getElementById('lokasiInfo').textContent = `✅ Pin dipilih dari peta (${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}) — link Maps dibuat otomatis, titik muncul di tab Peta`;
+  } else {
+    isiLinkOtomatis_('t_mapslink', lat, lng);
+    setTiketPin_(lat, lng);
+    toast('✅ Titik dipilih, link Maps terisi');
+  }
+}
+function setTiketPin_(lat, lng){
+  document.getElementById('t_lat').value = Number(lat).toFixed(6);
+  document.getElementById('t_lng').value = Number(lng).toFixed(6);
+}
+// Dipanggil saat link Maps ditempel di form Tiket: ambil koordinatnya biar titiknya muncul di Peta/KML
+async function resolveTiketLink(){
+  const link = val('t_mapslink').trim();
+  if(!link) return;
+  const local = coordsDariUrl_(link);
+  if(local){ setTiketPin_(local.lat, local.lng); toast('✅ Koordinat dari link terbaca'); return; }
+  const data = await apiCall('resolveMapsLink', { link });
+  if(data && data.found){ setTiketPin_(data.lat, data.lng); toast('✅ Koordinat dari link terbaca, muncul di Peta'); }
+  else if(data){ toast('ℹ️ Link tersimpan, titik belum terbaca. Pakai 🗺️ Pilih Titik di Peta.'); }
+}
+function bukaPicker(target){
+  const wrap = document.getElementById('pickWrap_'+target);
+  const nowHidden = wrap.classList.toggle('hide');
+  if(nowHidden) return;
+  if(typeof L === 'undefined'){ toast('Peta belum termuat (butuh internet)'); wrap.classList.add('hide'); return; }
+  let st = PICK[target];
+  if(!st){
+    const map = L.map('pickMap_'+target).setView([-6.0023, 106.0111], 13); // Cilegon
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+    st = PICK[target] = { map, marker:null };
+    map.on('click', e=>taruhPin(target, e.latlng.lat, e.latlng.lng));
+  }
+  setTimeout(()=>st.map.invalidateSize(), 80);
+  const cur = pinSekarang_(target);
+  if(cur){
+    taruhPin(target, cur.lat, cur.lng, true);
+    st.map.setView([cur.lat, cur.lng], 17);
+  } else if(navigator.permissions && navigator.geolocation){
+    // kalau izin lokasi sudah pernah diberikan, peta langsung mulai dari posisi HP
+    navigator.permissions.query({name:'geolocation'}).then(p=>{
+      if(p.state === 'granted') navigator.geolocation.getCurrentPosition(
+        pos=>st.map.setView([pos.coords.latitude, pos.coords.longitude], 16), ()=>{}, {timeout:8000});
+    }).catch(()=>{});
+  }
+}
+function resetPicker_(target){
+  const st = PICK[target];
+  if(st && st.marker){ st.map.removeLayer(st.marker); st.marker = null; }
+  document.getElementById('pickWrap_'+target).classList.add('hide');
+}
+
+function ambilLokasi(){
+  if(!navigator.geolocation){ toast('HP/browser ini tidak mendukung GPS'); return; }
+  const btn = document.getElementById('btnLokasi');
+  btn.disabled = true; btn.textContent = '📍 Mengambil lokasi...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('f_lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('f_lng').value = pos.coords.longitude.toFixed(6);
+    isiLinkOtomatis_('f_mapslink', pos.coords.latitude, pos.coords.longitude);
+    document.getElementById('lokasiInfo').textContent = `✅ Lokasi tersimpan dari GPS (${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}) — link Maps dibuat otomatis`;
+    btn.disabled = false; btn.textContent = '📍 Ambil Lokasi Saat Ini (GPS)';
+  }, err=>{
+    toast('❌ Gagal ambil lokasi: '+err.message);
+    btn.disabled = false; btn.textContent = '📍 Ambil Lokasi Saat Ini (GPS)';
+  }, { enableHighAccuracy:true, timeout:15000 });
+}
+
+function infoLinkMaps(){
+  const link = document.getElementById('f_mapslink').value.trim();
+  if(!link) return;
+  if(!/^(https?:\/\/)?(www\.)?(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.google\.|google\.[a-z.]+\/maps)/i.test(link)){
+    document.getElementById('lokasiInfo').textContent = '⚠️ Itu kayaknya bukan link Google Maps.';
+    return;
+  }
+  const hasPin = document.getElementById('f_lat').value;
+  document.getElementById('lokasiInfo').textContent = hasPin
+    ? document.getElementById('lokasiInfo').textContent
+    : '✅ Link Maps terisi — ikut tersimpan ke laporan/Excel dan jadi tombol Buka Maps buat teknisi. (Klik Ambil kalau mau titiknya muncul di tab Peta)';
+}
+
+function coordsDariUrl_(u){
+  let s = u; try{ s = decodeURIComponent(u); }catch(e){}
+  const n = '(-?\\d{1,3}\\.\\d+)';
+  const pats = [new RegExp('@'+n+','+n), new RegExp('!3d'+n+'!4d'+n), new RegExp('[?&](?:q|query|ll|sll|center|destination|daddr)='+n+',\\s*'+n)];
+  for(const re of pats){ const m = s.match(re); if(m) return {lat:parseFloat(m[1]), lng:parseFloat(m[2])}; }
+  return null;
+}
+
+async function ambilDariLinkMaps(){
+  const link = document.getElementById('f_mapslink').value.trim();
+  if(!link){ toast('Tempel link Google Maps dulu'); return; }
+  const setPin = (lat,lng,src)=>{
+    document.getElementById('f_lat').value = Number(lat).toFixed(6);
+    document.getElementById('f_lng').value = Number(lng).toFixed(6);
+    document.getElementById('lokasiInfo').textContent = `✅ Lokasi tersimpan dari ${src} (${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)})`;
+  };
+  // link panjang yang sudah ada koordinatnya: gak perlu tanya server
+  const lokal = coordsDariUrl_(link);
+  if(lokal){ setPin(lokal.lat, lokal.lng, 'link Maps'); return; }
+
+  const btn = document.getElementById('btnLinkMaps');
+  btn.disabled = true; btn.textContent = '⏳...';
+  const data = await apiCall('resolveMapsLink', { link });
+  btn.disabled = false; btn.textContent = '🔗 Ambil';
+  if(data && data.ok && data.found !== false && data.lat !== undefined){
+    setPin(data.lat, data.lng, 'link Maps');
+  } else if(data){
+    // link tetap ikut tersimpan pas Kirim; yang kurang cuma titik di tab Peta
+    document.getElementById('f_lat').value = '';
+    document.getElementById('f_lng').value = '';
+    document.getElementById('lokasiInfo').textContent = '✅ Link Maps tersimpan — masuk laporan/Excel dan jadi tombol Buka Maps buat teknisi. Cuma titik di tab Peta yang belum ada (titik dari link ini belum kebaca); pakai 🗺️ Pilih Titik di Peta atau GPS.';
+    toast('✅ Link tersimpan (titik Peta belum kebaca)');
+  }
+}
+
+function titikPeta_(){
+  const pend = STATE.pendaftaran.filter(x=>x.lat && x.lng).map(x=>({
+    jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
+    sub:x.alamatPasang||'', info:x.paket||'', status:x.status,
+    maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
+  }));
+  const tik = STATE.tiket.filter(x=>x.lat && x.lng).map(x=>({
+    jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
+    sub:x.alamat||'', info:x.kendala||'', status:x.status,
+    maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
+  }));
+  return [...pend, ...tik];
+}
+function exportKML(){
+  const pts = titikPeta_();
+  if(!pts.length){ toast('Belum ada titik koordinat tersimpan'); return; }
+  const placemarks = pts.map(x=>`
+    <Placemark>
+      <name>${esc(x.jenis)}: ${esc(x.judul)}</name>
+      <description>${esc(x.sub)} | ${esc(x.info)} | Status: ${esc(x.status)} | Maps: ${esc(x.maps)}</description>
+      <Point><coordinates>${x.lng},${x.lat},0</coordinates></Point>
+    </Placemark>`).join('');
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Titik Pelanggan AIS.NET</name>${placemarks}</Document></kml>`;
+  const blob = new Blob([kml], {type:'application/vnd.google-earth.kml+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'titik-pelanggan-aisnet.kml'; a.click();
+}
+
+/* ---------------- Actions ---------------- */
+function renderPaketOptions(){
+  const sel = document.getElementById('f_paket');
+  const current = sel.value;
+  const items = STATE.master.filter(m=>m.tipe==='Paket');
+  sel.innerHTML = items.map(m=>`<option value="${esc(m.nilai)}">${esc(m.nilai)}</option>`).join('')
+    + `<option value="__manual__">Lainnya (isi manual)</option>`;
+  if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
+}
+function togglePaketManual(){
+  const isManual = document.getElementById('f_paket').value === '__manual__';
+  document.getElementById('f_paket_manual').classList.toggle('hide', !isManual);
+}
+function getPaketValue(){
+  const sel = document.getElementById('f_paket').value;
+  return sel === '__manual__' ? val('f_paket_manual') : sel;
+}
+
+function renderKendalaOptions(){
+  const sel = document.getElementById('t_kendala');
+  const current = sel.value;
+  const items = STATE.master.filter(m=>m.tipe==='Kendala');
+  sel.innerHTML = items.map(m=>`<option value="${esc(m.nilai)}">${esc(m.nilai)}</option>`).join('')
+    + `<option value="__manual__">Lainnya (isi manual)</option>`;
+  if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
+}
+function toggleKendalaManual(){
+  const isManual = document.getElementById('t_kendala').value === '__manual__';
+  document.getElementById('t_kendala_manual').classList.toggle('hide', !isManual);
+}
+function getKendalaValue(){
+  const sel = document.getElementById('t_kendala').value;
+  return sel === '__manual__' ? val('t_kendala_manual') : sel;
+}
+
+/* ---------------- Kelola Daftar Paket & Kendala (Admin) ---------------- */
+function renderMasterLists(){
+  const pBox = document.getElementById('masterPaketList');
+  const kBox = document.getElementById('masterKendalaList');
+  if(!pBox || !kBox) return;
+  const chip = (m) => `
+    <div class="user-row">
+      <div class="u-info"><b>${esc(m.nilai)}</b></div>
+      <div class="u-actions"><button onclick="removeMasterItem('${m.tipe}','${esc(m.nilai).replace(/'/g,"\\'")}')">🗑 Hapus</button></div>
+    </div>`;
+  const paket = STATE.master.filter(m=>m.tipe==='Paket');
+  const kendala = STATE.master.filter(m=>m.tipe==='Kendala');
+  pBox.innerHTML = paket.length ? paket.map(chip).join('') : `<div class="mini-note">Belum ada paket.</div>`;
+  kBox.innerHTML = kendala.length ? kendala.map(chip).join('') : `<div class="mini-note">Belum ada kendala.</div>`;
+}
+async function submitMasterItem(tipe, inputId){
+  const nilai = val(inputId);
+  if(!nilai){ toast('Isi nilainya dulu'); return; }
+  const data = await apiCall('addMasterItem', { tipe, nilai });
+  if(data && data.ok){
+    toast('✅ Ditambahkan');
+    document.getElementById(inputId).value = '';
+    loadAll();
+  } else if(data){
+    toast('❌ '+(data.error||'Gagal menambah'));
+  }
+}
+async function removeMasterItem(tipe, nilai){
+  const data = await apiCall('deleteMasterItem', { tipe, nilai });
+  if(data && data.ok){ toast('✅ Dihapus'); loadAll(); }
+}
+
+async function submitPendaftaran(){
+  const payload = {
+    nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'),
+    noHp: val('f_hp'), paket: getPaketValue(), ssid: val('f_ssid'), password: val('f_pass'),
+    tglPemasangan: val('f_tgl'), noOdc: val('f_odc'), noOdp: val('f_odp'), statusTinggal: val('f_status'),
+    lat: val('f_lat'), lng: val('f_lng'),
+    mapsLink: val('f_mapslink') || ((val('f_lat') && val('f_lng')) ? coordLink_(val('f_lat'), val('f_lng')) : ''),
+    files: filesPayload('daftar')
+  };
+  if(!payload.nama || !payload.noHp){ toast('Nama dan No HP wajib diisi'); return; }
+  const data = await apiCall('addPendaftaran', payload);
+  if(data){
+    toast('✅ Pendaftaran terkirim');
+    ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f_paket').value = document.getElementById('f_paket').options[0].value;
+    togglePaketManual();
+    document.getElementById('lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
+    document.getElementById('f_mapslink').dataset.auto = ''; resetPicker_('daftar');
+    FILES.daftar = []; renderFiles('daftar');
+    loadAll();
+  }
+}
+function val(id){ return document.getElementById(id).value.trim(); }
+
+async function confirmTeknisi(id){
+  const data = await apiCall('confirmTeknisi', { id });
+  if(data){ toast('✅ Done confirm dikirim'); loadAll(); }
+}
+
+function openMikrotikPrompt(id){
+  const ip = prompt('IP Mikrotik:'); if(ip===null) return;
+  const user = prompt('Username Mikrotik:'); if(user===null) return;
+  const pass = prompt('Password Mikrotik:'); if(pass===null) return;
+  setMikrotik(id, ip, user, pass);
+}
+async function setMikrotik(id, ip, mUser, mPass){
+  const data = await apiCall('setMikrotik', { id, mikrotikIp: ip, mikrotikUser: mUser, mikrotikPass: mPass });
+  if(data){ toast('✅ Konfigurasi Mikrotik disimpan'); loadAll(); }
+}
+
+function fileIcon_(type, name){
+  if(type.startsWith('video/')) return '🎬';
+  if(type==='application/pdf') return '📄';
+  if(/\.(xls|xlsx|csv)$/i.test(name)) return '📊';
+  if(/\.(doc|docx|txt)$/i.test(name)) return '📝';
+  return '📎';
+}
+function tambahFiles(kind, e){
+  const list = FILES[kind];
+  const picked = [...e.target.files];
+  e.target.value = ''; // biar file yang sama bisa dipilih ulang
+  picked.forEach(file=>{
+    const totalMb = list.reduce((a,f)=>a+f.size,0)/1048576 + file.size/1048576;
+    if(file.size/1048576 > MAX_FILE_MB){ toast(`❌ ${file.name} lebih dari ${MAX_FILE_MB} MB`); return; }
+    if(totalMb > MAX_TOTAL_MB){ toast(`❌ Total lampiran maksimal ${MAX_TOTAL_MB} MB`); return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      list.push({ name:file.name, type:file.type||'application/octet-stream', size:file.size, data:reader.result });
+      renderFiles(kind);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function hapusFile(kind, i){ FILES[kind].splice(i,1); renderFiles(kind); }
+function renderFiles(kind){
+  const box = document.getElementById(FILE_BOX[kind]);
+  box.innerHTML = FILES[kind].map((f,i)=>{
+    const thumb = f.type.startsWith('image/') ? `<img src="${f.data}">` : `<div class="ico">${fileIcon_(f.type,f.name)}</div>`;
+    const mb = (f.size/1048576).toFixed(1);
+    return `<div class="file-item">${thumb}<div class="fi"><b>${esc(f.name)}</b><span>${mb} MB</span></div><button onclick="hapusFile('${kind}',${i})">✕</button></div>`;
+  }).join('');
+}
+function filesPayload(kind){
+  return FILES[kind].map(f=>({ name:f.name, data:f.data }));
+}
+
+function hmToMinutes_(hm){
+  if(!hm) return null;
+  const [h,m] = hm.split(':').map(Number);
+  return h*60+m;
+}
+function hitungDurasi(){
+  const a = hmToMinutes_(val('m_jamlaporan'));
+  const b = hmToMinutes_(val('m_jamselesai'));
+  const info = document.getElementById('durasiInfo');
+  if(a===null || b===null){ info.textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.'; return; }
+  let diff = b - a;
+  if(diff < 0) diff += 24*60; // lewat tengah malam
+  const jam = Math.floor(diff/60), menit = diff%60;
+  info.textContent = `⏱️ Durasi pengerjaan: ${jam} jam ${menit} menit`;
+}
+function isiJamSekarang(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('m_jamselesai').value = `${hh}:${mm}`;
+  hitungDurasi();
+}
+
+async function submitRealisasiPemasangan(){
+  const linkId = val('rp_link');
+  if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
+  const payload = {
+    linkId, client: val('rp_client'), stts: val('rp_stts'),
+    teknisi: val('rp_teknisi'), stok: val('rp_stok'), redaman: val('rp_redaman'),
+    modem: val('rp_modem'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
+    barrel: val('rp_barrel'), kabel: val('rp_kabel'), keterangan: val('rp_ket'),
+    files: filesPayload('pasang')
+  };
+  toast('⏳ Mengirim laporan...');
+  const data = await apiCall('addMaintenance', payload);
+  if(data){
+    toast('✅ Pemasangan Ais.net terkirim');
+    ['rp_teknisi','rp_stok','rp_redaman','rp_ket'].forEach(id=>document.getElementById(id).value='');
+    ['rp_modem','rp_adaptor','rp_patchcore','rp_barrel','rp_kabel'].forEach(id=>document.getElementById(id).value='0');
+    document.getElementById('rp_link').value='';
+    document.getElementById('rp_client').value='';
+    FILES.pasang = []; renderFiles('pasang');
+    loadAll();
+  }
+}
+
+async function submitMaintenance(){
+  const payload = {
+    ticketId: val('m_ticket'),
+    client: val('m_client'), isp: val('m_isp'), stts: val('m_stts'),
+    teknisi: val('m_teknisi'), stok: val('m_stok'), redaman: val('m_redaman'),
+    modem: val('m_modem'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
+    barrel: val('m_barrel'), kabel: val('m_kabel'), keterangan: val('m_ket'),
+    jamLaporan: val('m_jamlaporan'), jamSelesai: val('m_jamselesai'),
+    files: filesPayload('maint')
+  };
+  if(!payload.client){ toast('Nama client wajib diisi'); return; }
+  toast('⏳ Mengirim laporan...');
+  const data = await apiCall('addMaintenance', payload);
+  if(data){
+    toast('✅ Realisasi Maintenance terkirim');
+    ['m_client','m_teknisi','m_stok','m_redaman','m_ket','m_jamlaporan','m_jamselesai'].forEach(id=>document.getElementById(id).value='');
+    ['m_modem','m_adaptor','m_patchcore','m_barrel','m_kabel'].forEach(id=>document.getElementById(id).value='0');
+    document.getElementById('m_ticket').value='';
+    document.getElementById('durasiInfo').textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.';
+    FILES.maint = []; renderFiles('maint');
+    loadAll();
+  }
+}
+
+
+/* ---------------- Kelola Pengguna (Admin) ---------------- */
+async function loadUsers(){
+  const data = await apiCall('listUsers', {});
+  if(data && data.ok){ STATE.users = data.users || []; renderUsers(); }
+}
+function renderUsers(){
+  const box = document.getElementById('usersList');
+  if(!box) return;
+  if(!STATE.users.length){
+    box.innerHTML = `<div class="empty"><span class="ic">👤</span>Belum ada akun teknisi/staff. Tambahkan lewat form di atas.</div>`;
+    return;
+  }
+  box.innerHTML = STATE.users.map(u=>`
+    <div class="user-row">
+      <div class="u-info">
+        <b>${esc(u.nama)}</b>
+        <span class="${u.status==='Nonaktif'?'tag-off':''}">${esc(u.role)} • ${esc(u.status)}</span>
+      </div>
+      <div class="u-actions">
+        <button onclick="promptResetPassword('${esc(u.nama)}')">🔑 Reset</button>
+        <button onclick="promptChangeRole('${esc(u.nama)}')">🔄 Role</button>
+        <button onclick="toggleUserStatus('${esc(u.nama)}','${u.status==='Nonaktif'?'Aktif':'Nonaktif'}')">${u.status==='Nonaktif'?'✅ Aktifkan':'🚫 Nonaktifkan'}</button>
+      </div>
+    </div>`).join('');
+}
+async function submitAddUser(){
+  const nama = val('u_nama'), password = val('u_pass'), role = document.getElementById('u_role').value;
+  if(!nama || !password){ toast('Isi nama dan password akun'); return; }
+  const data = await apiCall('addUser', { nama, password, role });
+  if(data && data.ok){
+    toast('✅ Akun ditambahkan');
+    document.getElementById('u_nama').value=''; document.getElementById('u_pass').value='';
+    loadUsers();
+  }
+}
+async function promptResetPassword(nama){
+  const pass = prompt('Password baru untuk '+nama+':');
+  if(!pass) return;
+  const data = await apiCall('updateUser', { nama, newPassword: pass });
+  if(data && data.ok) toast('✅ Password direset');
+}
+async function promptChangeRole(nama){
+  const role = prompt('Role baru untuk '+nama+' (Marketing/CS, Sales, Teknisi, Admin Server, Office):');
+  if(!role) return;
+  const data = await apiCall('updateUser', { nama, newRole: role });
+  if(data && data.ok){ toast('✅ Role diubah'); loadUsers(); }
+}
+async function toggleUserStatus(nama, newStatus){
+  const data = await apiCall('updateUser', { nama, newStatus });
+  if(data && data.ok){ toast('✅ Status diubah'); loadUsers(); }
+}
+
+/* ---------------- Ganti password sendiri (akun apa pun, termasuk Admin) ---------------- */
+async function doGantiPassword(){
+  const oldPassword = prompt('Password lama:');
+  if(oldPassword===null) return;
+  const newPassword = prompt('Password baru:');
+  if(!newPassword) return;
+  if(newPassword.length < 6){ toast('Password baru minimal 6 karakter'); return; }
+  const data = await apiCall('changeOwnPassword', { oldPassword, newPassword });
+  if(data && data.ok){
+    if(data.token){ USER.token = data.token; localStorage.setItem('aisnet_user', JSON.stringify(USER)); }
+    toast('✅ Password berhasil diganti (perangkat lain otomatis keluar)');
+  }
+}
+
+
+function csvCell_(c){
+  if(c && typeof c === 'object' && 'link' in c){
+    const u = c.link || '';
+    if(/^https?:\/\/[^\s"]+$/.test(u)) return `"${`=HYPERLINK("${u}")`.replace(/"/g,'""')}"`;  // link bisa diklik di Excel
+    c = u;
+  }
+  let s = String(c===undefined||c===null ? '' : c);
+  // teks berawalan = + - @ dieksekusi Excel sebagai rumus -> jadikan teks biasa
+  if(/^[=+\-@\t\r]/.test(s) && !/^[+\-]?\d+([.,]\d+)?$/.test(s)) s = "'" + s;
+  return `"${s.replace(/"/g,'""')}"`;
+}
+function exportExcel(){
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Adaptor','Patchcore','Barrel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Waktu Input']];
+  STATE.maintenance.forEach(m=>{
+    const lok = lokasiMaintenance_(m);
+    rows.push([m.client,lok.alamat,{link: mapsUrl_(lok.mapsLink, lok.alamat)},m.isp,m.stts,m.teknisi,m.stok,m.redaman,m.modem,m.adaptor,m.patchcore,m.barrel,m.kabel,m.jamLaporan,m.jamSelesai,m.durasi,m.keterangan,m.timestamp]);
+  });
+  const csv = rows.map(r=>r.map(csvCell_).join(',')).join('\n');
+  const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'laporan-maintenance-aisnet.csv'; a.click();
+}
+
+/* auto refresh */
+setInterval(()=>{ if(USER) loadAll(); }, 20000);
+</script>
+</body>
+</html>
