@@ -59,6 +59,12 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
   display:flex;align-items:center;justify-content:center;
   font-family:'Space Grotesk';font-weight:700;color:#0F1B2B;font-size:15px;
 }
+.dwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-bottom:14px;}
+.dtable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:300px;}
+.dtable th,.dtable td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;}
+.dtable th:first-child,.dtable td:first-child{text-align:left;}
+.dtable th{background:var(--surface2);color:var(--text-dim);font-weight:600;}
+.dtable tr.tot td{font-weight:700;background:var(--surface2);}
 .logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:12px;}
 .logo-small{height:36px;width:auto;border-radius:6px;flex:none;}
 /* layar sempit: nama teks disembunyikan karena logo sudah memuat tulisan AIS.NET */
@@ -319,6 +325,32 @@ button{font-family:'Inter',sans-serif;}
         <div class="stat"><b id="cntMikrotik">0</b><span>Set Mikrotik</span></div>
         <div class="stat good"><b id="cntSelesai">0</b><span>Selesai</span></div>
       </div>
+      <div class="sect-h"><h2>Jumlah Aktivitas</h2></div>
+      <div class="field" style="margin-bottom:10px;"><select id="dashPeriode" onchange="renderBeranda()">
+        <option value="hari">Hari ini</option>
+        <option value="minggu" selected>7 hari terakhir</option>
+        <option value="bulan">Bulan ini</option>
+        <option value="pilih">Pilih bulan…</option>
+        <option value="semua">Semua waktu</option>
+      </select></div>
+      <div id="bulanWrap" class="hide" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <button type="button" class="btn btn-outline" onclick="geserBulan(-1)" style="padding:8px 12px;">◀</button>
+        <input type="month" id="dashBulan" onchange="renderBeranda()" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px;font-size:13px;">
+        <button type="button" class="btn btn-outline" onclick="geserBulan(1)" style="padding:8px 12px;">▶</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="actDaftar">0</b><span>Pendaftaran masuk</span></div>
+        <div class="stat good"><b id="actPasang">0</b><span>Pemasangan selesai</span></div>
+        <div class="stat warn"><b id="actMaint">0</b><span>Maintenance</span></div>
+        <div class="stat bad"><b id="actTiket">0</b><span>Tiket masuk</span></div>
+      </div>
+      <div class="sect-h"><h2>Per Teknisi</h2></div>
+      <div id="dashTeknisi"></div>
+      <div class="sect-h"><h2>Pemasangan Harian per ISP</h2></div>
+      <div id="dashIspHarian"></div>
+      <div class="sect-h"><h2>Market ISP (berdasarkan pemasangan)</h2></div>
+      <div id="dashMarket"></div>
+      <div id="dashKelola"></div>
       <div class="sect-h"><h2>Perlu Ditindak</h2></div>
       <div id="berandaList"></div>
     </div>
@@ -330,6 +362,7 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Nama (sesuai KTP)</label><input id="f_nama"></div>
         <div class="field"><label>Alamat sesuai KTP</label><textarea id="f_alamatktp"></textarea></div>
         <div class="field"><label>Alamat pasang</label><textarea id="f_alamatpasang"></textarea></div>
+        <div class="field"><label>ISP</label><select id="f_isp" onchange="ispBaru(this)"></select></div>
         <div class="grid2">
           <div class="field"><label>No HP</label><input id="f_hp" type="tel"></div>
           <div class="field"><label>Tgl pemasangan</label><input id="f_tgl" type="date"></div>
@@ -406,13 +439,22 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Nama Pelanggan / Mikrotik</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
         <div class="field"><label>No HP</label><input id="t_hp" type="tel"></div>
         <div class="field"><label>Alamat</label><input id="t_alamat" placeholder="Alamat rumah/lokasi client"></div>
-        <div class="field"><label>Link Google Maps (opsional)</label>
-          <input id="t_mapslink" oninput="this.dataset.auto=''" onchange="resolveTiketLink()" placeholder="https://maps.app.goo.gl/..."><input type="hidden" id="t_lat"><input type="hidden" id="t_lng">
+        <div class="field">
+          <label>Lokasi rumah client (opsional)</label>
+          <div class="mini-note" style="margin-top:-2px;margin-bottom:8px;">Biar teknisi gampang datang. Isi salah satu cara di bawah.</div>
+          <button type="button" class="btn btn-outline btn-block" onclick="ambilLokasiTiket()" id="btnLokasiTiket">📍 Ambil Lokasi Saat Ini (GPS)</button>
           <button type="button" class="btn btn-outline btn-block" style="margin-top:8px;" onclick="bukaPicker('tiket')">🗺️ Pilih Titik di Peta</button>
           <div id="pickWrap_tiket" class="hide">
-            <div class="mini-note" style="margin:8px 0 0;">Ketuk peta buat taruh pin, link Maps terisi otomatis.</div>
+            <div class="mini-note" style="margin:8px 0 0;">Ketuk peta buat taruh pin, geser pin biar pas. Link Maps dibuat otomatis.</div>
             <div id="pickMap_tiket" class="pickmap"></div>
           </div>
+          <div class="mini-note" style="margin-top:10px;margin-bottom:4px;">Atau tempel link share Google Maps dari CS/Sales:</div>
+          <div style="display:flex;gap:8px;">
+            <input id="t_mapslink" oninput="this.dataset.auto=''" placeholder="https://maps.app.goo.gl/..." style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+            <button type="button" class="btn btn-info" onclick="resolveTiketLink()" id="btnLinkTiket" style="white-space:nowrap;">🔗 Ambil</button>
+          </div>
+          <div class="mini-note" id="t_lokasiInfo" style="margin-top:10px;margin-bottom:0;">⚪ Lokasi belum diisi.</div>
+          <input type="hidden" id="t_lat"><input type="hidden" id="t_lng">
         </div>
         <div class="field">
           <label>Kendala</label>
@@ -449,11 +491,79 @@ button{font-family:'Inter',sans-serif;}
           <label>STTS</label>
           <select id="rp_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
         </div>
+        <div class="field"><label>ISP</label><select id="rp_isp" onchange="ispBaru(this)"></select></div>
         <div class="grid2">
           <div class="field"><label>Teknisi</label><input id="rp_teknisi" placeholder="cth: Alan,Burhan,didink,Sahel"></div>
           <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
         </div>
         <div class="field"><label>Redaman (dB)</label><input id="rp_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
+        <h3 style="margin-top:18px;">Material Terpakai</h3>
+        <div class="grid2">
+          <div class="field"><label>Jenis modem (opsional)</label><select id="rp_jmodem" onchange="toggleMat('rp','modem')"><option value="">— Tidak pakai —</option></select></div>
+          <div class="field hide" id="rp_wmodem"><label>Jumlah modem</label><input id="rp_modem" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Jenis splitter (opsional)</label><select id="rp_jsplitter" onchange="toggleMat('rp','splitter')"><option value="">— Tidak pakai —</option></select></div>
+          <div class="field hide" id="rp_wsplitter"><label>Jumlah splitter</label><input id="rp_splitter" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Jenis closure (opsional)</label><select id="rp_jclosure" onchange="toggleMat('rp','closure')"><option value="">— Tidak pakai —</option></select></div>
+          <div class="field hide" id="rp_wclosure"><label>Jumlah closure</label><input id="rp_closure" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Jenis box ODP (opsional)</label><select id="rp_jboxodp" onchange="toggleMat('rp','boxodp')"><option value="">— Tidak pakai —</option></select></div>
+          <div class="field hide" id="rp_wboxodp"><label>Jumlah box ODP</label><input id="rp_boxodp" type="number" value="0"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Adaptor</label><input id="rp_adaptor" type="number" value="0"></div>
+          <div class="field"><label>Patchcore</label><input id="rp_patchcore" type="number" value="0"></div>
+        </div>
+        <div class="field"><label>Barrel</label><input id="rp_barrel" type="number" value="0"></div>
+        <div class="field"><label>Jenis kabel (opsional)</label><select id="rp_jeniskabel" onchange="toggleMeter('rp')"><option value="">— Tidak pakai kabel —</option><option>1C DC</option><option>4C DC</option><option>4C Fig 8</option><option>12 Fig 8</option><option>24 Fig 8</option></select></div>
+        <div class="field hide" id="rp_meterWrap"><label>Meter kabel</label><input id="rp_kabel" type="number" value="0"></div>
+        <div class="field"><label>Keterangan (Ket)</label><textarea id="rp_ket" placeholder="cth: psb"></textarea></div>
+        <div class="field">
+          <label>Lampiran (opsional: foto, video, PDF, dll)</label>
+          <div class="photo-box">
+            <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
+            <input type="file" multiple id="rp_files" onchange="tambahFiles('pasang', event)">
+          </div>
+          <div id="fileListPasang"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitRealisasiPemasangan()">Kirim Pemasangan Ais.net</button>
+      </div>
+    </div>
+
+    <!-- ---- TAB: MAINTENANCE ---- -->
+    <div id="tab-maint" class="tabpane hide">
+      <div class="form-card">
+        <h3>#Realisasi Maintenance</h3>
+        <div class="mini-note" style="margin-top:-6px;">Khusus buat gangguan/perbaikan. Buat nutup pendaftaran baru, pakai tab Pemasangan.</div>
+        <div class="field">
+          <label>Kaitkan ke tiket gangguan (opsional)</label>
+          <select id="m_ticket" onchange="isiDariTiket()"><option value="">— Pilih dari tiket yang ditangani —</option></select>
+        </div>
+        <div class="field"><label>Nama Client</label><input id="m_client"></div>
+        <div class="field">
+          <label>ISP</label>
+          <select id="m_isp" onchange="ispBaru(this)"></select>
+        </div>
+        <div class="field">
+          <label>STTS</label>
+          <select id="m_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Teknisi</label><input id="m_teknisi" placeholder="cth: Alan, Deli"></div>
+          <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
+        </div>
+        <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
+        <h3 style="margin-top:18px;">⏱️ Waktu Pengerjaan</h3>
+        <div class="grid2">
+          <div class="field"><label>Jam Laporan (Admin/CS)</label><input id="m_jamlaporan" type="time" oninput="hitungDurasi()"></div>
+          <div class="field"><label>Jam Selesai (Done)</label><input id="m_jamselesai" type="time" oninput="hitungDurasi()"></div>
+        </div>
+        <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamSekarang()">🕐 Isi Jam Selesai = Sekarang</button>
+        <div class="mini-note" id="durasiInfo" style="margin-top:-6px;">Isi kedua jam buat hitung durasi pengerjaan otomatis.</div>
         <h3 style="margin-top:18px;">Material Terpakai</h3>
         <div class="grid2">
           <div class="field"><label>Jenis modem (opsional)</label><select id="m_jmodem" onchange="toggleMat('m','modem')"><option value="">— Tidak pakai —</option></select></div>
@@ -589,6 +699,14 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div id="master_boxodp" style="margin-top:12px;"></div>
       </div>
+      <div class="form-card">
+        <h3>🌐 Kelola Daftar ISP</h3>
+        <div style="display:flex;gap:8px;">
+          <input id="mi_nilai" placeholder="cth: AIS.Net" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+          <button class="btn btn-primary" onclick="submitMasterItem('ISP','mi_nilai')">Tambah</button>
+        </div>
+        <div id="master_isp" style="margin-top:12px;"></div>
+      </div>
     </div>
 
   </div>
@@ -610,6 +728,7 @@ button{font-family:'Inter',sans-serif;}
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 /* ===== KONFIGURASI (isi sekali di sini, tidak perlu diubah dari HP) =====
@@ -635,7 +754,7 @@ const ROLE_TABS = {
   "Marketing/CS": ["beranda","daftar","tiket","laporan","peta"],
   "Sales": ["beranda","daftar","tiket","laporan","peta"],
   "Teknisi": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta"],
-  "Admin Server": ["beranda","proses","laporan","peta"],
+  "Admin Server": ["beranda","daftar","tiket","proses","laporan","peta"],
   "Office": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log"],
   "Admin": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log","users"]
 };
@@ -715,7 +834,7 @@ function applyRoleAccess(){
   document.getElementById('prosesKonfirmasiWrap').classList.toggle('hide', !showKonf);
   document.getElementById('prosesMikrotikWrap').classList.toggle('hide', !showMik);
   // Pendaftaran: yang isi form baru adalah Marketing/CS, Sales, Office, Admin
-  document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !['Marketing/CS','Sales','Office','Admin'].includes(USER.role));
+  document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !USER);
   // buka tab pertama yang diizinkan
   document.querySelectorAll('#navbar button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tabpane').forEach(p=>p.classList.add('hide'));
@@ -806,6 +925,30 @@ ACT.login = async (p) => {
 };
 ACT.logout = async () => { await sb.auth.signOut(); return { ok:true }; };
 
+ACT.ubahTanggalMaintenance = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa mengubah tanggal' };
+  const { error } = await sb.from('maintenance').update({ timestamp: p.timestamp }).eq('id', p.id);
+  if(error) return fail_(error);
+  await logAksi_('mengubah tanggal data maintenance', p.id);
+  return { ok:true };
+};
+ACT.hapusMaintenanceBanyak = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
+  const ids = (p.ids || []).filter(Boolean);
+  if(!ids.length) return { ok:false, error:'Tidak ada data dipilih' };
+  const { error } = await sb.from('maintenance').delete().in('id', ids);
+  if(error) return fail_(error);
+  await logAksi_('menghapus data maintenance massal', `${ids.length} data`);
+  return { ok:true, jumlah: ids.length };
+};
+ACT.hapusMaintenance = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
+  const { error } = await sb.from('maintenance').delete().eq('id', p.id);
+  if(error) return fail_(error);
+  await logAksi_('menghapus data maintenance', p.id);
+  return { ok:true };
+};
+
 ACT.getAllData = async () => {
   const q = (tabel, order) => sb.from(tabel).select('*').order(order.col, { ascending: order.asc }).limit(500);
   const [p, m, t, l, mas] = await Promise.all([
@@ -831,7 +974,7 @@ ACT.addPendaftaran = async (p) => {
     id, nama: txt_(p.nama), alamatKtp: txt_(p.alamatKtp), alamatPasang: txt_(p.alamatPasang),
     noHp: txt_(p.noHp), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
     tglPemasangan: txt_(p.tglPemasangan), noOdc: txt_(p.noOdc), noOdp: txt_(p.noOdp),
-    statusTinggal: txt_(p.statusTinggal), status: 'Baru', diinputOleh: USER.name,
+    statusTinggal: txt_(p.statusTinggal), isp: txt_(p.isp), status: 'Baru', diinputOleh: USER.name,
     lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran
   });
   if(error) return fail_(error);
@@ -922,7 +1065,7 @@ ACT.resolveMapsLink = async (p) => {
 };
 
 ACT.addMasterItem = async (p) => {
-  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
+  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP','ISP'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
   const nilai = txt_(p.nilai).trim();
   if(!nilai) return { ok:false, error:'Isi nilainya dulu' };
   const { error } = await sb.from('master_data').insert({ tipe: p.tipe, nilai });
@@ -1034,6 +1177,7 @@ function renderAll(){
   renderKendalaOptions();
   renderMasterLists();
   renderMatOptions();
+  renderIspOptions();
 }
 
 function renderBeranda(){
@@ -1042,6 +1186,7 @@ function renderBeranda(){
   document.getElementById('cntProses').textContent = p.filter(x=>x.status==='Dikonfirmasi').length;
   document.getElementById('cntMikrotik').textContent = p.filter(x=>x.status==='MikrotikSiap').length;
   document.getElementById('cntSelesai').textContent = p.filter(x=>x.status==='Selesai').length;
+  hitungAktivitas_();
 
   const pending = p.filter(x=>x.status!=='Selesai').slice(0,6);
   const box = document.getElementById('berandaList');
@@ -1050,6 +1195,275 @@ function renderBeranda(){
     return;
   }
   box.innerHTML = pending.map(x=>pendaftaranCard(x)).join('');
+}
+
+// ---- Dashboard: per teknisi & pemasangan harian per ISP ----
+const ISP_TABEL = ['AIS.Net','BNET','JIB','AIS(CSR)'];
+function normIsp_(v){
+  const s = String(v||'').trim().toLowerCase();
+  const f = ISP_TABEL.find(x => x.toLowerCase() === s);
+  return f || 'Lainnya';
+}
+function namaTeknisi_(s){
+  return String(s||'').split(/[,;\/]+/).map(x => x.trim()).filter(Boolean);
+}
+function tglKey_(ts){
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function renderDashTeknisi_(maint){
+  const box = document.getElementById('dashTeknisi');
+  if(!box) return;
+  const map = {};
+  maint.forEach(m => {
+    const jenis = m.pendaftaranId ? 'pasang' : 'maint';
+    [...new Set(namaTeknisi_(m.teknisi))].forEach(n => {
+      map[n] = map[n] || { pasang:0, maint:0 };
+      map[n][jenis]++;
+    });
+  });
+  const rows = Object.entries(map)
+    .map(([n,c]) => ({ n, pasang:c.pasang, maint:c.maint, total:c.pasang + c.maint }))
+    .sort((a,b) => b.total - a.total);
+  if(!rows.length){ box.innerHTML = `<div class="empty"><span class="ic">👷</span>Belum ada data teknisi di periode ini</div>`; return; }
+  // Total = jumlah pekerjaan (bukan jumlah per orang), karena satu pekerjaan bisa dikerjakan beberapa teknisi
+  const jobPasang = maint.filter(m => m.pendaftaranId).length;
+  const jobMaint = maint.length - jobPasang;
+  box.innerHTML = `<div style="position:relative;height:${Math.max(160, rows.length*34+60)}px;margin-bottom:12px;"><canvas id="chTeknisi"></canvas></div><div class="dwrap"><table class="dtable">
+    <thead><tr><th>Teknisi</th><th>Pemasangan</th><th>Maintenance</th><th>Total</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${esc(r.n)}</td><td>${r.pasang}</td><td>${r.maint}</td><td>${r.total}</td></tr>`).join('')}
+      <tr class="tot"><td>Total pekerjaan</td><td>${jobPasang}</td><td>${jobMaint}</td><td>${jobPasang + jobMaint}</td></tr>
+    </tbody></table></div>
+    <div class="mini-note">Satu pekerjaan yang dikerjakan beberapa teknisi dihitung untuk tiap teknisi. Baris total menghitung jumlah pekerjaan.</div>`;
+}
+function renderDashIspHarian_(maint){
+  const box = document.getElementById('dashIspHarian');
+  if(!box) return;
+  const perHari = {};
+  maint.filter(m => m.pendaftaranId && m.timestamp).forEach(m => {
+    const k = tglKey_(m.timestamp), isp = normIsp_(m.isp);
+    perHari[k] = perHari[k] || {};
+    perHari[k][isp] = (perHari[k][isp] || 0) + 1;
+  });
+  const hari = Object.keys(perHari).sort().reverse().slice(0, 60);
+  if(!hari.length){ box.innerHTML = `<div class="empty"><span class="ic">📶</span>Belum ada pemasangan di periode ini</div>`; return; }
+  const kolom = ['AIS.Net','BNET','JIB','AIS(CSR)'];
+  const adaLainnya = hari.some(k => perHari[k]['Lainnya']);
+  if(adaLainnya) kolom.push('Lainnya');
+  const tgl = k => { const [y,mo,d] = k.split('-').map(Number); return new Date(y, mo-1, d).toLocaleDateString('id-ID', { weekday:'short', day:'2-digit', month:'short' }); };
+  const cell = (k, c) => perHari[k][c] || 0;
+  const total = {}; kolom.forEach(c => total[c] = 0); let totalAll = 0;
+  const baris = hari.map(k => {
+    const tot = kolom.reduce((a,c) => a + cell(k,c), 0); totalAll += tot;
+    kolom.forEach(c => total[c] += cell(k,c));
+    return `<tr><td>${tgl(k)}</td>${kolom.map(c => `<td>${cell(k,c)}</td>`).join('')}<td>${tot}</td></tr>`;
+  }).join('');
+  box.innerHTML = `<div style="position:relative;height:240px;margin-bottom:12px;"><canvas id="chHarian"></canvas></div><div class="dwrap"><table class="dtable">
+    <thead><tr><th>Tanggal</th>${kolom.map(c => `<th>${esc(c)}</th>`).join('')}<th>Total</th></tr></thead>
+    <tbody>${baris}
+      <tr class="tot"><td>Total</td>${kolom.map(c => `<td>${total[c]}</td>`).join('')}<td>${totalAll}</td></tr>
+    </tbody></table></div>
+    ${Object.keys(perHari).length > 60 ? '<div class="mini-note">Menampilkan 60 hari terakhir.</div>' : ''}`;
+}
+
+// Market share ISP: persen dari jumlah pemasangan periode ini, plus rata-rata per hari
+function renderDashMarket_(maint, per, now){
+  const box = document.getElementById('dashMarket');
+  if(!box) return;
+  const pasang = maint.filter(m => m.pendaftaranId && m.timestamp);
+  const total = pasang.length;
+  if(!total){ box.innerHTML = `<div class="empty"><span class="ic">📊</span>Belum ada pemasangan di periode ini</div>`; return; }
+  const cnt = {};
+  pasang.forEach(m => { const k = normIsp_(m.isp); cnt[k] = (cnt[k] || 0) + 1; });
+  // jumlah hari dalam periode, untuk rata-rata per hari
+  const hariSet = new Set(pasang.map(m => tglKey_(m.timestamp)));
+  const jumlahHari = per==='hari' ? 1 : per==='minggu' ? 7 : per==='bulan' ? now.getDate() : hariSet.size;
+  const urut = [...ISP_TABEL, ...(cnt['Lainnya'] ? ['Lainnya'] : [])];
+  box.innerHTML = `<div style="position:relative;height:240px;margin-bottom:12px;"><canvas id="chMarket"></canvas></div><div class="dwrap"><table class="dtable">
+    <thead><tr><th>ISP</th><th>Pemasangan</th><th>Market</th><th>Rata-rata/hari</th></tr></thead>
+    <tbody>${urut.map(k => {
+      const c = cnt[k] || 0, pct = (c / total * 100);
+      return `<tr>
+        <td>${esc(k)}</td>
+        <td>${c}</td>
+        <td><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+          <div style="width:60px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;"><div style="width:${pct.toFixed(1)}%;height:100%;background:#E8771D;"></div></div>
+          <span>${pct.toFixed(1)}%</span></div></td>
+        <td>${(c / jumlahHari).toFixed(1)}</td></tr>`;
+    }).join('')}
+      <tr class="tot"><td>Total</td><td>${total}</td><td>100%</td><td>${(total / jumlahHari).toFixed(1)}</td></tr>
+    </tbody></table></div>
+    <div class="mini-note">Market = persentase jumlah pemasangan tiap ISP dari total pemasangan periode ini. Rata-rata/hari = jumlah pemasangan dibagi jumlah hari yang tercatat.</div>`;
+}
+
+// Admin saja: ubah tanggal (bulan) dan hapus data pemasangan/maintenance
+function renderDashKelola_(){
+  const box = document.getElementById('dashKelola');
+  if(!box) return;
+  if(!USER || USER.role !== 'Admin'){ box.innerHTML = ''; return; }
+  const data = STATE.maintenance.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 40);
+  if(!data.length){ box.innerHTML = `<div class="sect-h"><h2>Kelola Data (Admin)</h2></div><div class="empty">Belum ada data</div>`; return; }
+  box.innerHTML = `<div class="sect-h"><h2>Kelola Data (Admin)</h2></div>
+    <div class="mini-note" style="margin-bottom:8px;">Ubah tanggal untuk memindahkan data ke bulan lain, atau hapus data yang salah input. 40 data terbaru.</div>
+    <div class="dwrap" style="padding:10px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Hapus data sekaligus</div>
+      <div class="mini-note" style="margin:0 0 8px;">Pemasangan &amp; maintenance pada bulan atau hari tertentu. Export dulu ke CSV kalau masih perlu datanya.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="month" id="hapusBulan" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px;font-size:13px;">
+        <button class="btn btn-outline" onclick="hapusPeriode('bulan')" style="color:#E5484D;">🗑️ Hapus bulan ini</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+        <input type="date" id="hapusHari" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px;font-size:13px;">
+        <button class="btn btn-outline" onclick="hapusPeriode('hari')" style="color:#E5484D;">🗑️ Hapus hari ini</button>
+      </div>
+    </div>
+    <div class="dwrap"><table class="dtable">
+      <thead><tr><th>Jenis</th><th>Client</th><th>Tanggal</th><th></th></tr></thead>
+      <tbody>${data.map(m => {
+        const tgl = tglKey_(m.timestamp);
+        return `<tr>
+          <td>${m.pendaftaranId ? 'Pemasangan' : 'Maintenance'}</td>
+          <td style="text-align:left;">${esc(m.client || '-')}</td>
+          <td><input type="date" value="${tgl}" onchange="ubahTanggalMaint('${m.id}', this.value)" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:6px;font-size:12px;"></td>
+          <td><button onclick="hapusMaint('${m.id}')" style="background:none;border:none;color:#E5484D;font-size:16px;cursor:pointer;">🗑️</button></td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+}
+async function ubahTanggalMaint(id, nilai){
+  if(!nilai) return;
+  const m = STATE.maintenance.find(x => x.id === id);
+  if(!m) return;
+  const lama = new Date(m.timestamp);
+  const baru = new Date(nilai + 'T00:00');
+  baru.setHours(lama.getHours(), lama.getMinutes(), lama.getSeconds(), 0);
+  const data = await apiCall('ubahTanggalMaintenance', { id, timestamp: baru.toISOString() });
+  if(data){ toast('✅ Tanggal diubah'); loadAll(); }
+}
+// Hapus semua pemasangan & maintenance pada satu bulan atau satu hari (Admin)
+async function hapusPeriode(jenis){
+  if(!USER || USER.role !== 'Admin'){ toast('Hanya Admin'); return; }
+  const nilai = val(jenis === 'bulan' ? 'hapusBulan' : 'hapusHari');
+  if(!nilai){ toast(jenis === 'bulan' ? 'Pilih bulannya dulu' : 'Pilih harinya dulu'); return; }
+  const cocok = m => jenis === 'bulan' ? tglKey_(m.timestamp).startsWith(nilai) : tglKey_(m.timestamp) === nilai;
+  const ids = STATE.maintenance.filter(m => m.timestamp && cocok(m)).map(m => m.id);
+  if(!ids.length){ toast('Tidak ada data di periode itu'); return; }
+  const label = jenis === 'bulan' ? `bulan ${nilai}` : `tanggal ${nilai}`;
+  const ketik = prompt(`Akan menghapus ${ids.length} data pemasangan & maintenance (${label}).\nTidak bisa dikembalikan.\n\nKetik HAPUS untuk lanjut:`);
+  if(ketik !== 'HAPUS'){ toast('Dibatalkan'); return; }
+  const data = await apiCall('hapusMaintenanceBanyak', { ids });
+  if(data){ toast(`✅ ${ids.length} data dihapus`); loadAll(); }
+}
+async function hapusMaint(id){
+  if(!confirm('Hapus data ini? Tidak bisa dikembalikan.')) return;
+  const data = await apiCall('hapusMaintenance', { id });
+  if(data){ toast('✅ Data dihapus'); loadAll(); }
+}
+
+// Geser bulan di dashboard: ◀ mundur, ▶ maju (langsung masuk mode "Pilih bulan")
+function geserBulan(n){
+  const inBulan = document.getElementById('dashBulan');
+  const sel = document.getElementById('dashPeriode');
+  const [y, mo] = (inBulan.value || '').split('-').map(Number);
+  const base = (y && mo) ? new Date(y, mo-1, 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  base.setMonth(base.getMonth() + n);
+  inBulan.value = base.getFullYear() + '-' + String(base.getMonth()+1).padStart(2,'0');
+  sel.value = 'pilih';
+  renderBeranda();
+}
+
+// ---- Grafik dashboard (Chart.js) ----
+const CHARTS = {};
+const PALET = ['#E8771D','#4FA3E3','#2ECC71','#9B59B6','#F1C40F','#95A5A6'];
+function gambarChart_(key, canvasId, cfg){
+  const cv = document.getElementById(canvasId);
+  if(!cv) return;
+  if(typeof Chart === 'undefined'){
+    if(cv.parentNode) cv.parentNode.innerHTML = '<div class="mini-note">Grafik butuh internet (library grafik belum termuat).</div>';
+    return;
+  }
+  if(CHARTS[key]) CHARTS[key].destroy();
+  Chart.defaults.color = '#cfe0f5';
+  Chart.defaults.borderColor = 'rgba(255,255,255,.12)';
+  CHARTS[key] = new Chart(cv, cfg);
+}
+function gambarGrafik_(maint){
+  // Per teknisi
+  const map = {};
+  maint.forEach(m => {
+    const jenis = m.pendaftaranId ? 'pasang' : 'maint';
+    [...new Set(namaTeknisi_(m.teknisi))].forEach(n => { map[n] = map[n] || {pasang:0,maint:0}; map[n][jenis]++; });
+  });
+  const tek = Object.entries(map).map(([n,c]) => ({n, ...c, total: c.pasang + c.maint})).sort((a,b) => b.total - a.total);
+  if(tek.length) gambarChart_('teknisi', 'chTeknisi', {
+    type: 'bar',
+    data: { labels: tek.map(r => r.n), datasets: [
+      { label:'Pemasangan', data: tek.map(r => r.pasang), backgroundColor: PALET[0] },
+      { label:'Maintenance', data: tek.map(r => r.maint), backgroundColor: PALET[1] } ] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ stacked:true, ticks:{ precision:0 } }, y:{ stacked:true } }, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  // Pemasangan harian per ISP
+  const pasang = maint.filter(m => m.pendaftaranId && m.timestamp);
+  const perHari = {};
+  pasang.forEach(m => { const k = tglKey_(m.timestamp), isp = normIsp_(m.isp); perHari[k] = perHari[k] || {}; perHari[k][isp] = (perHari[k][isp]||0) + 1; });
+  const hariAsc = Object.keys(perHari).sort().slice(-60);
+  const kolom = ['AIS.Net','BNET','JIB','AIS(CSR)'];
+  if(hariAsc.some(k => perHari[k]['Lainnya'])) kolom.push('Lainnya');
+  if(hariAsc.length) gambarChart_('harian', 'chHarian', {
+    type: 'bar',
+    data: { labels: hariAsc.map(k => k.slice(8,10) + '/' + k.slice(5,7)),
+      datasets: kolom.map((c,i) => ({ label: c, data: hariAsc.map(k => perHari[k][c] || 0), backgroundColor: PALET[i % PALET.length] })) },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ stacked:true }, y:{ stacked:true, ticks:{ precision:0 } } }, plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  // Market ISP
+  const cnt = {};
+  pasang.forEach(m => { const k = normIsp_(m.isp); cnt[k] = (cnt[k]||0) + 1; });
+  const urut = [...ISP_TABEL, ...(cnt['Lainnya'] ? ['Lainnya'] : [])];
+  if(pasang.length) gambarChart_('market', 'chMarket', {
+    type: 'doughnut',
+    data: { labels: urut, datasets: [{ data: urut.map(k => cnt[k] || 0), backgroundColor: urut.map((_,i) => PALET[i % PALET.length]) }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+  });
+}
+
+// Jumlah aktivitas sesuai periode yang dipilih di dashboard
+function hitungAktivitas_(){
+  const el = document.getElementById('dashPeriode');
+  if(!el) return;
+  const per = el.value, now = new Date();
+  const bulanWrap = document.getElementById('bulanWrap');
+  const inBulan = document.getElementById('dashBulan');
+  if(bulanWrap) bulanWrap.classList.toggle('hide', per !== 'pilih');
+  if(inBulan && !inBulan.value) inBulan.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  let mulai, akhir = null;
+  if(per === 'pilih'){
+    const [y, mo] = (inBulan.value || '').split('-').map(Number);
+    mulai = new Date(y, mo-1, 1);
+    akhir = new Date(y, mo, 1);
+  } else {
+    mulai = per==='hari'   ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          : per==='minggu' ? new Date(now.getTime() - 7*86400000)
+          : per==='bulan'  ? new Date(now.getFullYear(), now.getMonth(), 1)
+          : new Date(0);
+  }
+  const dalam = x => {
+    if(!x.timestamp) return false;
+    const d = new Date(x.timestamp);
+    return d >= mulai && (!akhir || d < akhir);
+  };
+  const maint = STATE.maintenance.filter(dalam);
+  renderDashTeknisi_(maint);
+  renderDashIspHarian_(maint);
+  renderDashMarket_(maint, per, now);
+  renderDashKelola_();
+  gambarGrafik_(maint);
+  document.getElementById('actDaftar').textContent = STATE.pendaftaran.filter(dalam).length;
+  document.getElementById('actPasang').textContent = maint.filter(m => m.pendaftaranId).length;
+  document.getElementById('actMaint').textContent  = maint.filter(m => !m.pendaftaranId).length;
+  document.getElementById('actTiket').textContent  = STATE.tiket.filter(dalam).length;
 }
 
 function pendaftaranCard(x){
@@ -1066,7 +1480,7 @@ function pendaftaranCard(x){
     <div class="row1">
       <div>
         <div class="nm">${esc(x.nama)}</div>
-        <div class="meta">${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
         ${lampiranLinks_(x.lampiran)}
       </div>
       ${statusBadge(x.status)}
@@ -1135,7 +1549,7 @@ function isiDariTiket(){
 function renderTiket(){
   const berjalan = STATE.tiket.filter(t=>t.status!=='Selesai');
   document.getElementById('tiketCount').textContent = berjalan.length;
-  document.getElementById('tiketFormCard').classList.toggle('hide', !['Marketing/CS','Sales','Office','Admin'].includes(USER.role));
+  document.getElementById('tiketFormCard').classList.toggle('hide', !USER);
   const box = document.getElementById('tiketList');
   if(!berjalan.length){
     box.innerHTML = `<div class="empty"><span class="ic">🎫</span>Tidak ada tiket gangguan yang berjalan</div>`;
@@ -1180,6 +1594,7 @@ async function submitTiket(){
     ['t_nama','t_hp','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual'].forEach(id=>document.getElementById(id).value='');
     toggleKendalaManual();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
+    document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
     document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
     FILES.tiket = []; renderFiles('tiket');
     loadAll();
@@ -1281,9 +1696,13 @@ function renderPeta(){
   if(!mapObj){
     if(box.offsetParent === null) return; // tab belum dibuka, container masih display:none — jangan init dulu
     mapObj = L.map('mapView').setView([-6.0025, 106.0128], 12); // default: sekitar Cilegon
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+    const peta = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
     }).addTo(mapObj);
+    const satelit = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri', maxZoom: 19
+    });
+    L.control.layers({ 'Peta': peta, 'Satelit': satelit }, null, { position: 'topright' }).addTo(mapObj);
   }
   mapMarkers.forEach(m=>mapObj.removeLayer(m));
   mapMarkers = [];
@@ -1303,6 +1722,38 @@ function renderPeta(){
     mapObj.fitBounds(group.getBounds().pad(0.2));
   }
   mapObj.invalidateSize();
+}
+
+// Daftar ISP dari master (tipe ISP). Pilihan "➕ Tambah ISP baru" menyimpan ke daftar.
+const ISP_BARU = '__isp_baru__';
+function renderIspOptions(){
+  const items = STATE.master.filter(x => x.tipe === 'ISP').map(x => x.nilai);
+  ['f_isp','rp_isp','m_isp'].forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Pilih ISP —</option>'
+      + items.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')
+      + `<option value="${ISP_BARU}">➕ Tambah ISP baru…</option>`;
+    if(cur && cur !== ISP_BARU && items.includes(cur)) sel.value = cur;
+  });
+}
+async function ispBaru(sel){
+  if(sel.value !== ISP_BARU) return;
+  const nama = (prompt('Nama ISP baru:') || '').trim();
+  if(!nama){ sel.value = ''; return; }
+  if(STATE.master.some(x => x.tipe === 'ISP' && x.nilai.toLowerCase() === nama.toLowerCase())){
+    sel.value = nama; return;   // sudah ada, langsung dipilih
+  }
+  const data = await apiCall('addMasterItem', { tipe:'ISP', nilai: nama });
+  if(data){
+    STATE.master.push({ tipe:'ISP', nilai: nama });
+    renderIspOptions();
+    sel.value = nama;
+    toast('✅ ISP ditambahkan');
+  } else {
+    sel.value = '';
+  }
 }
 
 // Material dengan pilihan jenis (dari daftar master, bisa diubah di tab Pengguna)
@@ -1393,15 +1844,44 @@ function setTiketPin_(lat, lng){
   document.getElementById('t_lat').value = Number(lat).toFixed(6);
   document.getElementById('t_lng').value = Number(lng).toFixed(6);
 }
-// Dipanggil saat link Maps ditempel di form Tiket: ambil koordinatnya biar titiknya muncul di Peta/KML
+// Tombol 🔗 Ambil di form Tiket: baca koordinat dari link (lokal dulu, lalu lewat server)
 async function resolveTiketLink(){
   const link = val('t_mapslink').trim();
-  if(!link) return;
+  const info = document.getElementById('t_lokasiInfo');
+  if(!link){ toast('Tempel link Google Maps dulu'); return; }
   const local = coordsDariUrl_(link);
-  if(local){ setTiketPin_(local.lat, local.lng); toast('✅ Koordinat dari link terbaca'); return; }
+  if(local){
+    setTiketPin_(local.lat, local.lng);
+    info.textContent = `✅ Lokasi dari link (${local.lat.toFixed(5)}, ${local.lng.toFixed(5)}) — muncul di tab Peta dan KML`;
+    return;
+  }
+  const btn = document.getElementById('btnLinkTiket');
+  btn.disabled = true; btn.textContent = '⏳...';
   const data = await apiCall('resolveMapsLink', { link });
-  if(data && data.found){ setTiketPin_(data.lat, data.lng); toast('✅ Koordinat dari link terbaca, muncul di Peta'); }
-  else if(data){ toast('ℹ️ Link tersimpan, titik belum terbaca. Pakai 🗺️ Pilih Titik di Peta.'); }
+  btn.disabled = false; btn.textContent = '🔗 Ambil';
+  if(data && data.found){
+    setTiketPin_(data.lat, data.lng);
+    info.textContent = `✅ Lokasi dari link (${Number(data.lat).toFixed(5)}, ${Number(data.lng).toFixed(5)}) — muncul di tab Peta dan KML`;
+  } else if(data){
+    document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
+    info.textContent = '✅ Link tersimpan, tapi titik belum kebaca dari link ini. Pakai 🗺️ Pilih Titik di Peta atau GPS.';
+  }
+}
+// Tombol GPS di form Tiket
+function ambilLokasiTiket(){
+  if(!navigator.geolocation){ toast('HP/browser ini tidak mendukung GPS'); return; }
+  const btn = document.getElementById('btnLokasiTiket');
+  btn.disabled = true; btn.textContent = '📍 Mengambil lokasi...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const la = pos.coords.latitude, ln = pos.coords.longitude;
+    setTiketPin_(la, ln);
+    isiLinkOtomatis_('t_mapslink', la, ln);
+    document.getElementById('t_lokasiInfo').textContent = `✅ Lokasi dari GPS (${la.toFixed(5)}, ${ln.toFixed(5)}) — link Maps dibuat otomatis`;
+    btn.disabled = false; btn.textContent = '📍 Ambil Lokasi Saat Ini (GPS)';
+  }, err=>{
+    toast('❌ Gagal ambil lokasi: ' + err.message);
+    btn.disabled = false; btn.textContent = '📍 Ambil Lokasi Saat Ini (GPS)';
+  }, { enableHighAccuracy:true, timeout:15000 });
 }
 function bukaPicker(target){
   const wrap = document.getElementById('pickWrap_'+target);
@@ -1411,7 +1891,7 @@ function bukaPicker(target){
   let st = PICK[target];
   if(!st){
     const map = L.map('pickMap_'+target).setView([-6.0023, 106.0111], 13); // Cilegon
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19, subdomains:'abcd', attribution:'© OpenStreetMap © CARTO' }).addTo(map);
     st = PICK[target] = { map, marker:null };
     map.on('click', e=>taruhPin(target, e.latlng.lat, e.latlng.lng));
   }
@@ -1577,6 +2057,11 @@ function renderMasterLists(){
   const kendala = STATE.master.filter(m=>m.tipe==='Kendala');
   pBox.innerHTML = paket.length ? paket.map(chip).join('') : `<div class="mini-note">Belum ada paket.</div>`;
   kBox.innerHTML = kendala.length ? kendala.map(chip).join('') : `<div class="mini-note">Belum ada kendala.</div>`;
+  const boxIsp = document.getElementById('master_isp');
+  if(boxIsp){
+    const isps = STATE.master.filter(x => x.tipe === 'ISP');
+    boxIsp.innerHTML = isps.length ? isps.map(chip).join('') : `<div class="mini-note">Belum ada ISP.</div>`;
+  }
   MAT.forEach(m => {
     const box = document.getElementById('master_' + m.key);
     if(!box) return;
@@ -1603,7 +2088,7 @@ async function removeMasterItem(tipe, nilai){
 
 async function submitPendaftaran(){
   const payload = {
-    nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'),
+    nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'), isp: val('f_isp'),
     noHp: val('f_hp'), paket: getPaketValue(), ssid: val('f_ssid'), password: val('f_pass'),
     tglPemasangan: val('f_tgl'), noOdc: val('f_odc'), noOdp: val('f_odp'), statusTinggal: val('f_status'),
     lat: val('f_lat'), lng: val('f_lng'),
@@ -1615,6 +2100,7 @@ async function submitPendaftaran(){
   if(data){
     toast('✅ Pendaftaran terkirim');
     ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f_isp').value='';
     document.getElementById('f_paket').value = document.getElementById('f_paket').options[0].value;
     togglePaketManual();
     document.getElementById('lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
@@ -1704,7 +2190,7 @@ async function submitRealisasiPemasangan(){
   const linkId = val('rp_link');
   if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
   const payload = {
-    linkId, client: val('rp_client'), stts: val('rp_stts'),
+    linkId, client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'),
     teknisi: val('rp_teknisi'), stok: val('rp_stok'), redaman: val('rp_redaman'),
     ...matPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
     barrel: val('rp_barrel'), jenisKabel: val('rp_jeniskabel'), kabel: val('rp_jeniskabel') ? val('rp_kabel') : 0, keterangan: val('rp_ket'),
@@ -1720,6 +2206,7 @@ async function submitRealisasiPemasangan(){
     renderMatOptions();
     document.getElementById('rp_jeniskabel').value=''; toggleMeter('rp');
     document.getElementById('rp_link').value='';
+    document.getElementById('rp_isp').value='';
     document.getElementById('rp_client').value='';
     FILES.pasang = []; renderFiles('pasang');
     loadAll();
