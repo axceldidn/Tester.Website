@@ -645,6 +645,17 @@ function setLoginMode(mode){
 }
 setLoginMode('staff');
 
+// Login tidak lewat apiCall, karena apiCall membuang pesan error (mengembalikan null).
+async function loginLangsung_(p){
+  try{
+    const data = await ACT.login(p);
+    setSync(true);
+    return data;
+  }catch(e){
+    setSync(false);
+    return { ok:false, error:'Gagal terhubung ke server: ' + (e.message || 'tidak diketahui') };
+  }
+}
 async function doLogin(){
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = 'Memeriksa...';
@@ -652,9 +663,9 @@ async function doLogin(){
   if(loginMode === 'admin'){
     const pass = document.getElementById('adminPassInput').value;
     if(!pass){ toast('Isi password admin'); btn.disabled=false; btn.textContent='Masuk'; return; }
-    const data = await apiCall('login', { mode:'admin', password: pass });
+    const data = await loginLangsung_({ mode:'admin', password: pass });
     btn.disabled = false; btn.textContent = 'Masuk';
-    if(!data || !data.ok){ toast('❌ '+(data && data.error ? data.error : 'Password admin salah')); return; }
+    if(!data.ok){ toast('❌ '+data.error); return; }
     if(!data.token){ toast('❌ Server belum versi terbaru (token tidak ada). Deploy ulang .gs dulu.'); return; }
     USER = { name: data.nama, role: data.role, token: data.token };
     localStorage.setItem('aisnet_user', JSON.stringify(USER));
@@ -665,9 +676,9 @@ async function doLogin(){
   const name = document.getElementById('loginName').value.trim();
   const pass = document.getElementById('loginPass').value;
   if(!name || !pass){ toast('Isi nama dan password'); btn.disabled=false; btn.textContent='Masuk'; return; }
-  const data = await apiCall('login', { nama: name, password: pass });
+  const data = await loginLangsung_({ nama: name, password: pass });
   btn.disabled = false; btn.textContent = 'Masuk';
-  if(!data || !data.ok){ toast('❌ '+(data && data.error ? data.error : 'Nama atau password salah')); return; }
+  if(!data.ok){ toast('❌ '+data.error); return; }
   if(!data.token){ toast('❌ Server belum versi terbaru (token tidak ada). Deploy ulang .gs dulu.'); return; }
   USER = { name: data.nama, role: data.role, token: data.token };
   localStorage.setItem('aisnet_user', JSON.stringify(USER));
