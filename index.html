@@ -903,7 +903,20 @@ async function uploadFiles_(files, prefix){
   }
   return urls.join('\n');
 }
-const fail_ = (error) => ({ ok:false, error: error.message });
+// Ubah pesan teknis dari database jadi kalimat yang bisa dipahami
+const PESAN_DB = [
+  [/pend_latlng_ck|tiket_latlng_ck/, 'Lokasi di luar wilayah Indonesia. Cek lagi titik di peta.'],
+  [/pend_status_ck|tiket_status_ck|mnt_stts_ck/, 'Status yang dipilih tidak valid.'],
+  [/mnt_angka_ck/, 'Jumlah material tidak boleh negatif.'],
+  [/row-level security|permission denied/i, 'Akunmu tidak punya izin untuk aksi ini.'],
+  [/Teknisi hanya boleh/i, 'Teknisi hanya boleh mengubah status dan data penanganan.'],
+  [/Akun tidak aktif/i, 'Akunmu tidak aktif. Hubungi admin.'],
+];
+const fail_ = (error) => {
+  const m = String((error && error.message) || '');
+  const hit = PESAN_DB.find(([re]) => re.test(m));
+  return { ok:false, error: hit ? hit[1] : ('Gagal menyimpan: ' + m) };
+};
 const notFound_ = () => ({ ok:false, error:'Data tidak ditemukan atau kamu tidak punya izin' });
 const ACT = {};
 
