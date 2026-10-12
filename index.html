@@ -370,7 +370,7 @@ button{font-family:'Inter',sans-serif;}
           <input id="f_lat" type="hidden"><input id="f_lng" type="hidden">
         </div>
         <div class="field">
-          <label>Lampiran (foto rumah, KTP, dll)</label>
+          <label>Lampiran (opsional: foto rumah, KTP, dll)</label>
           <div class="photo-box">
             <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
             <input type="file" multiple id="f_files" onchange="tambahFiles('daftar', event)">
@@ -417,6 +417,14 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="field"><label>Jam Laporan</label><input id="t_jamlaporan" type="time"></div>
         <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamLaporSekarang()">🕐 Isi Jam = Sekarang</button>
+        <div class="field">
+          <label>Lampiran (opsional: foto, screenshot, dll)</label>
+          <div class="photo-box">
+            <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
+            <input type="file" multiple id="t_files" onchange="tambahFiles('tiket', event)">
+          </div>
+          <div id="fileListTiket"></div>
+        </div>
         <button class="btn btn-primary btn-block" onclick="submitTiket()">Kirim Laporan Gangguan</button>
       </div>
       <div class="sect-h"><h2>Tiket Berjalan</h2><span class="count" id="tiketCount">0</span></div>
@@ -454,7 +462,7 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Kabel (meter)</label><input id="rp_kabel" type="number" value="0"></div>
         <div class="field"><label>Keterangan (Ket)</label><textarea id="rp_ket" placeholder="cth: psb"></textarea></div>
         <div class="field">
-          <label>Lampiran (foto, video, PDF, dll)</label>
+          <label>Lampiran (opsional: foto, video, PDF, dll)</label>
           <div class="photo-box">
             <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
             <input type="file" multiple id="rp_files" onchange="tambahFiles('pasang', event)">
@@ -507,7 +515,7 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Kabel (meter)</label><input id="m_kabel" type="number" value="0"></div>
         <div class="field"><label>Keterangan</label><textarea id="m_ket"></textarea></div>
         <div class="field">
-          <label>Lampiran (foto, video, PDF, dll)</label>
+          <label>Lampiran (opsional: foto, video, PDF, dll)</label>
           <div class="photo-box">
             <span>📎 Ketuk untuk pilih file — boleh lebih dari satu</span>
             <input type="file" multiple id="m_files" onchange="tambahFiles('maint', event)">
@@ -619,8 +627,8 @@ const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [] };
 let USER = null;
-const FILES = { maint: [], pasang: [], daftar: [] };
-const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar' };
+const FILES = { maint: [], pasang: [], daftar: [], tiket: [] };
+const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar', tiket:'fileListTiket' };
 const MAX_FILE_MB = 10, MAX_TOTAL_MB = 20;
 let mapObj = null;
 let mapMarkers = [];
@@ -863,7 +871,7 @@ ACT.addTiket = async (p) => {
   const { error } = await sb.from('tiket').insert({
     id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), alamat: txt_(p.alamat),
     mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
-    lat: num_(p.lat), lng: num_(p.lng), status:'Baru', diinputOleh: USER.name
+    lat: num_(p.lat), lng: num_(p.lng), lampiran: await uploadFiles_(p.files, id), status:'Baru', diinputOleh: USER.name
   });
   if(error) return fail_(error);
   await logAksi_('membuat tiket gangguan', `${p.namaPelanggan} — ${p.kendala}`);
@@ -1142,6 +1150,7 @@ function renderTiket(){
           <div class="nm">${esc(t.namaPelanggan)}</div>
           <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
+          ${lampiranLinks_(t.lampiran)}
         </div>
         <span class="badge ${badge}">${esc(t.status)}</span>
       </div>
@@ -1158,7 +1167,7 @@ async function submitTiket(){
   const payload = {
     namaPelanggan: val('t_nama'), noHp: val('t_hp'), alamat: val('t_alamat'),
     mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
-    lat: val('t_lat'), lng: val('t_lng'), kendala: getKendalaValue(),
+    lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), kendala: getKendalaValue(),
     jamLaporan: val('t_jamlaporan')
   };
   if(!payload.namaPelanggan){ toast('Isi nama pelanggan/mikrotik dulu'); return; }
@@ -1170,6 +1179,7 @@ async function submitTiket(){
     toggleKendalaManual();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
+    FILES.tiket = []; renderFiles('tiket');
     loadAll();
   }
 }
