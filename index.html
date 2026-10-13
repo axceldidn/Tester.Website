@@ -29,7 +29,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
-  background:var(--bg);
+  background:linear-gradient(175deg,#124F85 0%,#0B3D66 45%,#072A47 100%) fixed;
   color:var(--text);
   font-family:'Inter',sans-serif;
   min-height:100vh;
@@ -48,9 +48,10 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 /* ---------- Top bar ---------- */
 .topbar{
   position:sticky;top:0;z-index:20;
-  background:var(--bg);
+  background:linear-gradient(180deg,#165E9E 0%,#0B3D66 100%);
   padding:14px 16px 10px;
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid transparent;
+  box-shadow:0 1px 0 rgba(255,122,26,.45), 0 6px 18px rgba(0,0,0,.25);
 }
 .brand{display:flex;align-items:center;gap:10px;}
 .brand .mark{
@@ -65,8 +66,8 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 .dtable th:first-child,.dtable td:first-child{text-align:left;}
 .dtable th{background:var(--surface2);color:var(--text-dim);font-weight:600;}
 .dtable tr.tot td{font-weight:700;background:var(--surface2);}
-.logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:12px;}
-.logo-small{height:36px;width:auto;border-radius:6px;flex:none;}
+.logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:14px;border:2px solid rgba(255,255,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 4px rgba(255,122,26,.25);}
+.logo-small{height:38px;width:auto;border-radius:7px;flex:none;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.35);}
 /* layar sempit: nama teks disembunyikan karena logo sudah memuat tulisan AIS.NET */
 @media (max-width:480px){ .brand .name{display:none;} }
 .brand .name{font-family:'Space Grotesk';font-weight:700;font-size:17px;letter-spacing:.2px;}
@@ -150,7 +151,7 @@ button{font-family:'Inter',sans-serif;}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
 .field textarea{resize:vertical;min-height:56px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.form-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.form-card{background:linear-gradient(160deg,#135A94 0%,#0F4C81 100%);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
 .form-card h3{margin:0 0 14px;font-size:14.5px;}
 .mini-note{font-size:11.5px;color:var(--text-dim);margin:-6px 0 14px;}
 
@@ -414,6 +415,7 @@ button{font-family:'Inter',sans-serif;}
           </div>
           <div id="fileListDaftar"></div>
         </div>
+<div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="f_test" style="width:auto;"><label for="f_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
         <button class="btn btn-primary btn-block" onclick="submitPendaftaran()">Kirim Pendaftaran</button>
       </div>
       <div class="sect-h"><h2>Daftar Terbaru</h2><span class="count" id="daftarCount">0</span></div>
@@ -471,6 +473,7 @@ button{font-family:'Inter',sans-serif;}
           </div>
           <div id="fileListTiket"></div>
         </div>
+<div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="t_test" style="width:auto;"><label for="t_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
         <button class="btn btn-primary btn-block" onclick="submitTiket()">Kirim Laporan Gangguan</button>
       </div>
       <div class="sect-h"><h2>Tiket Berjalan</h2><span class="count" id="tiketCount">0</span></div>
@@ -530,6 +533,7 @@ button{font-family:'Inter',sans-serif;}
           </div>
           <div id="fileListPasang"></div>
         </div>
+<div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="rp_test" style="width:auto;"><label for="rp_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
         <button class="btn btn-primary btn-block" onclick="submitRealisasiPemasangan()">Kirim Pemasangan Ais.net</button>
       </div>
     </div>
@@ -597,13 +601,16 @@ button{font-family:'Inter',sans-serif;}
           </div>
           <div id="fileListMaint"></div>
         </div>
+<div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="m_test" style="width:auto;"><label for="m_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
         <button class="btn btn-primary btn-block" onclick="submitMaintenance()">Kirim Realisasi Maintenance</button>
       </div>
     </div>
 
     <!-- ---- TAB: LAPORAN ---- -->
     <div id="tab-laporan" class="tabpane hide">
-      <button class="btn btn-outline btn-block" style="margin-bottom:14px;" onclick="exportExcel()">⬇️ Export ke Excel (.csv)</button>
+      <button class="btn btn-outline btn-block" style="margin-bottom:14px;" onclick="exportExcel()">⬇️ Export ke Excel (2 file: pemasangan & maintenance)</button>
+      <div class="sect-h"><h2>⏳ Status Pengerjaan</h2></div>
+      <div id="laporanStatus"></div>
       <div class="sect-h"><h2>📦 Laporan Pemasangan</h2></div>
       <div id="laporanPemasanganList"></div>
       <div class="sect-h"><h2>🔧 Laporan Maintenance</h2></div>
@@ -755,7 +762,7 @@ const ROLE_TABS = {
   "Sales": ["beranda","daftar","tiket","laporan","peta"],
   "Teknisi": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta"],
   "Admin Server": ["beranda","daftar","tiket","proses","laporan","peta"],
-  "Office": ["beranda","daftar","tiket","proses","laporan","peta","log"],
+  "Office": ["beranda","daftar","tiket","proses","laporan","peta"],
   "Admin": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log","users"]
 };
 
@@ -988,7 +995,7 @@ ACT.addPendaftaran = async (p) => {
     id, nama: txt_(p.nama), alamatKtp: txt_(p.alamatKtp), alamatPasang: txt_(p.alamatPasang),
     noHp: txt_(p.noHp), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
     tglPemasangan: txt_(p.tglPemasangan), noOdc: txt_(p.noOdc), noOdp: txt_(p.noOdp),
-    statusTinggal: txt_(p.statusTinggal), isp: txt_(p.isp), status: 'Baru', diinputOleh: USER.name,
+    statusTinggal: txt_(p.statusTinggal), isp: txt_(p.isp), isTest: !!p.isTest, status: 'Baru', diinputOleh: USER.name,
     lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran
   });
   if(error) return fail_(error);
@@ -1025,7 +1032,7 @@ ACT.addTiket = async (p) => {
   const { error } = await sb.from('tiket').insert({
     id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), alamat: txt_(p.alamat),
     mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
-    lat: num_(p.lat), lng: num_(p.lng), lampiran: await uploadFiles_(p.files, id), status:'Baru', diinputOleh: USER.name
+    lat: num_(p.lat), lng: num_(p.lng), lampiran: await uploadFiles_(p.files, id), isTest: !!p.isTest, status:'Baru', diinputOleh: USER.name
   });
   if(error) return fail_(error);
   await logAksi_('membuat tiket gangguan', `${p.namaPelanggan} — ${p.kendala}`);
@@ -1056,7 +1063,7 @@ ACT.addMaintenance = async (p) => {
     boxOdp: int_(p.boxOdp), jenisBoxOdp: txt_(p.jenisBoxOdp),
     adaptor: int_(p.adaptor), patchcore: int_(p.patchcore),
     barrel: int_(p.barrel), jenisKabel: txt_(p.jenisKabel), kabel: int_(p.kabel),
-    keterangan: txt_(p.keterangan), fotoUrl, diinputOleh: USER.name,
+    keterangan: txt_(p.keterangan), fotoUrl, isTest: !!p.isTest, diinputOleh: USER.name,
     jamLaporan: txt_(p.jamLaporan), jamSelesai: txt_(p.jamSelesai),
     durasi: durasi_(p.jamLaporan, p.jamSelesai)
   });
@@ -1322,6 +1329,13 @@ function renderDashKelola_(){
     <div class="dwrap" style="padding:10px;margin-bottom:12px;">
       <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Hapus data sekaligus</div>
       <div class="mini-note" style="margin:0 0 8px;">Pemasangan &amp; maintenance pada bulan atau hari tertentu. Export dulu ke CSV kalau masih perlu datanya.</div>
+      <div style="margin-bottom:8px;">
+        <select id="hapusJenis" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px;font-size:13px;width:100%;">
+          <option value="">Semua (pemasangan & maintenance)</option>
+          <option value="pemasangan">Hanya pemasangan</option>
+          <option value="maintenance">Hanya maintenance</option>
+        </select>
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <input type="month" id="hapusBulan" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px;font-size:13px;">
         <button class="btn btn-outline" onclick="hapusPeriode('bulan')" style="color:#E5484D;">🗑️ Hapus bulan ini</button>
@@ -1358,10 +1372,14 @@ async function hapusPeriode(jenis){
   if(!USER || USER.role !== 'Admin'){ toast('Hanya Admin'); return; }
   const nilai = val(jenis === 'bulan' ? 'hapusBulan' : 'hapusHari');
   if(!nilai){ toast(jenis === 'bulan' ? 'Pilih bulannya dulu' : 'Pilih harinya dulu'); return; }
+  const jenisDipilih = val('hapusJenis');   // '' = semua, 'pemasangan', atau 'maintenance'
+  const cocokJenis = m => !jenisDipilih
+    || (jenisDipilih === 'pemasangan' && !!m.pendaftaranId)
+    || (jenisDipilih === 'maintenance' && !m.pendaftaranId);
   const cocok = m => jenis === 'bulan' ? tglKey_(m.timestamp).startsWith(nilai) : tglKey_(m.timestamp) === nilai;
-  const ids = STATE.maintenance.filter(m => m.timestamp && cocok(m)).map(m => m.id);
+  const ids = STATE.maintenance.filter(m => m.timestamp && cocok(m) && cocokJenis(m)).map(m => m.id);
   if(!ids.length){ toast('Tidak ada data di periode itu'); return; }
-  const label = jenis === 'bulan' ? `bulan ${nilai}` : `tanggal ${nilai}`;
+  const label = (jenis === 'bulan' ? `bulan ${nilai}` : `tanggal ${nilai}`) + (jenisDipilih ? ` (${jenisDipilih})` : '');
   const ketik = prompt(`Akan menghapus ${ids.length} data pemasangan & maintenance (${label}).\nTidak bisa dikembalikan.\n\nKetik HAPUS untuk lanjut:`);
   if(ketik !== 'HAPUS'){ toast('Dibatalkan'); return; }
   const data = await apiCall('hapusMaintenanceBanyak', { ids });
@@ -1468,16 +1486,16 @@ function hitungAktivitas_(){
     const d = new Date(x.timestamp);
     return d >= mulai && (!akhir || d < akhir);
   };
-  const maint = STATE.maintenance.filter(dalam);
+  const maint = hidup_(STATE.maintenance).filter(dalam);
   renderDashTeknisi_(maint);
   renderDashIspHarian_(maint);
   renderDashMarket_(maint, per, now);
   renderDashKelola_();
   gambarGrafik_(maint);
-  document.getElementById('actDaftar').textContent = STATE.pendaftaran.filter(dalam).length;
+  document.getElementById('actDaftar').textContent = hidup_(STATE.pendaftaran).filter(dalam).length;
   document.getElementById('actPasang').textContent = maint.filter(m => m.pendaftaranId).length;
   document.getElementById('actMaint').textContent  = maint.filter(m => !m.pendaftaranId).length;
-  document.getElementById('actTiket').textContent  = STATE.tiket.filter(dalam).length;
+  document.getElementById('actTiket').textContent  = hidup_(STATE.tiket).filter(dalam).length;
 }
 
 function pendaftaranCard(x){
@@ -1495,6 +1513,7 @@ function pendaftaranCard(x){
       <div>
         <div class="nm">${esc(x.nama)}</div>
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
         ${lampiranLinks_(x.lampiran)}
       </div>
       ${statusBadge(x.status)}
@@ -1580,6 +1599,7 @@ function renderTiket(){
           <div class="nm">${esc(t.namaPelanggan)}</div>
           <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
+          ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
           ${lampiranLinks_(t.lampiran)}
         </div>
         <span class="badge ${badge}">${esc(t.status)}</span>
@@ -1597,7 +1617,7 @@ async function submitTiket(){
   const payload = {
     namaPelanggan: val('t_nama'), noHp: val('t_hp'), alamat: val('t_alamat'),
     mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
-    lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), kendala: getKendalaValue(),
+    lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), isTest: document.getElementById('t_test').checked, kendala: getKendalaValue(),
     jamLaporan: val('t_jamlaporan')
   };
   if(!payload.namaPelanggan){ toast('Isi nama pelanggan/mikrotik dulu'); return; }
@@ -1610,7 +1630,7 @@ async function submitTiket(){
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
     document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
-    FILES.tiket = []; renderFiles('tiket');
+    FILES.tiket = []; renderFiles('tiket'); document.getElementById('t_test').checked=false;
     loadAll();
   }
 }
@@ -1652,9 +1672,40 @@ function lokasiMaintenance_(m){
   return { alamat:'', mapsLink:'' };
 }
 
+// Status pengerjaan: pendaftaran & tiket, sudah dikerjakan teknisi atau belum
+function renderLaporanStatus_(){
+  const box = document.getElementById('laporanStatus');
+  if(!box) return;
+  const mntPend = {}, mntTiket = {};
+  STATE.maintenance.forEach(m => {
+    if(m.pendaftaranId) mntPend[m.pendaftaranId] = m;
+    if(m.tiketId) mntTiket[m.tiketId] = m;
+  });
+  const rows = [];
+  hidup_(STATE.pendaftaran).forEach(x => {
+    const m = mntPend[x.id];
+    rows.push({ jenis:'Pemasangan', nama:x.nama, teknisi: m ? m.teknisi : (x.konfirmasiOleh || ''),
+      sudah: x.status === 'Selesai', status: x.status, ts: x.timestamp });
+  });
+  hidup_(STATE.tiket).forEach(t => {
+    const m = mntTiket[t.id];
+    rows.push({ jenis:'Tiket', nama:t.namaPelanggan, teknisi: m ? m.teknisi : (t.teknisiHandling || ''),
+      sudah: t.status === 'Selesai', status: t.status, ts: t.timestamp });
+  });
+  rows.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  const belum = rows.filter(r => !r.sudah).length;
+  box.innerHTML = `<div class="mini-note" style="margin-bottom:8px;">Belum dikerjakan: <b>${belum}</b> dari ${rows.length}</div>
+    <div class="dwrap"><table class="dtable">
+      <thead><tr><th>Jenis</th><th>Nama</th><th>Teknisi</th><th>Status</th></tr></thead>
+      <tbody>${rows.slice(0,50).map(r => `<tr><td>${r.jenis}</td><td style="text-align:left;">${esc(r.nama||'-')}</td><td>${esc(r.teknisi||'-')}</td><td>${r.sudah ? '✅ Sudah' : '⏳ Belum (' + esc(r.status) + ')'}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="mini-note">Menampilkan 50 terbaru. Teknisi diambil dari realisasi, atau dari yang konfirmasi/tangani.</div>`;
+}
+
 function renderLaporan(){
-  const install = STATE.maintenance.filter(m=>m.pendaftaranId);
-  const repair = STATE.maintenance.filter(m=>!m.pendaftaranId);
+  renderLaporanStatus_();
+  const install = hidup_(STATE.maintenance).filter(m=>m.pendaftaranId);
+  const repair = hidup_(STATE.maintenance).filter(m=>!m.pendaftaranId);
 
   const cardHtml = (m) => {
     const lok = lokasiMaintenance_(m);
@@ -1665,6 +1716,7 @@ function renderLaporan(){
         <div>
           <div class="nm">${esc(m.client)}</div>
           <div class="meta">${esc(m.isp)} • Teknisi: ${esc(m.teknisi||'-')} • Redaman ${esc(m.redaman||'-')}dB</div>
+          ${m.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(m.diinputOleh)}</div>` : ''}
         </div>
         <span class="badge ${sttsCls}">${esc(m.stts)}</span>
       </div>
@@ -1719,7 +1771,7 @@ function renderPeta(){
       attribution: 'Tiles &copy; Esri', maxZoom: 19
     }).addTo(mapObj);
     const satelit = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri', maxZoom: 19
+      attribution: 'Tiles &copy; Esri', maxZoom: 19, maxNativeZoom: 17   // zoom 18-19 sering kosong, diperbesar dari zoom 17
     });
     L.control.layers({ 'Peta': peta, 'Satelit': satelit }, null, { position: 'topright' }).addTo(mapObj);
   }
@@ -1743,6 +1795,8 @@ function renderPeta(){
   mapObj.invalidateSize();
 }
 
+// Data test (isTest) tidak dihitung di dashboard, laporan, export, dan peta
+const hidup_ = arr => (arr || []).filter(x => !x.isTest);
 // Daftar ISP dari master (tipe ISP). Pilihan "➕ Tambah ISP baru" menyimpan ke daftar.
 const ISP_BARU = '__isp_baru__';
 function renderIspOptions(){
@@ -1998,12 +2052,12 @@ async function ambilDariLinkMaps(){
 }
 
 function titikPeta_(){
-  const pend = STATE.pendaftaran.filter(x=>x.lat && x.lng).map(x=>({
+  const pend = hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({
     jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
     sub:x.alamatPasang||'', info:x.paket||'', status:x.status,
     maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
   }));
-  const tik = STATE.tiket.filter(x=>x.lat && x.lng).map(x=>({
+  const tik = hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({
     jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
     sub:x.alamat||'', info:x.kendala||'', status:x.status,
     maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
@@ -2107,7 +2161,7 @@ async function removeMasterItem(tipe, nilai){
 
 async function submitPendaftaran(){
   const payload = {
-    nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'), isp: val('f_isp'),
+    nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'), isp: val('f_isp'), isTest: document.getElementById('f_test').checked,
     noHp: val('f_hp'), paket: getPaketValue(), ssid: val('f_ssid'), password: val('f_pass'),
     tglPemasangan: val('f_tgl'), noOdc: val('f_odc'), noOdp: val('f_odp'), statusTinggal: val('f_status'),
     lat: val('f_lat'), lng: val('f_lng'),
@@ -2119,7 +2173,7 @@ async function submitPendaftaran(){
   if(data){
     toast('✅ Pendaftaran terkirim');
     ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('f_isp').value='';
+    document.getElementById('f_isp').value=''; document.getElementById('f_test').checked=false;
     document.getElementById('f_paket').value = document.getElementById('f_paket').options[0].value;
     togglePaketManual();
     document.getElementById('lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
@@ -2209,7 +2263,7 @@ async function submitRealisasiPemasangan(){
   const linkId = val('rp_link');
   if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
   const payload = {
-    linkId, client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'),
+    linkId, client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'), isTest: document.getElementById('rp_test').checked,
     teknisi: val('rp_teknisi'), stok: val('rp_stok'), redaman: val('rp_redaman'),
     ...matPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
     barrel: val('rp_barrel'), jenisKabel: val('rp_jeniskabel'), kabel: val('rp_jeniskabel') ? val('rp_kabel') : 0, keterangan: val('rp_ket'),
@@ -2225,7 +2279,7 @@ async function submitRealisasiPemasangan(){
     renderMatOptions();
     document.getElementById('rp_jeniskabel').value=''; toggleMeter('rp');
     document.getElementById('rp_link').value='';
-    document.getElementById('rp_isp').value='';
+    document.getElementById('rp_isp').value=''; document.getElementById('rp_test').checked=false;
     document.getElementById('rp_client').value='';
     FILES.pasang = []; renderFiles('pasang');
     loadAll();
@@ -2234,7 +2288,7 @@ async function submitRealisasiPemasangan(){
 
 async function submitMaintenance(){
   const payload = {
-    ticketId: val('m_ticket'),
+    ticketId: val('m_ticket'), isTest: document.getElementById('m_test').checked,
     client: val('m_client'), isp: val('m_isp'), stts: val('m_stts'),
     teknisi: val('m_teknisi'), stok: val('m_stok'), redaman: val('m_redaman'),
     ...matPayload_('m'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
@@ -2254,7 +2308,7 @@ async function submitMaintenance(){
     document.getElementById('m_jeniskabel').value=''; toggleMeter('m');
     document.getElementById('m_ticket').value='';
     document.getElementById('durasiInfo').textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.';
-    FILES.maint = []; renderFiles('maint');
+    FILES.maint = []; renderFiles('maint'); document.getElementById('m_test').checked=false;
     loadAll();
   }
 }
@@ -2339,16 +2393,25 @@ function csvCell_(c){
   return `"${s.replace(/"/g,'""')}"`;
 }
 function exportExcel(){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Waktu Input']];
-  STATE.maintenance.forEach(m=>{
+  const pasang = hidup_(STATE.maintenance).filter(m => m.pendaftaranId);
+  const perbaikan = hidup_(STATE.maintenance).filter(m => !m.pendaftaranId);
+  unduhCsv_(pasang, 'laporan-pemasangan-aisnet.csv');
+  setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
+}
+function unduhCsv_(list, namaFile){
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input']];
+  list.forEach(m => {
     const lok = lokasiMaintenance_(m);
-    rows.push([m.client,lok.alamat,{link: mapsUrl_(lok.mapsLink, lok.alamat)},m.isp,m.stts,m.teknisi,m.stok,m.redaman,m.modem,m.jenisModem||'',m.splitter,m.jenisSplitter||'',m.closure,m.jenisClosure||'',m.boxOdp,m.jenisBoxOdp||'',m.adaptor,m.patchcore,m.barrel,m.jenisKabel||'',m.kabel,m.jamLaporan,m.jamSelesai,m.durasi,m.keterangan,m.timestamp]);
+    rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat)}, m.isp, m.stts, m.teknisi, m.stok, m.redaman,
+      m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
+      m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamSelesai, m.durasi, m.keterangan,
+      m.diinputOleh||'', m.timestamp]);
   });
-  const csv = rows.map(r=>r.map(csvCell_).join(',')).join('\n');
+  const csv = rows.map(r => r.map(csvCell_).join(',')).join('\n');
   const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'laporan-maintenance-aisnet.csv'; a.click();
+  a.href = url; a.download = namaFile; a.click();
 }
 
 /* auto refresh */
