@@ -948,7 +948,9 @@ ACT.logout = async () => { await sb.auth.signOut(); return { ok:true }; };
 
 ACT.ubahTanggalMaintenance = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa mengubah tanggal' };
-  const { error } = await sb.from('maintenance').update({ timestamp: p.timestamp }).eq('id', p.id);
+  const r1 = await sb.from('maintenance').update({ timestamp: p.timestamp }).eq('id', p.id);
+  const r2 = await sb.from('pemasangan').update({ timestamp: p.timestamp }).eq('id', p.id);
+  const error = r1.error || r2.error;
   if(error) return fail_(error);
   await logAksi_('mengubah tanggal data maintenance', p.id);
   return { ok:true };
@@ -957,14 +959,18 @@ ACT.hapusMaintenanceBanyak = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
   const ids = (p.ids || []).filter(Boolean);
   if(!ids.length) return { ok:false, error:'Tidak ada data dipilih' };
-  const { error } = await sb.from('maintenance').delete().in('id', ids);
+  const r1 = await sb.from('maintenance').delete().in('id', ids);
+  const r2 = await sb.from('pemasangan').delete().in('id', ids);
+  const error = r1.error || r2.error;
   if(error) return fail_(error);
   await logAksi_('menghapus data maintenance massal', `${ids.length} data`);
   return { ok:true, jumlah: ids.length };
 };
 ACT.hapusMaintenance = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
-  const { error } = await sb.from('maintenance').delete().eq('id', p.id);
+  const r1 = await sb.from('maintenance').delete().eq('id', p.id);
+  const r2 = await sb.from('pemasangan').delete().eq('id', p.id);
+  const error = r1.error || r2.error;
   if(error) return fail_(error);
   await logAksi_('menghapus data maintenance', p.id);
   return { ok:true };
@@ -972,18 +978,22 @@ ACT.hapusMaintenance = async (p) => {
 
 ACT.getAllData = async () => {
   const q = (tabel, order) => sb.from(tabel).select('*').order(order.col, { ascending: order.asc }).limit(500);
-  const [p, m, t, l, mas] = await Promise.all([
+  const [p, m, pas, t, l, mas] = await Promise.all([
     q('pendaftaran', { col:'timestamp', asc:false }),
-    q('maintenance', { col:'timestamp', asc:false }),
+    q('maintenance', { col:'timestamp', asc:false }),      // perbaikan (dari tiket)
+    q('pemasangan', { col:'timestamp', asc:false }),       // realisasi pemasangan (dari pendaftaran)
     q('tiket', { col:'timestamp', asc:false }),
-    sb.from('log_aktivitas').select('*').order('timestamp', { ascending:false }).limit(200),  // RLS: hanya Office/Admin dapat isi
+    sb.from('log_aktivitas').select('*').order('timestamp', { ascending:false }).limit(200),
     sb.from('master_data').select('*').order('id')
   ]);
-  const err = [p,m,t,l,mas].find(r => r.error);
+  const err = [p,m,pas,t,l,mas].find(r => r.error);
   if(err) return fail_(err.error);
   return {
     ok:true,
-    pendaftaran: p.data.reverse(), maintenance: m.data.reverse(), tiket: t.data.reverse(),
+    pendaftaran: p.data.reverse(),
+    tiket: t.data.reverse(),
+    // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
+    maintenance: [...m.data.reverse(), ...pas.data.reverse()],
     logs: l.data, master: mas.data
   };
 };
@@ -1051,9 +1061,10 @@ ACT.tanganiTiket = async (p) => {
 
 // Dipakai untuk Realisasi Pemasangan (linkId) dan Maintenance (ticketId)
 ACT.addMaintenance = async (p) => {
-  const id = newId_('MNT');
+  const id = newId_(p.linkId ? 'PAS' : 'MNT');
+  const tabel = p.linkId ? 'pemasangan' : 'maintenance';
   const fotoUrl = await uploadFiles_(p.files, id);
-  const { error } = await sb.from('maintenance').insert({
+  const { error } = await sb.from(tabel).insert({
     id, pendaftaranId: p.linkId || null, tiketId: p.ticketId || null,
     client: txt_(p.client), isp: txt_(p.isp), stts: txt_(p.stts), teknisi: txt_(p.teknisi),
     stok: txt_(p.stok), redaman: txt_(p.redaman),
