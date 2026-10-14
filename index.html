@@ -1515,8 +1515,10 @@ function hitungAktivitas_(){
 function waBtn_(hp, hp2){
   const nomor = n => { let d = String(n||'').replace(/\D/g,''); if(!d) return ''; if(d.startsWith('0')) d = '62' + d.slice(1); return d; };
   const a = nomor(hp), b = nomor(hp2);
-  const daftar = [a, b].filter(Boolean);
-  return daftar.map((n,i) => `<a href="https://wa.me/${n}" target="_blank" rel="noopener" class="btn btn-good" style="display:inline-block;padding:6px 10px;margin:6px 6px 0 0;font-size:12px;text-decoration:none;">💬 WA${daftar.length > 1 ? (i ? ' cadangan' : ' utama') : ''}</a>`).join('');
+  const daftar = [];
+  if(a) daftar.push({ n: a, label: 'WA (biasa)' });
+  if(b) daftar.push({ n: b, label: 'WA (opsional)' });
+  return daftar.map(x => `<a href="https://wa.me/${x.n}" target="_blank" rel="noopener" class="btn btn-good" style="display:inline-block;padding:6px 10px;margin:6px 6px 0 0;font-size:12px;text-decoration:none;">💬 ${x.label}</a>`).join('');
 }
 function pendaftaranCard(x){
   let actions = '';
@@ -1579,6 +1581,7 @@ function isiDariPendaftaran(){
   const id = document.getElementById('rp_link').value;
   const x = STATE.pendaftaran.find(p=>p.id===id);
   document.getElementById('rp_client').value = x ? x.nama : '';
+
 }
 
 function renderMaintLinkOptions(){
