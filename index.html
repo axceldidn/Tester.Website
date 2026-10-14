@@ -354,6 +354,10 @@ button{font-family:'Inter',sans-serif;}
       <div id="dashIspHarian"></div>
       <div class="sect-h"><h2>Market ISP (berdasarkan pemasangan)</h2></div>
       <div id="dashMarket"></div>
+      <div class="sect-h"><h2>Maintenance per Kendala (6 bulan)</h2></div>
+      <div id="dashKendala"></div>
+      <div class="sect-h"><h2>Komplain per Client</h2></div>
+      <div id="dashComplaint"></div>
       <div id="dashKelola"></div>
       <div class="sect-h"><h2>Perlu Ditindak</h2></div>
       <div id="berandaList"></div>
@@ -1495,6 +1499,66 @@ function gambarGrafik_(maint){
   });
 }
 
+// Maintenance per kendala, 6 bulan terakhir (kendala diambil dari tiket yang terkait)
+function bulanKey_(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function renderDashKendala_(now){
+  const box = document.getElementById('dashKendala');
+  if(!box) return;
+  const tiketById = {};
+  hidup_(STATE.tiket).forEach(t => { tiketById[t.id] = t; });
+  const bulanList = [];
+  for(let i = 5; i >= 0; i--) bulanList.push(bulanKey_(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  const matrix = {};
+  hidup_(STATE.maintenance).filter(m => m.tiketId && m.timestamp).forEach(m => {
+    const t = tiketById[m.tiketId];
+    const k = (t && t.kendala) || 'Lainnya';
+    const b = bulanKey_(new Date(m.timestamp));
+    if(!bulanList.includes(b)) return;
+    matrix[k] = matrix[k] || {};
+    matrix[k][b] = (matrix[k][b] || 0) + 1;
+  });
+  const total = o => Object.values(o).reduce((a,b) => a + b, 0);
+  const kendala = Object.keys(matrix).sort((a,b) => total(matrix[b]) - total(matrix[a]));
+  if(!kendala.length){
+    box.innerHTML = `<div class="empty"><span class="ic">🔧</span>Belum ada maintenance dari tiket di 6 bulan terakhir</div>`;
+    return;
+  }
+  const label = b => { const [y,m] = b.split('-').map(Number); return new Date(y, m-1, 1).toLocaleDateString('id-ID', { month:'short', year:'2-digit' }); };
+  const kolomBulan = bulanList.map(b => {
+    return `<th>${esc(label(b))}</th>`;
+  }).join('');
+  const kolomTotal = kendala.map(k => {
+    const cells = bulanList.map(b => `<td>${matrix[k][b] || 0}</td>`).join('');
+    return `<tr><td style="text-align:left;">${esc(k)}</td>${cells}<td>${total(matrix[k])}</td></tr>`;
+  }).join('');
+  box.innerHTML = `<div class="dwrap"><table class="dtable">
+    <thead><tr><th>Kendala</th>${kolomBulan}<th>Total</th></tr></thead>
+    <tbody>${kolomTotal}</tbody></table></div>`;
+}
+
+// Komplain per client dari tiket pada periode yang dipilih
+function renderDashComplaint_(tiketPeriode){
+  const box = document.getElementById('dashComplaint');
+  if(!box) return;
+  const per = {};
+  (tiketPeriode || []).forEach(t => {
+    const c = String(t.namaPelanggan || '-').trim();
+    const k = t.kendala || 'Lainnya';
+    per[c] = per[c] || { total: 0, kendala: {} };
+    per[c].total++;
+    per[c].kendala[k] = (per[c].kendala[k] || 0) + 1;
+  });
+  const rows = Object.entries(per).sort((a,b) => b[1].total - a[1].total);
+  if(!rows.length){
+    box.innerHTML = `<div class="empty"><span class="ic">📞</span>Belum ada komplain di periode ini</div>`;
+    return;
+  }
+  box.innerHTML = `<div class="dwrap"><table class="dtable">
+    <thead><tr><th>Client</th><th>Jumlah</th><th style="text-align:left;">Kendala</th></tr></thead>
+    <tbody>${rows.map(([c,v]) => `<tr><td style="text-align:left;">${esc(c)}</td><td>${v.total}</td><td style="text-align:left;white-space:normal;">${Object.entries(v.kendala).map(([k,n]) => `${esc(k)} ×${n}`).join(', ')}</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
 // Jumlah aktivitas sesuai periode yang dipilih di dashboard
 function hitungAktivitas_(){
   const el = document.getElementById('dashPeriode');
@@ -1526,6 +1590,8 @@ function hitungAktivitas_(){
   renderDashMarket_(maint, per, now);
   renderDashKelola_();
   gambarGrafik_(maint);
+  renderDashKendala_(now);
+  renderDashComplaint_(hidup_(STATE.tiket).filter(dalam));
   document.getElementById('actDaftar').textContent = hidup_(STATE.pendaftaran).filter(dalam).length;
   document.getElementById('actPasang').textContent = maint.filter(m => m.pendaftaranId).length;
   document.getElementById('actMaint').textContent  = maint.filter(m => !m.pendaftaranId).length;
