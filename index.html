@@ -990,9 +990,19 @@ ACT.getAllData = async () => {
   ]);
   const err = [p,m,pas,t,l,mas].find(r => r.error);
   if(err) return fail_(err.error);
+  // Nama & password Mikrotik: hanya peran yang boleh melihatnya (aturan database juga membatasi)
+  const pendaftaran = p.data.reverse();
+  if(['Teknisi','Admin Server','Office','Admin'].includes(USER && USER.role)){
+    const sec = await sb.from('mikrotik_secret').select('*');
+    if(!sec.error){
+      const peta = {};
+      (sec.data || []).forEach(s => { peta[s.pendaftaranId] = s; });
+      pendaftaran.forEach(x => { if(peta[x.id]){ x.mikrotikUser = peta[x.id].mikrotikUser; x.mikrotikPass = peta[x.id].mikrotikPass; } });
+    }
+  }
   return {
     ok:true,
-    pendaftaran: p.data.reverse(),
+    pendaftaran,
     tiket: t.data.reverse(),
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
     maintenance: [...m.data.reverse(), ...pas.data.reverse()],
@@ -1535,6 +1545,7 @@ function pendaftaranCard(x){
       <div>
         <div class="nm">${esc(x.nama)}</div>
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        ${x.mikrotikUser ? `<div class="meta">🔐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}</div>` : ''}
         ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
         ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
