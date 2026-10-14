@@ -366,6 +366,7 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>ISP</label><select id="f_isp" onchange="ispBaru(this)"></select></div>
         <div class="grid2">
           <div class="field"><label>No HP</label><input id="f_hp" type="tel"></div>
+          <div class="field"><label>No HP cadangan (opsional)</label><input id="f_hp2" type="tel"></div>
           <div class="field"><label>Tgl pemasangan</label><input id="f_tgl" type="date"></div>
         </div>
         <div class="field">
@@ -440,6 +441,7 @@ button{font-family:'Inter',sans-serif;}
         <h3>🎫 Laporan Gangguan Masuk</h3>
         <div class="field"><label>Nama Pelanggan / Mikrotik</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
         <div class="field"><label>No HP</label><input id="t_hp" type="tel"></div>
+        <div class="field"><label>No HP cadangan (opsional)</label><input id="t_hp2" type="tel"></div>
         <div class="field"><label>Alamat</label><input id="t_alamat" placeholder="Alamat rumah/lokasi client"></div>
         <div class="field">
           <label>Lokasi rumah client (opsional)</label>
@@ -1003,7 +1005,7 @@ ACT.addPendaftaran = async (p) => {
   const lampiran = await uploadFiles_(p.files, id);
   const { error } = await sb.from('pendaftaran').insert({
     id, nama: txt_(p.nama), alamatKtp: txt_(p.alamatKtp), alamatPasang: txt_(p.alamatPasang),
-    noHp: txt_(p.noHp), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
+    noHp: txt_(p.noHp), noHpCadangan: txt_(p.noHpCadangan), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
     tglPemasangan: txt_(p.tglPemasangan), noOdc: txt_(p.noOdc), noOdp: txt_(p.noOdp),
     statusTinggal: txt_(p.statusTinggal), isp: txt_(p.isp), isTest: !!p.isTest, status: 'Baru', diinputOleh: USER.name,
     lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran
@@ -1040,7 +1042,7 @@ ACT.setMikrotik = async (p) => {
 ACT.addTiket = async (p) => {
   const id = newId_('TKT');
   const { error } = await sb.from('tiket').insert({
-    id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), alamat: txt_(p.alamat),
+    id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), noHpCadangan: txt_(p.noHpCadangan), alamat: txt_(p.alamat),
     mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
     lat: num_(p.lat), lng: num_(p.lng), lampiran: await uploadFiles_(p.files, id), isTest: !!p.isTest, status:'Baru', diinputOleh: USER.name
   });
@@ -1509,6 +1511,13 @@ function hitungAktivitas_(){
   document.getElementById('actTiket').textContent  = hidup_(STATE.tiket).filter(dalam).length;
 }
 
+// Tombol WA langsung ke nomor (0xxx -> 62xxx). Utama & cadangan jika ada.
+function waBtn_(hp, hp2){
+  const nomor = n => { let d = String(n||'').replace(/\D/g,''); if(!d) return ''; if(d.startsWith('0')) d = '62' + d.slice(1); return d; };
+  const a = nomor(hp), b = nomor(hp2);
+  const daftar = [a, b].filter(Boolean);
+  return daftar.map((n,i) => `<a href="https://wa.me/${n}" target="_blank" rel="noopener" class="btn btn-good" style="display:inline-block;padding:6px 10px;margin:6px 6px 0 0;font-size:12px;text-decoration:none;">💬 WA${daftar.length > 1 ? (i ? ' cadangan' : ' utama') : ''}</a>`).join('');
+}
 function pendaftaranCard(x){
   let actions = '';
   if(x.status==='Baru'){
@@ -1524,6 +1533,7 @@ function pendaftaranCard(x){
       <div>
         <div class="nm">${esc(x.nama)}</div>
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
         ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
         ${lampiranLinks_(x.lampiran)}
@@ -1531,7 +1541,7 @@ function pendaftaranCard(x){
       ${statusBadge(x.status)}
     </div>
     <div class="actions">
-      ${mapsUrl_(x.mapsLink, x.alamatPasang) ? `<a class="btn btn-info" href="${esc(mapsUrl_(x.mapsLink, x.alamatPasang))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+      ${mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
       ${actions}
     </div>
   </div>`;
@@ -1610,6 +1620,7 @@ function renderTiket(){
         <div>
           <div class="nm">${esc(t.namaPelanggan)}</div>
           <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
+          ${waBtn_(t.noHp, t.noHpCadangan)}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
           ${t.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
           ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
@@ -1618,7 +1629,7 @@ function renderTiket(){
         <span class="badge ${badge}">${esc(t.status)}</span>
       </div>
       <div class="actions">
-        ${mapsUrl_(t.mapsLink, t.alamat) ? `<a class="btn btn-info" href="${esc(mapsUrl_(t.mapsLink, t.alamat))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+        ${mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
         ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
       </div>
       ${t.status==='Ditangani' ? `<div class="mini-note" style="margin:8px 0 0;">Ditangani ${esc(t.teknisiHandling||'-')} — lanjut isi di tab Maintenance</div>` : ''}
@@ -1628,7 +1639,7 @@ function renderTiket(){
 
 async function submitTiket(){
   const payload = {
-    namaPelanggan: val('t_nama'), noHp: val('t_hp'), alamat: val('t_alamat'),
+    namaPelanggan: val('t_nama'), noHp: val('t_hp'), noHpCadangan: val('t_hp2'), alamat: val('t_alamat'),
     mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
     lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), isTest: document.getElementById('t_test').checked, kendala: getKendalaValue(),
     jamLaporan: val('t_jamlaporan')
@@ -1638,7 +1649,7 @@ async function submitTiket(){
   const data = await apiCall('addTiket', payload);
   if(data && data.ok){
     toast('✅ Laporan gangguan tercatat');
-    ['t_nama','t_hp','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual'].forEach(id=>document.getElementById(id).value='');
+    ['t_nama','t_hp','t_hp2','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual'].forEach(id=>document.getElementById(id).value='');
     toggleKendalaManual();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
@@ -1656,7 +1667,11 @@ async function tanganiTiket(id){
   if(data && data.ok){ toast('✅ Tiket ditandai ditangani'); loadAll(); }
 }
 
-function mapsUrl_(mapsLink, alamat){
+function mapsUrl_(mapsLink, alamat, lat, lng){
+  // Ada koordinat: selalu buka pin merah di titik itu (bukan tempat lain di sekitarnya)
+  if(lat !== null && lat !== undefined && lat !== '' && lng !== null && lng !== undefined && lng !== '' && !isNaN(Number(lat)) && !isNaN(Number(lng))){
+    return coordLink_(lat, lng);
+  }
   const l = String(mapsLink||'').trim();
   if(/^https?:\/\//i.test(l)) return l;                       // hanya http(s) yang boleh jadi link
   if(/^(www\.)?(maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps)/i.test(l)) return 'https://' + l;
@@ -1676,13 +1691,13 @@ function lampiranLinks_(raw){
 function lokasiMaintenance_(m){
   if(m.pendaftaranId){
     const x = STATE.pendaftaran.find(p=>p.id===m.pendaftaranId);
-    if(x) return { alamat: x.alamatPasang||'', mapsLink: x.mapsLink||'' };
+    if(x) return { alamat: x.alamatPasang||'', mapsLink: x.mapsLink||'', lat: x.lat, lng: x.lng };
   }
   if(m.tiketId){
     const t = STATE.tiket.find(t=>t.id===m.tiketId);
-    if(t) return { alamat: t.alamat||'', mapsLink: t.mapsLink||'' };
+    if(t) return { alamat: t.alamat||'', mapsLink: t.mapsLink||'', lat: t.lat, lng: t.lng };
   }
-  return { alamat:'', mapsLink:'' };
+  return { alamat:'', mapsLink:'', lat: null, lng: null };
 }
 
 // Status pengerjaan: pendaftaran & tiket, sudah dikerjakan teknisi atau belum
@@ -1736,7 +1751,7 @@ function renderLaporan(){
       <div class="meta" style="margin-top:8px;">${esc(m.keterangan||'')}</div>
       ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
       ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
-      ${mapsUrl_(lok.mapsLink, lok.alamat) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
+      ${mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
       ${lampiranLinks_(m.fotoUrl)}
     </div>`;
   };
@@ -2068,12 +2083,12 @@ function titikPeta_(){
   const pend = hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({
     jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
     sub:x.alamatPasang||'', info:x.paket||'', status:x.status,
-    maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
+    maps: coordLink_(x.lat, x.lng)
   }));
   const tik = hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({
     jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
     sub:x.alamat||'', info:x.kendala||'', status:x.status,
-    maps: mapsUrl_(x.mapsLink, '') || coordLink_(x.lat, x.lng)
+    maps: coordLink_(x.lat, x.lng)
   }));
   return [...pend, ...tik];
 }
@@ -2175,7 +2190,7 @@ async function removeMasterItem(tipe, nilai){
 async function submitPendaftaran(){
   const payload = {
     nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'), isp: val('f_isp'), isTest: document.getElementById('f_test').checked,
-    noHp: val('f_hp'), paket: getPaketValue(), ssid: val('f_ssid'), password: val('f_pass'),
+    noHp: val('f_hp'), noHpCadangan: val('f_hp2'), paket: getPaketValue(), ssid: val('f_ssid'), password: val('f_pass'),
     tglPemasangan: val('f_tgl'), noOdc: val('f_odc'), noOdp: val('f_odp'), statusTinggal: val('f_status'),
     lat: val('f_lat'), lng: val('f_lng'),
     mapsLink: val('f_mapslink') || ((val('f_lat') && val('f_lng')) ? coordLink_(val('f_lat'), val('f_lng')) : ''),
@@ -2185,7 +2200,7 @@ async function submitPendaftaran(){
   const data = await apiCall('addPendaftaran', payload);
   if(data){
     toast('✅ Pendaftaran terkirim');
-    ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
+    ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_hp2','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f_isp').value=''; document.getElementById('f_test').checked=false;
     document.getElementById('f_paket').value = document.getElementById('f_paket').options[0].value;
     togglePaketManual();
@@ -2203,10 +2218,9 @@ async function confirmTeknisi(id){
 }
 
 function openMikrotikPrompt(id){
-  const ip = prompt('IP Mikrotik:'); if(ip===null) return;
-  const user = prompt('Username Mikrotik:'); if(user===null) return;
+  const user = prompt('Nama Mikrotik:'); if(user===null) return;
   const pass = prompt('Password Mikrotik:'); if(pass===null) return;
-  setMikrotik(id, ip, user, pass);
+  setMikrotik(id, '', user, pass);
 }
 async function setMikrotik(id, ip, mUser, mPass){
   const data = await apiCall('setMikrotik', { id, mikrotikIp: ip, mikrotikUser: mUser, mikrotikPass: mPass });
@@ -2415,7 +2429,7 @@ function unduhCsv_(list, namaFile){
   const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input']];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
-    rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat)}, m.isp, m.stts, m.teknisi, m.stok, m.redaman,
+    rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, m.teknisi, m.stok, m.redaman,
       m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
       m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamSelesai, m.durasi, m.keterangan,
       m.diinputOleh||'', m.timestamp]);
