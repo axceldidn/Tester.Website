@@ -66,6 +66,9 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 .dtable th:first-child,.dtable td:first-child{text-align:left;}
 .dtable th{background:var(--surface2);color:var(--text-dim);font-weight:600;}
 .dtable tr.tot td{font-weight:700;background:var(--surface2);}
+.teknisi-box{display:flex;flex-wrap:wrap;gap:8px;}
+.chk-teknisi{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);font-size:13px;cursor:pointer;}
+.chk-teknisi input{width:auto;margin:0;}
 .logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:14px;border:2px solid rgba(255,255,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 4px rgba(255,122,26,.25);}
 .logo-small{height:38px;width:auto;border-radius:7px;flex:none;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.35);}
 /* layar sempit: nama teks disembunyikan karena logo sudah memuat tulisan AIS.NET */
@@ -498,7 +501,7 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="field"><label>ISP</label><select id="rp_isp" onchange="ispBaru(this)"></select></div>
         <div class="grid2">
-          <div class="field"><label>Teknisi</label><input id="rp_teknisi" placeholder="cth: Alan,Burhan,didink,Sahel"></div>
+          <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="rp_teknisi"><div id="rp_teknisiBox" class="teknisi-box"></div></div>
           <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
         </div>
         <div class="field"><label>Redaman (dB)</label><input id="rp_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
@@ -559,7 +562,7 @@ button{font-family:'Inter',sans-serif;}
           <select id="m_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
         </div>
         <div class="grid2">
-          <div class="field"><label>Teknisi</label><input id="m_teknisi" placeholder="cth: Alan, Deli"></div>
+          <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="m_teknisi"><div id="m_teknisiBox" class="teknisi-box"></div></div>
           <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
         </div>
         <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
@@ -647,7 +650,8 @@ button{font-family:'Inter',sans-serif;}
         <div class="field">
           <label>Role</label>
           <select id="u_role">
-            <option>Marketing/CS</option>
+            <option>CS</option>
+            <option>Marketing</option>
             <option>Sales</option>
             <option>Teknisi</option>
             <option>Admin Server</option>
@@ -760,7 +764,8 @@ let mapMarkers = [];
 let loginMode = 'staff';
 
 const ROLE_TABS = {
-  "Marketing/CS": ["beranda","daftar","tiket","laporan","peta"],
+  "CS": ["beranda","daftar","tiket","laporan","peta"],
+  "Marketing": ["beranda","daftar","tiket","laporan","peta"],
   "Sales": ["beranda","daftar","tiket","laporan","peta"],
   "Teknisi": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta"],
   "Admin Server": ["beranda","daftar","tiket","proses","laporan","peta"],
@@ -1000,8 +1005,12 @@ ACT.getAllData = async () => {
       pendaftaran.forEach(x => { if(peta[x.id]){ x.mikrotikUser = peta[x.id].mikrotikUser; x.mikrotikPass = peta[x.id].mikrotikPass; } });
     }
   }
+  // Daftar teknisi (nama saja) untuk centang; gagal dimuat = daftar kosong
+  let teknisiList = [];
+  try { const r = await sb.rpc('daftar_teknisi'); if(!r.error) teknisiList = (r.data || []).map(x => x.nama); } catch(e) {}
   return {
     ok:true,
+    teknisiList,
     pendaftaran,
     tiket: t.data.reverse(),
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
@@ -1186,6 +1195,7 @@ async function loadAll(){
     STATE.maintenance = data.maintenance || [];
     STATE.tiket = data.tiket || [];
     STATE.logs = data.logs || [];
+    STATE.teknisiList = data.teknisiList || [];
     STATE.master = data.master || [];
   }
   renderAll();
@@ -1222,6 +1232,7 @@ function renderAll(){
   renderMasterLists();
   renderMatOptions();
   renderIspOptions();
+  renderTeknisiChecks();
 }
 
 function renderBeranda(){
@@ -1871,6 +1882,33 @@ async function ispBaru(sel){
   }
 }
 
+// Centang teknisi di form Pemasangan & Maintenance (maks 4 orang)
+function renderTeknisiChecks(){
+  [['rp','rp_teknisiBox'],['m','m_teknisiBox']].forEach(([pre, boxId]) => {
+    const box = document.getElementById(boxId);
+    if(!box) return;
+    const hid = document.getElementById(pre + '_teknisi');
+    const dipilih = (hid.value || '').split(',').map(s => s.trim()).filter(Boolean);
+    const list = STATE.teknisiList || [];
+    if(!list.length){
+      box.innerHTML = '<div class="mini-note">Belum ada akun teknisi. Tambah dulu di tab Pengguna.</div>';
+      return;
+    }
+    box.innerHTML = list.map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihTeknisi('${pre}', this)"> ${esc(n)}</label>`).join('');
+  });
+}
+function pilihTeknisi(pre, cb){
+  const box = document.getElementById(pre + '_teknisiBox');
+  const hid = document.getElementById(pre + '_teknisi');
+  const terpilih = [...box.querySelectorAll('input[type=checkbox]:checked')];
+  if(terpilih.length > 4){
+    cb.checked = false;
+    toast('Maksimal 4 teknisi per pekerjaan');
+    return;
+  }
+  hid.value = terpilih.map(c => c.value).join(', ');
+}
+
 // Material dengan pilihan jenis (dari daftar master, bisa diubah di tab Pengguna)
 const MAT = [
   { key:'modem',    col:'modem',   jenis:'jenisModem',    master:'Modem' },
@@ -2315,6 +2353,7 @@ async function submitRealisasiPemasangan(){
   if(data){
     toast('✅ Pemasangan Ais.net terkirim');
     ['rp_teknisi','rp_stok','rp_redaman','rp_ket'].forEach(id=>document.getElementById(id).value='');
+    renderTeknisiChecks();
     ['rp_modem','rp_splitter','rp_closure','rp_boxodp','rp_adaptor','rp_patchcore','rp_barrel','rp_kabel'].forEach(id=>document.getElementById(id).value='0');
     MAT.forEach(m=>document.getElementById('rp_j'+m.key).value='');
     renderMatOptions();
@@ -2343,6 +2382,7 @@ async function submitMaintenance(){
   if(data){
     toast('✅ Realisasi Maintenance terkirim');
     ['m_client','m_teknisi','m_stok','m_redaman','m_ket','m_jamlaporan','m_jamselesai'].forEach(id=>document.getElementById(id).value='');
+    renderTeknisiChecks();
     ['m_modem','m_splitter','m_closure','m_boxodp','m_adaptor','m_patchcore','m_barrel','m_kabel'].forEach(id=>document.getElementById(id).value='0');
     MAT.forEach(m=>document.getElementById('m_j'+m.key).value='');
     renderMatOptions();
@@ -2397,7 +2437,7 @@ async function promptResetPassword(nama){
   if(data && data.ok) toast('✅ Password direset');
 }
 async function promptChangeRole(nama){
-  const role = prompt('Role baru untuk '+nama+' (Marketing/CS, Sales, Teknisi, Admin Server, Office):');
+  const role = prompt('Role baru untuk '+nama+' (CS, Marketing, Sales, Teknisi, Admin Server, Office):');
   if(!role) return;
   const data = await apiCall('updateUser', { nama, newRole: role });
   if(data && data.ok){ toast('✅ Role diubah'); loadUsers(); }
