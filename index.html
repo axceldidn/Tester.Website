@@ -1041,9 +1041,9 @@ ACT.addPendaftaran = async (p) => {
 ACT.confirmTeknisi = async (p) => {
   const { data, error } = await sb.from('pendaftaran')
     .update({ status:'Dikonfirmasi', konfirmasiOleh: USER.name, tglKonfirmasi: nowStr_() })
-    .eq('id', p.id).select('nama').maybeSingle();
+    .eq('id', p.id).eq('status','Baru').select('nama').maybeSingle();
   if(error) return fail_(error);
-  if(!data) return notFound_();
+  if(!data) return { ok:false, error:'Sudah diambil teknisi lain, atau data tidak ditemukan' };
   await logAksi_('konfirmasi menerima order pemasangan', `${data.nama} — done confirm`);
   return { ok:true };
 };
@@ -1077,9 +1077,9 @@ ACT.addTiket = async (p) => {
 ACT.tanganiTiket = async (p) => {
   const { data, error } = await sb.from('tiket')
     .update({ status:'Ditangani', teknisiHandling: USER.name, tglDitangani: nowStr_() })
-    .eq('id', p.id).select('namaPelanggan').maybeSingle();
+    .eq('id', p.id).eq('status','Baru').select('namaPelanggan').maybeSingle();
   if(error) return fail_(error);
-  if(!data) return notFound_();
+  if(!data) return { ok:false, error:'Sudah ditangani teknisi lain, atau data tidak ditemukan' };
   await logAksi_('menangani tiket', data.namaPelanggan);
   return { ok:true };
 };
@@ -1622,6 +1622,7 @@ function pendaftaranCard(x){
       <div>
         <div class="nm">${esc(x.nama)}</div>
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
+        ${x.konfirmasiOleh ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Diambil oleh ${esc(x.konfirmasiOleh)}</div>` : ''}
         ${x.mikrotikUser ? `<div class="meta">🔐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}</div>` : ''}
         ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
@@ -1714,6 +1715,7 @@ function renderTiket(){
           ${waBtn_(t.noHp, t.noHpCadangan)}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
           ${t.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
+          ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
           ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
           ${lampiranLinks_(t.lampiran)}
         </div>
