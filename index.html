@@ -495,7 +495,7 @@ button{font-family:'Inter',sans-serif;}
           <select id="t_kendala" onchange="toggleKendalaManual()"></select>
           <input id="t_kendala_manual" placeholder="Tulis kendalanya" class="hide" style="margin-top:8px;">
         </div>
-        <div class="field"><label>Tanggal laporan</label><input id="t_tgl" type="date"></div>
+        <div class="field"><label>Tanggal laporan pelanggan (maks 3 hari ke belakang)</label><input id="t_tgl" type="date"></div>
         <div class="field"><label>Jam Laporan</label><input id="t_jamlaporan" type="time"></div>
         <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamLaporSekarang()">🕐 Isi Jam = Sekarang</button>
         <div class="field">
@@ -595,12 +595,9 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
         <h3 style="margin-top:18px;">⏱️ Waktu Pengerjaan</h3>
-        <div class="grid2">
-          <div class="field"><label>Jam Laporan (Admin/CS)</label><input id="m_jamlaporan" type="time" oninput="hitungDurasi()"></div>
-          <div class="field"><label>Jam Selesai (Done)</label><input id="m_jamselesai" type="time" oninput="hitungDurasi()"></div>
-        </div>
-        <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamSekarang()">🕐 Isi Jam Selesai = Sekarang</button>
-        <div class="mini-note" id="durasiInfo" style="margin-top:-6px;">Isi kedua jam buat hitung durasi pengerjaan otomatis.</div>
+        <div class="field"><label>Jam Laporan (otomatis dari tiket; isi manual hanya kalau tanpa tiket)</label><input id="m_jamlaporan" type="time"></div>
+        <input type="hidden" id="m_jamselesai">
+        <div class="mini-note" id="durasiInfo">🔒 Jam selesai dan durasi pengerjaan dicatat otomatis oleh server saat laporan dikirim.</div>
         <h3 style="margin-top:18px;">Material Terpakai</h3>
         <div class="grid2">
           <div class="field"><label>Jenis modem (opsional)</label><select id="m_jmodem" onchange="toggleMat('m','modem')"><option value="">— Tidak pakai —</option></select></div>
@@ -1694,6 +1691,7 @@ function pendaftaranCard(x){
         ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
         ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
+        <div class="meta">🕐 Daftar: ${fmtTs_(x.dibuatServer || x.timestamp)}${x.diambilServer ? ` • Diambil: ${fmtTs_(x.diambilServer)}` : ''}</div>
         ${lampiranLinks_(x.lampiran)}
       </div>
       ${statusBadge(x.status)}
@@ -1766,11 +1764,13 @@ function renderMaintLinkOptions(){
 
 function isiDariTiket(){
   const id = document.getElementById('m_ticket').value;
-  if(!id) return;
+  const jl = document.getElementById('m_jamlaporan');
+  if(!id){ jl.readOnly = false; return; }
   const t = STATE.tiket.find(x=>x.id===id);
   if(!t) return;
   document.getElementById('m_client').value = t.namaPelanggan;
-  if(t.jamLaporan){ document.getElementById('m_jamlaporan').value = t.jamLaporan; hitungDurasi(); }
+  jl.value = t.jamLaporan || '';
+  jl.readOnly = true;            // jam laporan mengikuti tiket, tidak bisa diubah
   document.getElementById('m_ket').value = `Keluhan: ${t.kendala}`;
 }
 
@@ -1801,6 +1801,7 @@ function renderTiket(){
           ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
           ${mikrotikTiketInfo_(t)}
           ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
+          <div class="meta">🕐 Dicatat sistem: ${fmtTs_(t.dibuatServer || t.timestamp)}${t.diambilServer ? ` • Diambil: ${fmtTs_(t.diambilServer)}` : ''}</div>
           ${lampiranLinks_(t.lampiran)}
         </div>
         <span class="badge ${badge}">${esc(t.status)}</span>
@@ -1840,6 +1841,9 @@ async function submitTiket(){
 }
 function isiTanggalHariIni_(){
   const now = new Date();
+  const fmtD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const elT = document.getElementById('t_tgl');
+  if(elT){ elT.max = fmtD(now); elT.min = fmtD(new Date(now.getTime() - 3*86400000)); }
   const el = document.getElementById('t_tgl');
   if(el) el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 }
@@ -1959,6 +1963,36 @@ function renderLaporanStatus_(){
     <div class="mini-note">Menampilkan 50 terbaru. Teknisi diambil dari realisasi, atau dari yang konfirmasi/tangani.</div>`;
 }
 
+/* ---- Tanggal dari server (tidak bisa diakali) ---- */
+function fmtTs_(ts){
+  if(!ts) return '-';
+  const d = new Date(ts); if(isNaN(d)) return '-';
+  return d.toLocaleString('id-ID', { timeZone:'Asia/Jakarta', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function selisih_(a, b){
+  if(!a || !b) return '';
+  const ms = new Date(b) - new Date(a); if(isNaN(ms) || ms < 0) return '';
+  const mnt = Math.floor(ms/60000), h = Math.floor(mnt/1440), j = Math.floor((mnt%1440)/60), m = mnt%60;
+  return h ? `${h} hari ${j} jam` : (j ? `${j} jam ${m} menit` : `${m} menit`);
+}
+function tanggalAsal_(m){
+  let asal = null;
+  if(m.pendaftaranId) asal = STATE.pendaftaran.find(p=>p.id===m.pendaftaranId);
+  else if(m.tiketId) asal = STATE.tiket.find(t=>t.id===m.tiketId);
+  return {
+    lapor: asal ? (asal.dibuatServer || asal.timestamp) : null,
+    diambil: asal ? asal.diambilServer : null,
+    selesai: m.selesaiServer || m.timestamp
+  };
+}
+function blokTanggal_(m){
+  const d = tanggalAsal_(m);
+  const lama = selisih_(d.lapor, d.selesai);
+  const diubah = m.selesaiServer && m.timestamp && Math.abs(new Date(m.timestamp) - new Date(m.selesaiServer)) > 60000;
+  return `<div class="meta" style="margin-top:6px;">📅 ${m.pendaftaranId ? 'Daftar' : 'Lapor'}: <b>${fmtTs_(d.lapor)}</b>${d.diambil ? ` • 🙋 Diambil: <b>${fmtTs_(d.diambil)}</b>` : ''} • ✅ Dikerjakan: <b>${fmtTs_(d.selesai)}</b>${lama ? ` • ⏳ ${lama}` : ''}</div>`
+    + (diubah ? `<div class="meta" style="color:var(--warn);">⚠️ Tanggal di dashboard digeser Admin ke ${fmtTs_(m.timestamp)}</div>` : '');
+}
+
 function renderLaporan(){
   renderLaporanStatus_();
   const install = hidup_(STATE.maintenance).filter(m=>m.pendaftaranId);
@@ -1979,6 +2013,7 @@ function renderLaporan(){
       </div>
       <div class="meta" style="margin-top:8px;">${esc(m.keterangan||'')}</div>
       ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
+      ${blokTanggal_(m)}
       ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
       ${mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
       ${lampiranLinks_(m.fotoUrl)}
@@ -2554,16 +2589,7 @@ function hmToMinutes_(hm){
   const [h,m] = hm.split(':').map(Number);
   return h*60+m;
 }
-function hitungDurasi(){
-  const a = hmToMinutes_(val('m_jamlaporan'));
-  const b = hmToMinutes_(val('m_jamselesai'));
-  const info = document.getElementById('durasiInfo');
-  if(a===null || b===null){ info.textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.'; return; }
-  let diff = b - a;
-  if(diff < 0) diff += 24*60; // lewat tengah malam
-  const jam = Math.floor(diff/60), menit = diff%60;
-  info.textContent = `⏱️ Durasi pengerjaan: ${jam} jam ${menit} menit`;
-}
+function hitungDurasi(){ /* jam selesai & durasi sekarang otomatis dari server */ }
 function isiJamSekarang(){
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');
@@ -2622,6 +2648,7 @@ async function submitMaintenance(){
     renderMatOptions();
     document.getElementById('m_jeniskabel').value=''; toggleMeter('m');
     document.getElementById('m_ticket').value='';
+    document.getElementById('m_jamlaporan').readOnly = false;
     document.getElementById('durasiInfo').textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.';
     FILES.maint = []; renderFiles('maint'); document.getElementById('m_test').checked=false;
     loadAll();
@@ -2714,13 +2741,14 @@ function exportExcel(){
   setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
 }
 function unduhCsv_(list, namaFile){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input']];
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)']];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
+    const td = tanggalAsal_(m);
     rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, m.teknisi, m.stok, m.redaman,
       m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
       m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamSelesai, m.durasi, m.keterangan,
-      m.diinputOleh||'', m.timestamp]);
+      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai)]);
   });
   const csv = rows.map(r => r.map(csvCell_).join(',')).join('\n');
   const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
