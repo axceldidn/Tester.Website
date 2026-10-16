@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>AIS.NET — Pemasangan &amp; Maintenance</title>
+<meta name="theme-color" content="#0B3D66">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AIS.NET">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -259,6 +267,14 @@ button{font-family:'Inter',sans-serif;}
   font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;
 }
 .tag-off{color:var(--bad) !important;}
+
+/* ---------- Badge merah menu ---------- */
+.navbar button{position:relative;}
+.nbadge{
+  position:absolute;top:0;right:4px;min-width:17px;height:17px;padding:0 5px;border-radius:9px;
+  background:#E5484D;color:#fff;font-size:10px;font-weight:700;line-height:1;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--surface);
+}
 </style>
 </head>
 <body>
@@ -270,7 +286,7 @@ button{font-family:'Inter',sans-serif;}
   <p>Pemasangan &amp; Maintenance Teknisi</p>
   <div class="login-card">
     <div class="grid2" style="margin-bottom:16px;">
-      <button type="button" class="btn btn-outline" id="modeStaffBtn" onclick="setLoginMode('staff')">🧑‍🔧 Teknisi / CS</button>
+      <button type="button" class="btn btn-outline" id="modeStaffBtn" onclick="setLoginMode('staff')">🧑‍🔧 Staf</button>
       <button type="button" class="btn btn-outline" id="modeAdminBtn" onclick="setLoginMode('admin')">🔐 Admin</button>
     </div>
 
@@ -283,7 +299,7 @@ button{font-family:'Inter',sans-serif;}
         <label>Password</label>
         <div style="position:relative;"><input id="loginPass" type="password" placeholder="••••••••" style="padding-right:56px;"><button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:20px;cursor:pointer;padding:6px;">👁️</button></div>
       </div>
-      <div class="mini-note" style="margin-top:-4px;">Belum punya akun? Minta Admin daftarkan di tab Kelola Pengguna.</div>
+      <div class="mini-note" style="margin-top:-4px;">Untuk semua staf: Teknisi, CS, Marketing, Sales, Office, dan Admin Server. Belum punya akun? Minta Admin daftarkan di tab Pengguna.</div>
     </div>
 
     <div id="adminLoginFields" class="hide">
@@ -295,6 +311,7 @@ button{font-family:'Inter',sans-serif;}
     </div>
 
     <button class="btn btn-primary btn-block" onclick="doLogin()" id="loginBtn" style="margin-top:6px;">Masuk</button>
+    <button type="button" class="btn btn-outline btn-block hide" id="btnInstallLogin" onclick="pasangApp()" style="margin-top:8px;">📲 Pasang Aplikasi di HP</button>
   </div>
 
 </div>
@@ -311,6 +328,8 @@ button{font-family:'Inter',sans-serif;}
       <div class="who">
         <div>Halo, <b id="whoName">-</b></div>
         <div id="whoRole" style="margin-bottom:4px;"></div>
+        <button onclick="pasangApp()" id="btnInstall" class="hide" style="margin-right:4px;">📲 Pasang</button>
+        <button onclick="aktifkanNotif()" id="btnNotif" class="hide" style="margin-right:4px;">🔔 Aktifkan Notif</button>
         <button onclick="doGantiPassword()" id="btnGantiPw" style="margin-right:4px;">🔑 Ganti PW</button>
         <button onclick="logout()">Ganti akun</button>
       </div>
@@ -440,6 +459,10 @@ button{font-family:'Inter',sans-serif;}
         <div class="sect-h"><h2>🌐 Setup Mikrotik</h2><span class="count" id="mikrotikCount">0</span></div>
         <div id="mikrotikList"></div>
       </div>
+      <div id="prosesTiketMikrotikWrap">
+        <div class="sect-h"><h2>🎫 Tiket Minta Mikrotik</h2><span class="count" id="tiketMikrotikCount">0</span></div>
+        <div id="tiketMikrotikList"></div>
+      </div>
     </div>
 
     <!-- ---- TAB: TIKET MASUK ---- -->
@@ -472,6 +495,7 @@ button{font-family:'Inter',sans-serif;}
           <select id="t_kendala" onchange="toggleKendalaManual()"></select>
           <input id="t_kendala_manual" placeholder="Tulis kendalanya" class="hide" style="margin-top:8px;">
         </div>
+        <div class="field"><label>Tanggal laporan</label><input id="t_tgl" type="date"></div>
         <div class="field"><label>Jam Laporan</label><input id="t_jamlaporan" type="time"></div>
         <button type="button" class="btn btn-outline btn-block" style="margin-bottom:12px;" onclick="isiJamLaporSekarang()">🕐 Isi Jam = Sekarang</button>
         <div class="field">
@@ -635,6 +659,10 @@ button{font-family:'Inter',sans-serif;}
     <!-- ---- TAB: PETA ---- -->
     <div id="tab-peta" class="tabpane hide">
       <div class="sect-h"><h2>🗺️ Peta Titik Pelanggan</h2></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <button class="btn btn-info" onclick="lokasiSaya()" id="btnLokasiSaya" style="flex:1;">📍 Lokasi saya</button>
+      </div>
+      <div class="mini-note" id="lokasiSayaInfo" style="margin-bottom:8px;">Tekan tombol untuk melihat posisi HP sekarang di peta.</div>
       <div class="map-legend">
         <span><i style="background:var(--bad);"></i>Baru</span>
         <span><i style="background:var(--warn);"></i>Dikonfirmasi</span>
@@ -732,8 +760,8 @@ button{font-family:'Inter',sans-serif;}
 <div class="navbar hide" id="navbar">
   <button data-tab="beranda" class="active"><span class="ic">🏠</span>Beranda</button>
   <button data-tab="daftar"><span class="ic">📝</span>Daftar</button>
-  <button data-tab="tiket"><span class="ic">🎫</span>Tiket</button>
-  <button data-tab="proses"><span class="ic">🌐</span>Proses</button>
+  <button data-tab="tiket"><span class="ic">🎫</span>Tiket<span class="nbadge hide" id="badgeTiket"></span></button>
+  <button data-tab="proses"><span class="ic">🌐</span>Proses<span class="nbadge hide" id="badgeProses"></span></button>
   <button data-tab="pasang"><span class="ic">📶</span>Pemasangan</button>
   <button data-tab="maint"><span class="ic">🛠️</span>Maintenance</button>
   <button data-tab="laporan"><span class="ic">📊</span>Laporan</button>
@@ -754,7 +782,8 @@ button{font-family:'Inter',sans-serif;}
 const CONFIG = {
   SUPABASE_URL: "https://hgklwpaaklcttgazktre.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhna2x3cGFha2xjdHRnYXprdHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2OTg0NjUsImV4cCI6MjEwNzI3NDQ2NX0.Ao8sUIh1-YTdahkjECmX847aO-cydfJDJMjrp2p4zH0",
-  EMAIL_DOMAIN: "aisnet.local"   // login teknisi = nama@aisnet.local (cuma di dalam Supabase, bukan email sungguhan)
+  EMAIL_DOMAIN: "aisnet.local",   // login teknisi = nama@aisnet.local (cuma di dalam Supabase, bukan email sungguhan)
+  VAPID_PUBLIC_KEY: "BPj8g8dc5MQm-BB6rOnNq-O2EYbf8IrWkTpBB3rO8ueRg33oexP4-NwEYbPVKb2EkxKPBrPxetWa2PGEJrXgKPc"   // kunci PUBLIK dari buat-kunci-vapid.html (untuk notifikasi)
 };
 const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
@@ -839,6 +868,9 @@ function enterApp(){
   document.getElementById('whoRole').textContent = USER.role;
   applyRoleAccess();
   loadAll();
+  initRealtime_();
+  initNotifUI_();
+  bukaTabDariLink_();
 }
 function applyRoleAccess(){
   const allowed = ROLE_TABS[USER.role] || ["beranda"];
@@ -851,6 +883,7 @@ function applyRoleAccess(){
   const showMik = ['Admin Server','Office','Admin'].includes(USER.role);
   document.getElementById('prosesKonfirmasiWrap').classList.toggle('hide', !showKonf);
   document.getElementById('prosesMikrotikWrap').classList.toggle('hide', !showMik);
+  document.getElementById('prosesTiketMikrotikWrap').classList.toggle('hide', !showMik);
   // Pendaftaran: yang isi form baru adalah Marketing/CS, Sales, Office, Admin
   document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !USER);
   // buka tab pertama yang diizinkan
@@ -955,7 +988,7 @@ ACT.login = async (p) => {
   if(prof.status === 'Nonaktif'){ await sb.auth.signOut(); return { ok:false, error:'Akun ini dinonaktifkan, hubungi admin' }; }
   return { ok:true, nama: prof.nama, role: prof.role, token: data.session.access_token };
 };
-ACT.logout = async () => { await sb.auth.signOut(); return { ok:true }; };
+ACT.logout = async () => { await hapusPushDevice_(); await sb.auth.signOut(); return { ok:true }; };
 
 ACT.ubahTanggalMaintenance = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa mengubah tanggal' };
@@ -1009,6 +1042,17 @@ ACT.getAllData = async () => {
       pendaftaran.forEach(x => { if(peta[x.id]){ x.mikrotikUser = peta[x.id].mikrotikUser; x.mikrotikPass = peta[x.id].mikrotikPass; } });
     }
   }
+  const tiket = t.data.reverse();
+  if(['Teknisi','Admin Server','Office','Admin'].includes(USER && USER.role)){
+    try{
+      const st = await sb.from('mikrotik_secret_tiket').select('*');
+      if(!st.error){
+        const pt = {};
+        (st.data || []).forEach(s => { pt[s.tiketId] = s; });
+        tiket.forEach(x => { if(pt[x.id]){ x.mikrotikUser = pt[x.id].mikrotikUser; x.mikrotikPass = pt[x.id].mikrotikPass; } });
+      }
+    }catch(e){}
+  }
   // Daftar teknisi (nama saja) untuk centang; gagal dimuat = daftar kosong
   let teknisiList = [];
   try { const r = await sb.rpc('daftar_teknisi'); if(!r.error) teknisiList = (r.data || []).map(x => x.nama); } catch(e) {}
@@ -1016,7 +1060,7 @@ ACT.getAllData = async () => {
     ok:true,
     teknisiList,
     pendaftaran,
-    tiket: t.data.reverse(),
+    tiket,
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
     maintenance: [...m.data.reverse(), ...pas.data.reverse()],
     logs: l.data, master: mas.data
@@ -1064,14 +1108,30 @@ ACT.setMikrotik = async (p) => {
 
 ACT.addTiket = async (p) => {
   const id = newId_('TKT');
+  // Kalau tanggal laporan diisi, tiket dicatat di tanggal itu (dashboard ikut tanggal ini)
+  const waktu = p.tglLaporan ? new Date(p.tglLaporan + 'T' + (p.jamLaporan || '00:00') + ':00').toISOString() : undefined;
   const { error } = await sb.from('tiket').insert({
-    id, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), noHpCadangan: txt_(p.noHpCadangan), alamat: txt_(p.alamat),
+    id, timestamp: waktu, namaPelanggan: txt_(p.namaPelanggan), noHp: txt_(p.noHp), noHpCadangan: txt_(p.noHpCadangan), alamat: txt_(p.alamat),
     mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
     lat: num_(p.lat), lng: num_(p.lng), lampiran: await uploadFiles_(p.files, id), isTest: !!p.isTest, status:'Baru', diinputOleh: USER.name
   });
   if(error) return fail_(error);
   await logAksi_('membuat tiket gangguan', `${p.namaPelanggan} — ${p.kendala}`);
   return { ok:true, id };
+};
+
+ACT.mintaMikrotikTiket = async (p) => {
+  const { error } = await sb.rpc('minta_mikrotik_tiket', { p_id: p.id, p_catatan: txt_(p.catatan) });
+  if(error) return { ok:false, error: error.message };
+  await logAksi_('minta Mikrotik untuk tiket', `${p.nama||''} — ${p.catatan||''}`);
+  return { ok:true };
+};
+
+ACT.setMikrotikTiket = async (p) => {
+  const { error } = await sb.rpc('set_mikrotik_tiket', { p_id: p.id, p_user: txt_(p.mikrotikUser), p_pass: txt_(p.mikrotikPass) });
+  if(error) return { ok:false, error: error.message };
+  await logAksi_('menyiapkan Mikrotik untuk tiket', `${p.nama||''} — siap dipasang teknisi`);
+  return { ok:true };
 };
 
 ACT.tanganiTiket = async (p) => {
@@ -1226,6 +1286,7 @@ function renderAll(){
   renderDaftar();
   renderProses();
   renderTiket();
+  updateBadges();
   renderPasangLinkOptions();
   renderMaintLinkOptions();
   renderLaporan();
@@ -1237,6 +1298,7 @@ function renderAll(){
   renderMatOptions();
   renderIspOptions();
   renderTeknisiChecks();
+  isiTanggalHariIni_();
 }
 
 function renderBeranda(){
@@ -1598,6 +1660,11 @@ function hitungAktivitas_(){
   document.getElementById('actTiket').textContent  = hidup_(STATE.tiket).filter(dalam).length;
 }
 
+// Rute ke titik di Google Maps asli (HP akan membuka aplikasi Google Maps)
+function ruteUrl_(lat, lng){
+  if(lat === null || lat === undefined || lat === '' || lng === null || lng === undefined || lng === '') return '';
+  return `https://www.google.com/maps/dir/?api=1&destination=${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
+}
 // Tombol WA langsung ke nomor (0xxx -> 62xxx). Utama & cadangan jika ada.
 function waBtn_(hp, hp2){
   const nomor = n => { let d = String(n||'').replace(/\D/g,''); if(!d) return ''; if(d.startsWith('0')) d = '62' + d.slice(1); return d; };
@@ -1633,6 +1700,7 @@ function pendaftaranCard(x){
     </div>
     <div class="actions">
       ${mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+      ${ruteUrl_(x.lat, x.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank">🧭 Rute</a>` : ''}
       ${actions}
     </div>
   </div>`;
@@ -1655,14 +1723,23 @@ function renderProses(){
     `<div class="empty"><span class="ic">👌</span>Tidak ada yang menunggu konfirmasi</div>`;
   document.getElementById('mikrotikList').innerHTML = mik.length ? mik.map(pendaftaranCard).join('') :
     `<div class="empty"><span class="ic">👌</span>Tidak ada yang menunggu setup Mikrotik</div>`;
+  const tm = STATE.tiket.filter(t=>t.mikrotikReq==='Diminta' && t.status!=='Selesai');
+  document.getElementById('tiketMikrotikCount').textContent = tm.length;
+  document.getElementById('tiketMikrotikList').innerHTML = tm.length ? tm.map(tiketMikrotikCard).join('') :
+    `<div class="empty"><span class="ic">👌</span>Tidak ada tiket yang minta Mikrotik</div>`;
 }
 
 function renderPasangLinkOptions(){
   const sel = document.getElementById('rp_link');
   const current = sel.value;
-  const ready = STATE.pendaftaran.filter(x=>x.status==='MikrotikSiap');
-  sel.innerHTML = '<option value="">— Pilih dari daftar siap pasang —</option>' +
-    ready.map(x=>`<option value="${x.id}">${esc(x.nama)} — ${esc(x.alamatPasang||'')}</option>`).join('');
+  const saya = (USER && USER.name) ? USER.name : '';
+  // Yang sudah saya ambil (Done Confirm) tampil di atas; yang lain tetap kelihatan di bawah
+  const milikSaya = STATE.pendaftaran.filter(x => x.konfirmasiOleh === saya && ['Dikonfirmasi','MikrotikSiap'].includes(x.status));
+  const lainnya = STATE.pendaftaran.filter(x => x.status === 'MikrotikSiap' && x.konfirmasiOleh !== saya);
+  const opsi = x => `<option value="${x.id}">${esc(x.nama)} — ${esc(x.alamatPasang||'')} [${esc(x.status)}]</option>`;
+  sel.innerHTML = '<option value="">— Pilih pendaftaran —</option>'
+    + (milikSaya.length ? `<optgroup label="📌 Diambil saya">${milikSaya.map(opsi).join('')}</optgroup>` : '')
+    + (lainnya.length ? `<optgroup label="Siap pasang (lainnya)">${lainnya.map(opsi).join('')}</optgroup>` : '');
   if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
 }
 
@@ -1676,9 +1753,14 @@ function isiDariPendaftaran(){
 function renderMaintLinkOptions(){
   const tsel = document.getElementById('m_ticket');
   const current = tsel.value;
-  const ditangani = STATE.tiket.filter(t=>t.status==='Ditangani');
-  tsel.innerHTML = '<option value="">— Pilih dari tiket yang ditangani —</option>' +
-    ditangani.map(t=>`<option value="${t.id}">${esc(t.namaPelanggan)} — ${esc(t.kendala)}</option>`).join('');
+  const saya = (USER && USER.name) ? USER.name : '';
+  const sedang = STATE.tiket.filter(t => t.status === 'Ditangani');
+  const milikSaya = sedang.filter(t => t.teknisiHandling === saya);
+  const lainnya = sedang.filter(t => t.teknisiHandling !== saya);
+  const opsi = t => `<option value="${t.id}">${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.teknisiHandling ? ' ('+esc(t.teknisiHandling)+')' : ''}</option>`;
+  tsel.innerHTML = '<option value="">— Pilih tiket yang sedang berjalan —</option>'
+    + (milikSaya.length ? `<optgroup label="📌 Diambil saya">${milikSaya.map(opsi).join('')}</optgroup>` : '')
+    + (lainnya.length ? `<optgroup label="Sedang berjalan (lainnya)">${lainnya.map(opsi).join('')}</optgroup>` : '');
   if(current && [...tsel.options].some(o=>o.value===current)) tsel.value = current;
 }
 
@@ -1706,16 +1788,18 @@ function renderTiket(){
     const cls = t.status==='Baru' ? 'st-baru' : 'st-konfirmasi';
     const badge = t.status==='Baru' ? 'baru' : 'konfirmasi';
     const canTangani = t.status==='Baru' && ['Teknisi','Admin'].includes(USER.role);
+    const canMinta = t.status==='Ditangani' && !t.mikrotikReq && (USER.role==='Admin' || (USER.role==='Teknisi' && t.teknisiHandling===USER.name));
     return `
     <div class="card ${cls}">
       <div class="row1">
         <div>
           <div class="nm">${esc(t.namaPelanggan)}</div>
-          <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
+          <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.timestamp?` • 📅 ${new Date(t.timestamp).toLocaleDateString('id-ID')}`:''}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
           ${waBtn_(t.noHp, t.noHpCadangan)}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
           ${t.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
           ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
+          ${mikrotikTiketInfo_(t)}
           ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
           ${lampiranLinks_(t.lampiran)}
         </div>
@@ -1723,7 +1807,9 @@ function renderTiket(){
       </div>
       <div class="actions">
         ${mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
+        ${ruteUrl_(t.lat, t.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(t.lat, t.lng))}" target="_blank">🧭 Rute</a>` : ''}
         ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
+        ${canMinta ? `<button class="btn btn-info" onclick="mintaMikrotikTiket('${t.id}')">🌐 Minta Mikrotik</button>` : ''}
       </div>
       ${t.status==='Ditangani' ? `<div class="mini-note" style="margin:8px 0 0;">Ditangani ${esc(t.teknisiHandling||'-')} — lanjut isi di tab Maintenance</div>` : ''}
     </div>`;
@@ -1735,7 +1821,7 @@ async function submitTiket(){
     namaPelanggan: val('t_nama'), noHp: val('t_hp'), noHpCadangan: val('t_hp2'), alamat: val('t_alamat'),
     mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
     lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), isTest: document.getElementById('t_test').checked, kendala: getKendalaValue(),
-    jamLaporan: val('t_jamlaporan')
+    jamLaporan: val('t_jamlaporan'), tglLaporan: val('t_tgl')
   };
   if(!payload.namaPelanggan){ toast('Isi nama pelanggan/mikrotik dulu'); return; }
   if(!payload.kendala){ toast('Isi kendalanya dulu'); return; }
@@ -1746,14 +1832,64 @@ async function submitTiket(){
     toggleKendalaManual();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
+    isiTanggalHariIni_();
     document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
     FILES.tiket = []; renderFiles('tiket'); document.getElementById('t_test').checked=false;
     loadAll();
   }
 }
+function isiTanggalHariIni_(){
+  const now = new Date();
+  const el = document.getElementById('t_tgl');
+  if(el) el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
 function isiJamLaporSekarang(){
   const now = new Date();
   document.getElementById('t_jamlaporan').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('t_tgl').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+function mikrotikTiketInfo_(t){
+  if(!t.mikrotikReq) return '';
+  let h = `<div class="meta" style="color:var(--info);font-weight:600;">🌐 Minta Mikrotik oleh ${esc(t.mikrotikMinta||'-')}${t.mikrotikCatatan ? ': '+esc(t.mikrotikCatatan) : ''}</div>`;
+  if(t.mikrotikReq==='Diminta') h += `<div class="meta" style="color:var(--warn);font-weight:600;">⏳ Menunggu Admin Server / Office</div>`;
+  if(t.mikrotikReq==='Siap') h += `<div class="meta" style="color:var(--good);font-weight:600;">✅ Mikrotik siap${t.mikrotikOleh ? ' (oleh '+esc(t.mikrotikOleh)+')' : ''}${t.mikrotikUser ? ` — <b>${esc(t.mikrotikUser)}</b> / ${esc(t.mikrotikPass||'-')}` : ''}</div>`;
+  return h;
+}
+function tiketMikrotikCard(t){
+  const mu = mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng);
+  return `
+  <div class="card st-mikrotik">
+    <div class="row1">
+      <div>
+        <div class="nm">${esc(t.namaPelanggan)}</div>
+        <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}</div>
+        ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
+        ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
+        ${mikrotikTiketInfo_(t)}
+        ${waBtn_(t.noHp, t.noHpCadangan)}
+      </div>
+      <span class="badge mikrotik">Minta Mikrotik</span>
+    </div>
+    <div class="actions">
+      ${mu ? `<a class="btn btn-info" href="${esc(mu)}" target="_blank">🗺️ Buka Maps</a>` : ''}
+      <button class="btn btn-info" onclick="openMikrotikTiketPrompt('${t.id}')">🌐 Isi Mikrotik</button>
+    </div>
+  </div>`;
+}
+async function mintaMikrotikTiket(id){
+  const t = STATE.tiket.find(x=>x.id===id); if(!t) return;
+  const cat = prompt('Apa yang perlu disiapkan di Mikrotik?\n(cth: modem diganti, perlu setting ulang)');
+  if(cat===null) return;
+  if(!cat.trim()){ toast('Isi catatannya dulu'); return; }
+  const data = await apiCall('mintaMikrotikTiket', { id, catatan: cat.trim(), nama: t.namaPelanggan });
+  if(data){ toast('✅ Permintaan Mikrotik terkirim'); loadAll(); }
+}
+async function openMikrotikTiketPrompt(id){
+  const t = STATE.tiket.find(x=>x.id===id); if(!t) return;
+  const user = prompt('Nama Mikrotik:'); if(user===null) return;
+  const pass = prompt('Password Mikrotik:'); if(pass===null) return;
+  const data = await apiCall('setMikrotikTiket', { id, mikrotikUser: user, mikrotikPass: pass, nama: t.namaPelanggan });
+  if(data){ toast('✅ Mikrotik tiket disimpan'); loadAll(); }
 }
 async function tanganiTiket(id){
   const data = await apiCall('tanganiTiket', { id });
@@ -1882,6 +2018,36 @@ function esc(s){
 
 const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F5B942','MikrotikSiap':'#4FA3E3','Selesai':'#21C77A' };
 
+// Posisi HP sekarang di peta, dengan lingkaran akurasi. Bisa ditekan ulang untuk refresh.
+let lokasiMarker = null, lokasiCircle = null;
+function lokasiSaya(){
+  const info = document.getElementById('lokasiSayaInfo');
+  const btn = document.getElementById('btnLokasiSaya');
+  if(!navigator.geolocation){ info.textContent = '⚠️ HP/browser ini tidak mendukung GPS.'; return; }
+  if(!mapObj){ renderPeta(); }
+  if(!mapObj){ info.textContent = '⚠️ Peta belum siap, coba lagi.'; return; }
+  btn.disabled = true; btn.textContent = '📍 Mencari posisi...';
+  info.textContent = 'Mencari posisi… tunggu sebentar, pastikan GPS/lokasi HP aktif.';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const la = pos.coords.latitude, ln = pos.coords.longitude, akurasi = Math.round(pos.coords.accuracy);
+    if(!lokasiMarker){
+      lokasiMarker = L.circleMarker([la, ln], { radius: 8, color: '#fff', weight: 3, fillColor: '#2D7FF9', fillOpacity: 1 }).addTo(mapObj);
+      lokasiCircle = L.circle([la, ln], { radius: akurasi, color: '#2D7FF9', weight: 1, fillOpacity: 0.12 }).addTo(mapObj);
+    } else {
+      lokasiMarker.setLatLng([la, ln]);
+      lokasiCircle.setLatLng([la, ln]).setRadius(akurasi);
+    }
+    mapObj.setView([la, ln], Math.max(mapObj.getZoom(), 17));
+    const bagus = akurasi <= 30;
+    info.textContent = (bagus ? '✅' : '⚠️') + ` Posisi: ${la.toFixed(5)}, ${ln.toFixed(5)} • akurasi ±${akurasi} m`
+      + (bagus ? '' : ' — masih kurang presisi. Tunggu sebentar lalu tekan lagi, atau pindah ke area terbuka.');
+    btn.disabled = false; btn.textContent = '📍 Lokasi saya (refresh)';
+  }, err => {
+    info.textContent = '❌ Gagal ambil lokasi: ' + err.message + '. Pastikan izin lokasi browser diberikan.';
+    btn.disabled = false; btn.textContent = '📍 Lokasi saya';
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+
 function renderPeta(){
   const box = document.getElementById('mapView');
   if(!box || typeof L === 'undefined') return;
@@ -1906,7 +2072,7 @@ function renderPeta(){
       html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0B3D66;${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484D55;':''}"></div>`
     });
     const marker = L.marker([parseFloat(x.lat), parseFloat(x.lng)], { icon }).addTo(mapObj);
-    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}`);
+    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
   if(pts.length){
@@ -2561,6 +2727,138 @@ function unduhCsv_(list, namaFile){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = namaFile; a.click();
+}
+
+/* ================= PWA, Notifikasi Push, Realtime, Badge ================= */
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  navigator.serviceWorker.addEventListener('message', (e)=>{
+    if(e.data && e.data.type === 'goto'){ gotoTab_(e.data.tab); if(USER) loadAll(); }
+  });
+}
+
+function gotoTab_(tab){
+  if(!tab) return;
+  const b = document.querySelector(`#navbar button[data-tab="${tab}"]`);
+  if(b && !b.classList.contains('hide')) b.click();
+}
+function bukaTabDariLink_(){
+  const tab = new URLSearchParams(location.search).get('tab');
+  if(tab){ gotoTab_(tab); history.replaceState(null, '', location.pathname); }
+}
+
+/* ---- Pasang aplikasi (tombol "Pasang") ---- */
+let deferredInstall_ = null;
+const isStandalone_ = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS_ = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+function showInstallBtns_(){
+  const show = !isStandalone_();
+  ['btnInstall','btnInstallLogin'].forEach(id=>{ const el = document.getElementById(id); if(el) el.classList.toggle('hide', !show); });
+}
+window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredInstall_ = e; showInstallBtns_(); });
+window.addEventListener('appinstalled', ()=>{ deferredInstall_ = null; showInstallBtns_(); toast('✅ Aplikasi terpasang'); });
+async function pasangApp(){
+  if(deferredInstall_){
+    deferredInstall_.prompt();
+    try{ await deferredInstall_.userChoice; }catch(e){}
+    deferredInstall_ = null; showInstallBtns_();
+    return;
+  }
+  if(isIOS_()){
+    alert('Cara pasang di iPhone:\n1. Buka lewat Safari\n2. Ketuk tombol Bagikan (kotak dengan panah ke atas)\n3. Pilih "Tambah ke Layar Utama"\n4. Buka aplikasi dari ikon di layar utama');
+  } else {
+    alert('Buka menu browser (titik tiga ⋮) lalu pilih "Pasang aplikasi" atau "Tambahkan ke layar utama".');
+  }
+}
+showInstallBtns_();
+
+/* ---- Notifikasi push ---- */
+const pushSupported_ = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const vapidReady_ = () => CONFIG.VAPID_PUBLIC_KEY && !String(CONFIG.VAPID_PUBLIC_KEY).startsWith('GANTI');
+function b64ToU8_(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+async function initNotifUI_(){
+  const btn = document.getElementById('btnNotif');
+  if(!vapidReady_()){ btn.classList.add('hide'); return; }
+  if(isIOS_() && !isStandalone_()){ btn.classList.remove('hide'); return; }   // iPhone: harus dipasang dulu
+  if(!pushSupported_()){ btn.classList.add('hide'); return; }
+  if(Notification.permission === 'granted'){ await daftarPush_(true); btn.classList.add('hide'); }
+  else if(Notification.permission === 'denied'){ btn.classList.remove('hide'); btn.textContent = '🔕 Notif diblokir'; }
+  else { btn.classList.remove('hide'); }
+}
+async function aktifkanNotif(){
+  if(isIOS_() && !isStandalone_()){
+    alert('Di iPhone, pasang aplikasinya dulu ke Layar Utama (tombol 📲 Pasang), lalu buka dari ikon itu dan tekan 🔔 Aktifkan Notif.');
+    return;
+  }
+  if(!pushSupported_()){ toast('Browser ini belum mendukung notifikasi'); return; }
+  if(Notification.permission === 'denied'){ alert('Notifikasi diblokir. Buka pengaturan browser/HP → Notifikasi → izinkan untuk AIS.NET, lalu buka ulang aplikasi.'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted'){
+    if(await daftarPush_(false)){ toast('🔔 Notifikasi aktif'); document.getElementById('btnNotif').classList.add('hide'); }
+  } else { toast('Notifikasi tidak diizinkan'); }
+}
+async function daftarPush_(silent){
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8_(CONFIG.VAPID_PUBLIC_KEY) });
+    const { error } = await sb.rpc('simpan_push', { p_endpoint: sub.endpoint, p_sub: sub.toJSON() });
+    if(error) throw error;
+    return true;
+  }catch(e){
+    if(!silent) toast('❌ Gagal aktifkan notif: ' + (e.message || e));
+    return false;
+  }
+}
+async function hapusPushDevice_(){
+  try{
+    if(!pushSupported_()) return;
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg && await reg.pushManager.getSubscription();
+    if(sub){ await sb.rpc('hapus_push', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); }
+  }catch(e){}
+}
+
+/* ---- Realtime: data baru muncul sendiri ---- */
+let rtChannel_ = null, rtTimer_ = null;
+function initRealtime_(){
+  if(rtChannel_) return;
+  const kick = ()=>{ clearTimeout(rtTimer_); rtTimer_ = setTimeout(()=>{ if(USER) loadAll(); }, 600); };
+  rtChannel_ = sb.channel('aisnet-live')
+    .on('postgres_changes', { event:'*', schema:'public', table:'pendaftaran' }, kick)
+    .on('postgres_changes', { event:'*', schema:'public', table:'tiket' }, kick)
+    .subscribe();
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && USER) loadAll(); });
+}
+
+/* ---- Badge merah di menu ---- */
+function setBadge_(id, n){
+  const el = document.getElementById(id); if(!el) return;
+  el.textContent = n > 99 ? '99+' : n;
+  el.classList.toggle('hide', !n);
+}
+function updateBadges(){
+  if(!USER) return;
+  const isTek = ['Teknisi','Admin'].includes(USER.role);
+  const isMik = ['Admin Server','Office','Admin'].includes(USER.role);
+  let p = 0, t = 0;
+  if(isTek){
+    p += STATE.pendaftaran.filter(x=>x.status==='Baru').length;
+    t += STATE.tiket.filter(x=>x.status==='Baru').length;
+  }
+  if(isMik){
+    p += STATE.pendaftaran.filter(x=>x.status==='Dikonfirmasi').length;
+    p += STATE.tiket.filter(x=>x.mikrotikReq==='Diminta' && x.status!=='Selesai').length;
+  }
+  setBadge_('badgeProses', p);
+  setBadge_('badgeTiket', t);
+  if('setAppBadge' in navigator){
+    try{ (p + t) > 0 ? navigator.setAppBadge(p + t) : navigator.clearAppBadge(); }catch(e){}
+  }
 }
 
 /* auto refresh */
