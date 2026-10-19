@@ -6,8 +6,8 @@
 <title>AIS.NET — Pemasangan &amp; Maintenance</title>
 <meta name="theme-color" content="#0B3D66">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AIS.NET">
@@ -167,7 +167,7 @@ button{font-family:'Inter',sans-serif;}
 .mini-note{font-size:11.5px;color:var(--text-dim);margin:-6px 0 14px;}
 
 /* ---------- Photo ---------- */
-.pickmap{height:270px;border-radius:10px;border:1px solid var(--line);margin-top:8px;z-index:0;}
+.pickmap{position:relative;z-index:0;isolation:isolate;overflow:hidden;max-width:100%;height:270px;border-radius:10px;border:1px solid var(--line);margin-top:8px;}
 .photo-box{
   border:1.5px dashed var(--line);border-radius:10px;padding:16px;text-align:center;
   color:var(--text-dim);font-size:12.5px;cursor:pointer;margin-bottom:12px;position:relative;overflow:hidden;
@@ -245,12 +245,16 @@ button{font-family:'Inter',sans-serif;}
 .sync-dot.off{background:var(--bad);}
 
 /* ---------- Map ---------- */
-#mapView{width:100%;height:52vh;min-height:320px;border-radius:var(--radius);border:1px solid var(--line);}
+#mapView{position:relative;z-index:0;isolation:isolate;overflow:hidden;contain:layout paint;width:100%;max-width:100%;height:52vh;min-height:320px;border-radius:var(--radius);border:1px solid var(--line);}
 .map-legend{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0 16px;font-size:11.5px;color:var(--text-dim);}
 .map-legend span{display:inline-flex;align-items:center;gap:5px;}
 .map-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .leaflet-popup-content-wrapper{background:var(--surface2);color:var(--text);border-radius:8px;}
 .leaflet-popup-tip{background:var(--surface2);}
+/* Cadangan inti Leaflet: mencegah tile & marker melebar kalau CSS CDN gagal dimuat */
+.leaflet-container{position:relative;overflow:hidden;}
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0;}
+.leaflet-container img.leaflet-tile,.leaflet-container .leaflet-marker-icon,.leaflet-container .leaflet-marker-shadow{max-width:none !important;max-height:none !important;}
 .leaflet-popup-content b{color:var(--accent);}
 
 /* ---------- User management ---------- */
@@ -267,6 +271,23 @@ button{font-family:'Inter',sans-serif;}
   font-size:11px;padding:5px 9px;border-radius:7px;cursor:pointer;
 }
 .tag-off{color:var(--bad) !important;}
+
+/* ---------- Chat per kasus ---------- */
+.chat-msgs{display:flex;flex-direction:column;gap:2px;padding:10px 4px;min-height:200px;max-height:55vh;overflow-y:auto;}
+.bub{max-width:82%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.35;word-break:break-word;white-space:pre-wrap;}
+.bub small{display:block;opacity:.7;font-size:11px;margin-top:3px;white-space:normal;}
+.bub.me{align-self:flex-end;background:var(--accent);color:#1a1a1a;border-bottom-right-radius:4px;}
+.bub.other{align-self:flex-start;background:var(--surface2);border:1px solid var(--line);border-bottom-left-radius:4px;}
+.bub .who{display:block;font-size:11px;font-weight:700;margin-bottom:2px;opacity:.85;}
+.chat-send{display:flex;gap:8px;margin-top:8px;}
+.chat-send input{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:11px;border-radius:10px;font-size:14px;}
+.thread{cursor:pointer;}
+.thread .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-right:6px;}
+.susulan-box{border:1px dashed var(--warn);border-radius:10px;padding:10px;margin:10px 0;background:rgba(245,185,66,.07);}
+.susulan-box label.chk{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;}
+.susulan-box input[type=checkbox]{width:auto;margin:0;}
+.exp-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.exp-row .btn{flex:1;min-width:110px;}
 
 /* ---------- Badge merah menu ---------- */
 .navbar button{position:relative;}
@@ -330,6 +351,8 @@ button{font-family:'Inter',sans-serif;}
         <div id="whoRole" style="margin-bottom:4px;"></div>
         <button onclick="pasangApp()" id="btnInstall" class="hide" style="margin-right:4px;">📲 Pasang</button>
         <button onclick="aktifkanNotif()" id="btnNotif" class="hide" style="margin-right:4px;">🔔 Aktifkan Notif</button>
+        <button onclick="tesNotif()" id="btnTesNotif" class="hide" style="margin-right:4px;">🔔 Tes Notif</button>
+        <button onclick="toggleSuara()" id="btnSuara" style="margin-right:4px;">🔊 Suara</button>
         <button onclick="doGantiPassword()" id="btnGantiPw" style="margin-right:4px;">🔑 Ganti PW</button>
         <button onclick="logout()">Ganti akun</button>
       </div>
@@ -347,6 +370,11 @@ button{font-family:'Inter',sans-serif;}
         <div class="stat warn"><b id="cntProses">0</b><span>Diproses</span></div>
         <div class="stat"><b id="cntMikrotik">0</b><span>Set Mikrotik</span></div>
         <div class="stat good"><b id="cntSelesai">0</b><span>Selesai</span></div>
+      </div>
+      <div class="mini-note hide" id="piketHariIni" style="margin:0 0 10px;"></div>
+      <div class="exp-row hide" id="expDashboard">
+        <button type="button" class="btn btn-outline" onclick="exportDashboard('xlsx')">⬇️ Dashboard Excel</button>
+        <button type="button" class="btn btn-outline" onclick="exportDashboard('pdf')">⬇️ Dashboard PDF</button>
       </div>
       <div class="sect-h"><h2>Jumlah Aktivitas</h2></div>
       <div class="field" style="margin-bottom:10px;"><select id="dashPeriode" onchange="renderBeranda()">
@@ -369,6 +397,8 @@ button{font-family:'Inter',sans-serif;}
       </div>
       <div class="sect-h"><h2>Per Teknisi</h2></div>
       <div id="dashTeknisi"></div>
+      <div class="sect-h"><h2>🗓️ Piket per Teknisi</h2></div>
+      <div id="dashPiket"></div>
       <div class="sect-h"><h2>Pemasangan Harian per ISP</h2></div>
       <div id="dashIspHarian"></div>
       <div class="sect-h"><h2>Market ISP (berdasarkan pemasangan)</h2></div>
@@ -446,6 +476,11 @@ button{font-family:'Inter',sans-serif;}
         <button class="btn btn-primary btn-block" onclick="submitPendaftaran()">Kirim Pendaftaran</button>
       </div>
       <div class="sect-h"><h2>Daftar Terbaru</h2><span class="count" id="daftarCount">0</span></div>
+      <div class="exp-row hide" id="btnExportDaftar">
+        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('xlsx')">⬇️ Excel</button>
+        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('pdf')">⬇️ PDF</button>
+        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('csv')">⬇️ CSV</button>
+      </div>
       <div id="daftarList"></div>
     </div>
 
@@ -510,7 +545,15 @@ button{font-family:'Inter',sans-serif;}
         <button class="btn btn-primary btn-block" onclick="submitTiket()">Kirim Laporan Gangguan</button>
       </div>
       <div class="sect-h"><h2>Tiket Berjalan</h2><span class="count" id="tiketCount">0</span></div>
+      <div class="exp-row hide" id="btnExportTiket">
+        <button type="button" class="btn btn-outline" onclick="exportTiket('xlsx')">⬇️ Excel</button>
+        <button type="button" class="btn btn-outline" onclick="exportTiket('pdf')">⬇️ PDF</button>
+        <button type="button" class="btn btn-outline" onclick="exportTiket('csv')">⬇️ CSV</button>
+      </div>
+      <div class="sect-h"><h2>🆕 Belum Ditangani</h2><span class="count" id="tiketBaruCount">0</span></div>
       <div id="tiketList"></div>
+      <div class="sect-h"><h2>🔧 Sedang Diproses</h2><span class="count" id="tiketProsesCount">0</span></div>
+      <div id="tiketProsesList"></div>
     </div>
 
     <!-- ---- TAB: REALISASI PEMASANGAN ---- -->
@@ -567,6 +610,17 @@ button{font-family:'Inter',sans-serif;}
           <div id="fileListPasang"></div>
         </div>
 <div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="rp_test" style="width:auto;"><label for="rp_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
+        <div class="susulan-box">
+          <label class="chk"><input type="checkbox" id="rp_susulan" onchange="toggleSusulan('rp')"> 📝 Input susulan (pekerjaan sudah selesai sebelumnya)</label>
+          <div id="rp_susulanBox" class="hide" style="margin-top:10px;">
+            <div class="field"><label>Tanggal pengerjaan sebenarnya</label><input id="rp_tglmanual" type="date"></div>
+            <div class="grid2">
+              <div class="field"><label>Jam mulai</label><input id="rp_jammulai" type="time"></div>
+              <div class="field"><label>Jam selesai</label><input id="rp_jamselesaim" type="time"></div>
+            </div>
+            <div class="mini-note" style="margin:0;">Maksimal 7 hari ke belakang. Waktu sistem (kapan laporan ini dikirim) tetap dicatat server dan tidak bisa diubah. Laporan ditandai SUSULAN.</div>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block" onclick="submitRealisasiPemasangan()">Kirim Pemasangan Ais.net</button>
       </div>
     </div>
@@ -632,13 +686,43 @@ button{font-family:'Inter',sans-serif;}
           <div id="fileListMaint"></div>
         </div>
 <div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="m_test" style="width:auto;"><label for="m_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
+        <div class="susulan-box">
+          <label class="chk"><input type="checkbox" id="m_susulan" onchange="toggleSusulan('m')"> 📝 Input susulan (pekerjaan sudah selesai sebelumnya)</label>
+          <div id="m_susulanBox" class="hide" style="margin-top:10px;">
+            <div class="field"><label>Tanggal pengerjaan sebenarnya</label><input id="m_tglmanual" type="date"></div>
+            <div class="grid2">
+              <div class="field"><label>Jam mulai</label><input id="m_jammulai" type="time"></div>
+              <div class="field"><label>Jam selesai</label><input id="m_jamselesaim" type="time"></div>
+            </div>
+            <div class="mini-note" style="margin:0;">Maksimal 7 hari ke belakang. Waktu sistem (kapan laporan ini dikirim) tetap dicatat server dan tidak bisa diubah. Laporan ditandai SUSULAN.</div>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block" onclick="submitMaintenance()">Kirim Realisasi Maintenance</button>
       </div>
     </div>
 
     <!-- ---- TAB: LAPORAN ---- -->
     <div id="tab-laporan" class="tabpane hide">
-      <button class="btn btn-outline btn-block" style="margin-bottom:14px;" onclick="exportExcel()">⬇️ Export ke Excel (2 file: pemasangan & maintenance)</button>
+      <div class="mini-note" style="margin:0 0 6px;"><b>⬇️ Export Laporan</b> (pemasangan &amp; maintenance)</div>
+      <div class="exp-row">
+        <button type="button" class="btn btn-outline" onclick="exportLaporan('xlsx')">⬇️ Excel</button>
+        <button type="button" class="btn btn-outline" onclick="exportLaporan('pdf')">⬇️ PDF</button>
+        <button type="button" class="btn btn-outline" onclick="exportExcel()">⬇️ CSV (2 file)</button>
+      </div>
+      <div id="expLaporanAdmin" class="hide" style="margin-bottom:14px;">
+        <div class="mini-note" style="margin:6px 0;"><b>⬇️ Export Pendaftaran</b> (semua data, termasuk password WiFi &amp; Mikrotik)</div>
+        <div class="exp-row">
+          <button type="button" class="btn btn-outline" onclick="exportPendaftaran('xlsx')">⬇️ Excel</button>
+          <button type="button" class="btn btn-outline" onclick="exportPendaftaran('pdf')">⬇️ PDF</button>
+          <button type="button" class="btn btn-outline" onclick="exportPendaftaran('csv')">⬇️ CSV</button>
+        </div>
+        <div class="mini-note" style="margin:6px 0;"><b>⬇️ Export Tiket</b> (semua data, termasuk password Mikrotik)</div>
+        <div class="exp-row">
+          <button type="button" class="btn btn-outline" onclick="exportTiket('xlsx')">⬇️ Excel</button>
+          <button type="button" class="btn btn-outline" onclick="exportTiket('pdf')">⬇️ PDF</button>
+          <button type="button" class="btn btn-outline" onclick="exportTiket('csv')">⬇️ CSV</button>
+        </div>
+      </div>
       <div class="sect-h"><h2>⏳ Status Pengerjaan</h2></div>
       <div id="laporanStatus"></div>
       <div class="sect-h"><h2>📦 Laporan Pemasangan</h2></div>
@@ -648,6 +732,43 @@ button{font-family:'Inter',sans-serif;}
     </div>
 
     <!-- ---- TAB: LOG ---- -->
+    <!-- ---- TAB: PESAN ---- -->
+    <div id="tab-pesan" class="tabpane hide">
+      <div id="pesanListView">
+        <div class="sect-h"><h2>💬 Pesan per Kasus</h2><span class="count" id="pesanCount">0</span></div>
+        <div class="mini-note" style="margin:0 0 10px;">Satu percakapan untuk satu pendaftaran/tiket. Hanya pembuat, teknisi yang mengambil, serta Admin Server/Office yang bisa melihat.</div>
+        <div id="pesanList"></div>
+      </div>
+      <div id="pesanThreadView" class="hide">
+        <button type="button" class="btn btn-outline" onclick="tutupChat()" style="margin-bottom:10px;">← Kembali</button>
+        <div class="card" id="chatHead" style="margin-bottom:8px;"></div>
+        <div class="chat-msgs" id="chatMsgs"></div>
+        <div class="chat-send">
+          <input id="chatInput" placeholder="Tulis pesan..." maxlength="1000" autocomplete="off" onkeydown="if(event.key==='Enter')kirimPesan()">
+          <button type="button" class="btn btn-primary" onclick="kirimPesan()">Kirim</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- TAB: PIKET ---- -->
+    <div id="tab-piket" class="tabpane hide">
+      <div class="form-card hide" id="piketForm">
+        <h3>🗓️ Atur Jadwal Piket</h3>
+        <div class="field"><label>Hari Minggu yang dijadwalkan</label><select id="pk_tgl" onchange="pilihTanggalPiket()"></select></div>
+        <div class="field"><label>Teknisi yang piket (centang)</label><div id="pk_box" class="teknisi-box"></div></div>
+        <button type="button" class="btn btn-primary btn-block" onclick="simpanPiket()">💾 Simpan Jadwal Piket</button>
+        <div class="mini-note" style="margin:12px 0 0;">Piket hanya hari Minggu. Kosongkan semua centang untuk menghapus jadwal hari itu. Di hari yang ada jadwal piketnya, notifikasi pendaftaran dan tiket baru hanya masuk ke teknisi yang piket. Hari tanpa jadwal: notif ke semua teknisi.</div>
+      </div>
+      <div class="exp-row" id="expPiket">
+        <button type="button" class="btn btn-outline" onclick="exportPiket('xlsx')">⬇️ Jadwal & Rekap Excel</button>
+        <button type="button" class="btn btn-outline" onclick="exportPiket('pdf')">⬇️ Jadwal & Rekap PDF</button>
+      </div>
+      <div class="sect-h"><h2>Jadwal Piket Hari Minggu</h2></div>
+      <div id="piketList"></div>
+      <div class="sect-h"><h2>Rekap Piket Bulan Ini</h2></div>
+      <div id="piketRekap"></div>
+    </div>
+
     <div id="tab-log" class="tabpane hide">
       <div class="sect-h"><h2>📜 Log Aktivitas</h2></div>
       <div id="logList"></div>
@@ -759,10 +880,12 @@ button{font-family:'Inter',sans-serif;}
   <button data-tab="daftar"><span class="ic">📝</span>Daftar</button>
   <button data-tab="tiket"><span class="ic">🎫</span>Tiket<span class="nbadge hide" id="badgeTiket"></span></button>
   <button data-tab="proses"><span class="ic">🌐</span>Proses<span class="nbadge hide" id="badgeProses"></span></button>
+  <button data-tab="pesan"><span class="ic">💬</span>Pesan<span class="nbadge hide" id="badgePesan"></span></button>
   <button data-tab="pasang"><span class="ic">📶</span>Pemasangan</button>
   <button data-tab="maint"><span class="ic">🛠️</span>Maintenance</button>
   <button data-tab="laporan"><span class="ic">📊</span>Laporan</button>
   <button data-tab="peta"><span class="ic">🗺️</span>Peta</button>
+  <button data-tab="piket"><span class="ic">🗓️</span>Piket</button>
   <button data-tab="log"><span class="ic">📜</span>Log</button>
   <button data-tab="users"><span class="ic">👤</span>Pengguna</button>
 </div>
@@ -772,17 +895,24 @@ button{font-family:'Inter',sans-serif;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <script>
 /* ===== KONFIGURASI (isi sekali di sini, tidak perlu diubah dari HP) =====
    Ambil dari Dashboard Supabase > Project Settings > API.
    Anon key boleh terlihat publik; yang menjaga data itu aturan RLS di database. */
-const CONFIG = {
-  SUPABASE_URL: "https://hgklwpaaklcttgazktre.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhna2x3cGFha2xjdHRnYXprdHJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2OTg0NjUsImV4cCI6MjEwNzI3NDQ2NX0.Ao8sUIh1-YTdahkjECmX847aO-cydfJDJMjrp2p4zH0",
-  EMAIL_DOMAIN: "aisnet.local",   // login teknisi = nama@aisnet.local (cuma di dalam Supabase, bukan email sungguhan)
-  VAPID_PUBLIC_KEY: "BPj8g8dc5MQm-BB6rOnNq-O2EYbf8IrWkTpBB3rO8ueRg33oexP4-NwEYbPVKb2EkxKPBrPxetWa2PGEJrXgKPc"   // kunci PUBLIK dari buat-kunci-vapid.html (untuk notifikasi)
-};
-const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+// Semua isian (URL Supabase, anon key, kunci VAPID) ada di config.js, terpisah dari file ini.
+// Jangan isi apa pun di sini.
+const CONFIG = Object.assign({ EMAIL_DOMAIN: "aisnet.local" }, window.AIS_CONFIG || {});
+const CONFIG_OK = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && !/GANTI/i.test(CONFIG.SUPABASE_URL + CONFIG.SUPABASE_ANON_KEY));
+const sb = supabase.createClient(
+  CONFIG_OK ? CONFIG.SUPABASE_URL : 'https://belum-diisi.supabase.co',
+  CONFIG_OK ? CONFIG.SUPABASE_ANON_KEY : 'belum-diisi'
+);
+if(!CONFIG_OK){
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="position:fixed;left:0;right:0;top:0;z-index:99999;background:#B3261E;color:#fff;padding:10px 14px;font-size:13px;font-weight:600;text-align:center;">' +
+    '⚠️ config.js belum terunggah atau belum diisi. Upload config.js ke folder yang sama dengan index.html, isi URL dan anon key Supabase, lalu muat ulang.</div>');
+}
 
 let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [] };
 let USER = null;
@@ -790,17 +920,18 @@ const FILES = { maint: [], pasang: [], daftar: [], tiket: [] };
 const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar', tiket:'fileListTiket' };
 const MAX_FILE_MB = 10, MAX_TOTAL_MB = 20;
 let mapObj = null;
+let mapNeedFit = true;
 let mapMarkers = [];
 let loginMode = 'staff';
 
 const ROLE_TABS = {
-  "CS": ["beranda","daftar","tiket","laporan","peta"],
-  "Marketing": ["beranda","daftar","tiket","laporan","peta"],
-  "Sales": ["beranda","daftar","tiket","laporan","peta"],
-  "Teknisi": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta"],
-  "Admin Server": ["beranda","daftar","tiket","proses","laporan","peta"],
-  "Office": ["beranda","daftar","tiket","proses","laporan","peta"],
-  "Admin": ["beranda","daftar","tiket","proses","pasang","maint","laporan","peta","log","users"]
+  "CS": ["beranda","daftar","tiket","pesan","laporan","peta"],
+  "Marketing": ["beranda","daftar","tiket","pesan","laporan","peta"],
+  "Sales": ["beranda","daftar","tiket","pesan","laporan","peta"],
+  "Teknisi": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","piket"],
+  "Admin Server": ["beranda","daftar","tiket","proses","pesan","laporan","peta","piket"],
+  "Office": ["beranda","daftar","tiket","proses","pesan","laporan","peta","piket"],
+  "Admin": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","piket","log","users"]
 };
 
 /* ---------------- Login ---------------- */
@@ -815,8 +946,13 @@ setLoginMode('staff');
 
 // Login tidak lewat apiCall, karena apiCall membuang pesan error (mengembalikan null).
 async function loginLangsung_(p){
+  if(!CONFIG_OK) return { ok:false, error:'config.js belum terunggah atau belum diisi (lihat peringatan merah di atas).' };
   try{
-    const data = await ACT.login(p);
+    // Batas waktu 20 detik supaya tidak "Memeriksa..." selamanya kalau server tidak menjawab
+    const data = await Promise.race([
+      ACT.login(p),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('server tidak menjawab dalam 20 detik. Cek koneksi, atau project Supabase sedang dijeda (paused)')), 20000))
+    ]);
     setSync(true);
     return data;
   }catch(e){
@@ -867,6 +1003,7 @@ function enterApp(){
   loadAll();
   initRealtime_();
   initNotifUI_();
+  updateTombolSuara_();
   bukaTabDariLink_();
 }
 function applyRoleAccess(){
@@ -881,6 +1018,9 @@ function applyRoleAccess(){
   document.getElementById('prosesKonfirmasiWrap').classList.toggle('hide', !showKonf);
   document.getElementById('prosesMikrotikWrap').classList.toggle('hide', !showMik);
   document.getElementById('prosesTiketMikrotikWrap').classList.toggle('hide', !showMik);
+  ['btnExportDaftar','btnExportTiket'].forEach(id => document.getElementById(id).classList.toggle('hide', !ROLE_EXPORT_.includes(USER.role)));
+  document.getElementById('expDashboard').classList.toggle('hide', !['Admin','Office'].includes(USER.role));
+  document.getElementById('expLaporanAdmin').classList.toggle('hide', !ROLE_EXPORT_.includes(USER.role));
   // Pendaftaran: yang isi form baru adalah Marketing/CS, Sales, Office, Admin
   document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !USER);
   // buka tab pertama yang diizinkan
@@ -906,7 +1046,7 @@ document.querySelectorAll('#navbar button').forEach(btn=>{
     btn.classList.add('active');
     document.querySelectorAll('.tabpane').forEach(p=>p.classList.add('hide'));
     document.getElementById('tab-'+btn.dataset.tab).classList.remove('hide');
-    if(btn.dataset.tab==='peta') setTimeout(()=>{ renderPeta(); }, 50);
+    if(btn.dataset.tab==='peta'){ mapNeedFit = true; setTimeout(()=>{ renderPeta(); }, 50); }
     if(btn.dataset.tab==='users') loadUsers();
   };
 });
@@ -1031,7 +1171,7 @@ ACT.getAllData = async () => {
   if(err) return fail_(err.error);
   // Nama & password Mikrotik: hanya peran yang boleh melihatnya (aturan database juga membatasi)
   const pendaftaran = p.data.reverse();
-  if(['Teknisi','Admin Server','Office','Admin'].includes(USER && USER.role)){
+  if(['Teknisi','Admin Server','Office','Admin','CS'].includes(USER && USER.role)){
     const sec = await sb.from('mikrotik_secret').select('*');
     if(!sec.error){
       const peta = {};
@@ -1040,7 +1180,7 @@ ACT.getAllData = async () => {
     }
   }
   const tiket = t.data.reverse();
-  if(['Teknisi','Admin Server','Office','Admin'].includes(USER && USER.role)){
+  if(['Teknisi','Admin Server','Office','Admin','CS'].includes(USER && USER.role)){
     try{
       const st = await sb.from('mikrotik_secret_tiket').select('*');
       if(!st.error){
@@ -1050,6 +1190,17 @@ ACT.getAllData = async () => {
       }
     }catch(e){}
   }
+  let piket = [];
+  try{
+    const dari = new Date(Date.now() - 62*86400000).toISOString().slice(0,10);
+    const pk = await sb.from('piket').select('*').gte('tanggal', dari).order('tanggal');
+    if(!pk.error) piket = pk.data || [];
+  }catch(e){}
+  let pesan = [];
+  try{
+    const ps = await sb.from('pesan').select('*').order('dibuat', { ascending:false }).limit(500);
+    if(!ps.error) pesan = ps.data || [];
+  }catch(e){}
   // Daftar teknisi (nama saja) untuk centang; gagal dimuat = daftar kosong
   let teknisiList = [];
   try { const r = await sb.rpc('daftar_teknisi'); if(!r.error) teknisiList = (r.data || []).map(x => x.nama); } catch(e) {}
@@ -1058,6 +1209,8 @@ ACT.getAllData = async () => {
     teknisiList,
     pendaftaran,
     tiket,
+    piket,
+    pesan,
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
     maintenance: [...m.data.reverse(), ...pas.data.reverse()],
     logs: l.data, master: mas.data
@@ -1117,6 +1270,13 @@ ACT.addTiket = async (p) => {
   return { ok:true, id };
 };
 
+ACT.setPiket = async (p) => {
+  const { error } = await sb.rpc('set_piket', { p_tanggal: p.tanggal, p_nama: p.names });
+  if(error) return { ok:false, error: error.message };
+  await logAksi_('mengatur jadwal piket', `${p.tanggal}: ${p.names.length ? p.names.join(', ') : '(dikosongkan)'}`);
+  return { ok:true };
+};
+
 ACT.mintaMikrotikTiket = async (p) => {
   const { error } = await sb.rpc('minta_mikrotik_tiket', { p_id: p.id, p_catatan: txt_(p.catatan) });
   if(error) return { ok:false, error: error.message };
@@ -1158,7 +1318,9 @@ ACT.addMaintenance = async (p) => {
     barrel: int_(p.barrel), jenisKabel: txt_(p.jenisKabel), kabel: int_(p.kabel),
     keterangan: txt_(p.keterangan), fotoUrl, isTest: !!p.isTest, diinputOleh: USER.name,
     jamLaporan: txt_(p.jamLaporan), jamSelesai: txt_(p.jamSelesai),
-    durasi: durasi_(p.jamLaporan, p.jamSelesai)
+    durasi: durasi_(p.jamLaporan, p.jamSelesai),
+    susulan: !!p.susulan, tglKerjaManual: p.susulan ? txt_(p.tglKerjaManual) : null,
+    jamMulaiManual: p.susulan ? txt_(p.jamMulaiManual) : null, jamSelesaiManual: p.susulan ? txt_(p.jamSelesaiManual) : null
   });
   if(error) return fail_(error);
   if(p.linkId)   await sb.from('pendaftaran').update({ status:'Selesai' }).eq('id', p.linkId);
@@ -1224,7 +1386,7 @@ ACT.changeOwnPassword = async (p) => {
 
 // Satu pintu untuk semua pemanggilan dari tampilan (nama aksi sama seperti sebelumnya)
 async function apiCall(action, payload){
-  if(CONFIG.SUPABASE_URL.startsWith('https://GANTI')){
+  if(!CONFIG_OK){
     toast('⚠️ Isi SUPABASE_URL & ANON KEY di CONFIG dulu');
     return null;
   }
@@ -1258,6 +1420,9 @@ async function loadAll(){
     STATE.logs = data.logs || [];
     STATE.teknisiList = data.teknisiList || [];
     STATE.master = data.master || [];
+    STATE.piket = data.piket || [];
+    STATE.pesan = data.pesan || [];
+    deteksiEvent_();
   }
   renderAll();
 }
@@ -1283,6 +1448,8 @@ function renderAll(){
   renderDaftar();
   renderProses();
   renderTiket();
+  renderPiket();
+  renderPesan();
   updateBadges();
   renderPasangLinkOptions();
   renderMaintLinkOptions();
@@ -1353,6 +1520,31 @@ function renderDashTeknisi_(maint){
       <tr class="tot"><td>Total pekerjaan</td><td>${jobPasang}</td><td>${jobMaint}</td><td>${jobPasang + jobMaint}</td></tr>
     </tbody></table></div>
     <div class="mini-note">Satu pekerjaan yang dikerjakan beberapa teknisi dihitung untuk tiap teknisi. Baris total menghitung jumlah pekerjaan.</div>`;
+}
+function renderDashPiket_(maint){
+  const box = document.getElementById('dashPiket');
+  if(!box) return;
+  const piketJobs = maint.filter(m => m.isPiket);
+  const map = {};
+  piketJobs.forEach(m => {
+    const jenis = m.pendaftaranId ? 'pasang' : 'maint';
+    String(m.teknisiPiket || '').split(',').map(x => x.trim()).filter(Boolean).forEach(n => {
+      map[n] = map[n] || { pasang:0, maint:0 };
+      map[n][jenis]++;
+    });
+  });
+  const rows = Object.entries(map)
+    .map(([n,c]) => ({ n, pasang:c.pasang, maint:c.maint, total:c.pasang + c.maint }))
+    .sort((a,b) => b.total - a.total);
+  if(!piketJobs.length){ box.innerHTML = `<div class="empty"><span class="ic">🗓️</span>Tidak ada pekerjaan di hari piket pada periode ini</div>`; return; }
+  const jobPasang = piketJobs.filter(m => m.pendaftaranId).length;
+  const jobMaint = piketJobs.length - jobPasang;
+  box.innerHTML = `<div class="dwrap"><table class="dtable">
+    <thead><tr><th>Teknisi (P)</th><th>Pemasangan</th><th>Maintenance</th><th>Total</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td style="text-align:left;">${esc(r.n)} (P)</td><td>${r.pasang}</td><td>${r.maint}</td><td>${r.total}</td></tr>`).join('')}
+      <tr class="tot"><td>Total pekerjaan di hari piket</td><td>${jobPasang}</td><td>${jobMaint}</td><td>${piketJobs.length}</td></tr>
+    </tbody></table></div>
+    <div class="mini-note" style="margin-top:8px;">Hanya teknisi yang terjadwal piket yang dihitung (P). Pekerjaan di hari piket tapi dikerjakan teknisi yang tidak terjadwal masuk ke baris total saja. Periode mengikuti filter di atas.</div>`;
 }
 function renderDashIspHarian_(maint){
   const box = document.getElementById('dashIspHarian');
@@ -1645,6 +1837,7 @@ function hitungAktivitas_(){
   };
   const maint = hidup_(STATE.maintenance).filter(dalam);
   renderDashTeknisi_(maint);
+  renderDashPiket_(maint);
   renderDashIspHarian_(maint);
   renderDashMarket_(maint, per, now);
   renderDashKelola_();
@@ -1700,6 +1893,7 @@ function pendaftaranCard(x){
       ${mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(x.mapsLink, x.alamatPasang, x.lat, x.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
       ${ruteUrl_(x.lat, x.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank">🧭 Rute</a>` : ''}
       ${actions}
+      ${(x.status!=='Selesai' && bolehChat_('pendaftaran', x)) ? `<button class="btn btn-outline" onclick="bukaChat_('pendaftaran','${x.id}')">💬 Chat</button>` : ''}
     </div>
   </div>`;
 }
@@ -1731,20 +1925,33 @@ function renderPasangLinkOptions(){
   const sel = document.getElementById('rp_link');
   const current = sel.value;
   const saya = (USER && USER.name) ? USER.name : '';
-  // Yang sudah saya ambil (Done Confirm) tampil di atas; yang lain tetap kelihatan di bawah
+  // Hanya yang saya ambil (Done Confirm) yang bisa diselesaikan. Admin boleh melihat semuanya.
   const milikSaya = STATE.pendaftaran.filter(x => x.konfirmasiOleh === saya && ['Dikonfirmasi','MikrotikSiap'].includes(x.status));
-  const lainnya = STATE.pendaftaran.filter(x => x.status === 'MikrotikSiap' && x.konfirmasiOleh !== saya);
+  const lainnya = (USER && USER.role === 'Admin') ? STATE.pendaftaran.filter(x => x.status === 'MikrotikSiap' && x.konfirmasiOleh !== saya) : [];
   const opsi = x => `<option value="${x.id}">${esc(x.nama)} — ${esc(x.alamatPasang||'')} [${esc(x.status)}]</option>`;
-  sel.innerHTML = '<option value="">— Pilih pendaftaran —</option>'
+  sel.innerHTML = `<option value="">${milikSaya.length || lainnya.length ? '— Pilih pendaftaran —' : '— Belum ada yang Anda ambil (ambil dulu di tab Proses) —'}</option>`
     + (milikSaya.length ? `<optgroup label="📌 Diambil saya">${milikSaya.map(opsi).join('')}</optgroup>` : '')
     + (lainnya.length ? `<optgroup label="Siap pasang (lainnya)">${lainnya.map(opsi).join('')}</optgroup>` : '');
   if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
+}
+
+function kotakMikrotik_(idSelect, idBox, html){
+  let box = document.getElementById(idBox);
+  if(!box){
+    box = document.createElement('div'); box.id = idBox; box.className = 'mini-note';
+    box.style.cssText = 'margin:6px 0 12px;color:var(--good);font-weight:600;';
+    document.getElementById(idSelect).parentElement.insertAdjacentElement('afterend', box);
+  }
+  box.innerHTML = html || '';
+  box.classList.toggle('hide', !html);
 }
 
 function isiDariPendaftaran(){
   const id = document.getElementById('rp_link').value;
   const x = STATE.pendaftaran.find(p=>p.id===id);
   document.getElementById('rp_client').value = x ? x.nama : '';
+  kotakMikrotik_('rp_link', 'rp_mikrotikInfo', x && x.mikrotikUser
+    ? `🌐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}` : (x ? '🌐 Mikrotik belum diisi Admin Server/Office' : ''));
 
 }
 
@@ -1754,9 +1961,9 @@ function renderMaintLinkOptions(){
   const saya = (USER && USER.name) ? USER.name : '';
   const sedang = STATE.tiket.filter(t => t.status === 'Ditangani');
   const milikSaya = sedang.filter(t => t.teknisiHandling === saya);
-  const lainnya = sedang.filter(t => t.teknisiHandling !== saya);
+  const lainnya = (USER && USER.role === 'Admin') ? sedang.filter(t => t.teknisiHandling !== saya) : [];   // hanya Admin yang melihat milik orang lain
   const opsi = t => `<option value="${t.id}">${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.teknisiHandling ? ' ('+esc(t.teknisiHandling)+')' : ''}</option>`;
-  tsel.innerHTML = '<option value="">— Pilih tiket yang sedang berjalan —</option>'
+  tsel.innerHTML = `<option value="">${milikSaya.length || lainnya.length ? '— Tanpa tiket / pilih tiket yang saya tangani —' : '— Tanpa tiket (belum ada tiket yang Anda tangani) —'}</option>`
     + (milikSaya.length ? `<optgroup label="📌 Diambil saya">${milikSaya.map(opsi).join('')}</optgroup>` : '')
     + (lainnya.length ? `<optgroup label="Sedang berjalan (lainnya)">${lainnya.map(opsi).join('')}</optgroup>` : '');
   if(current && [...tsel.options].some(o=>o.value===current)) tsel.value = current;
@@ -1765,26 +1972,19 @@ function renderMaintLinkOptions(){
 function isiDariTiket(){
   const id = document.getElementById('m_ticket').value;
   const jl = document.getElementById('m_jamlaporan');
-  if(!id){ jl.readOnly = false; return; }
+  if(!id){ jl.readOnly = false; kotakMikrotik_('m_ticket', 'm_mikrotikInfo', ''); return; }
   const t = STATE.tiket.find(x=>x.id===id);
   if(!t) return;
   document.getElementById('m_client').value = t.namaPelanggan;
+  kotakMikrotik_('m_ticket', 'm_mikrotikInfo', t.mikrotikReq === 'Siap' && t.mikrotikUser
+    ? `🌐 Mikrotik: <b>${esc(t.mikrotikUser)}</b> / ${esc(t.mikrotikPass||'-')}` : (t.mikrotikReq === 'Diminta' ? '🌐 Menunggu Admin Server/Office mengisi Mikrotik' : ''));
   jl.value = t.jamLaporan || '';
   jl.readOnly = true;            // jam laporan mengikuti tiket, tidak bisa diubah
   document.getElementById('m_ket').value = `Keluhan: ${t.kendala}`;
 }
 
 /* ---------------- Tiket Masuk (Laporan Gangguan) ---------------- */
-function renderTiket(){
-  const berjalan = STATE.tiket.filter(t=>t.status!=='Selesai');
-  document.getElementById('tiketCount').textContent = berjalan.length;
-  document.getElementById('tiketFormCard').classList.toggle('hide', !USER);
-  const box = document.getElementById('tiketList');
-  if(!berjalan.length){
-    box.innerHTML = `<div class="empty"><span class="ic">🎫</span>Tidak ada tiket gangguan yang berjalan</div>`;
-    return;
-  }
-  box.innerHTML = [...berjalan].reverse().map(t=>{
+function tiketCard_(t){
     const cls = t.status==='Baru' ? 'st-baru' : 'st-konfirmasi';
     const badge = t.status==='Baru' ? 'baru' : 'konfirmasi';
     const canTangani = t.status==='Baru' && ['Teknisi','Admin'].includes(USER.role);
@@ -1811,10 +2011,26 @@ function renderTiket(){
         ${ruteUrl_(t.lat, t.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(t.lat, t.lng))}" target="_blank">🧭 Rute</a>` : ''}
         ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
         ${canMinta ? `<button class="btn btn-info" onclick="mintaMikrotikTiket('${t.id}')">🌐 Minta Mikrotik</button>` : ''}
+        ${bolehChat_('tiket', t) ? `<button class="btn btn-outline" onclick="bukaChat_('tiket','${t.id}')">💬 Chat</button>` : ''}
       </div>
       ${t.status==='Ditangani' ? `<div class="mini-note" style="margin:8px 0 0;">Ditangani ${esc(t.teknisiHandling||'-')} — lanjut isi di tab Maintenance</div>` : ''}
     </div>`;
-  }).join('');
+}
+
+function renderTiket(){
+  const berjalan = STATE.tiket.filter(t=>t.status!=='Selesai');
+  const baru = berjalan.filter(t=>t.status==='Baru');
+  const proses = berjalan.filter(t=>t.status!=='Baru');
+  document.getElementById('tiketCount').textContent = berjalan.length;
+  document.getElementById('tiketBaruCount').textContent = baru.length;
+  document.getElementById('tiketProsesCount').textContent = proses.length;
+  document.getElementById('tiketFormCard').classList.toggle('hide', !USER);
+  document.getElementById('tiketList').innerHTML = baru.length
+    ? [...baru].reverse().map(tiketCard_).join('')
+    : `<div class="empty"><span class="ic">✅</span>Tidak ada tiket yang menunggu ditangani</div>`;
+  document.getElementById('tiketProsesList').innerHTML = proses.length
+    ? [...proses].reverse().map(tiketCard_).join('')
+    : `<div class="empty"><span class="ic">🔧</span>Belum ada tiket yang sedang diproses</div>`;
 }
 
 async function submitTiket(){
@@ -1833,7 +2049,7 @@ async function submitTiket(){
     toggleKendalaManual();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
-    isiTanggalHariIni_();
+    document.getElementById('t_tgl').value = ''; isiTanggalHariIni_();
     document.getElementById('t_lat').value = ''; document.getElementById('t_lng').value = '';
     FILES.tiket = []; renderFiles('tiket'); document.getElementById('t_test').checked=false;
     loadAll();
@@ -1845,7 +2061,7 @@ function isiTanggalHariIni_(){
   const elT = document.getElementById('t_tgl');
   if(elT){ elT.max = fmtD(now); elT.min = fmtD(new Date(now.getTime() - 3*86400000)); }
   const el = document.getElementById('t_tgl');
-  if(el) el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  if(el && !el.value) el.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 }
 function isiJamLaporSekarang(){
   const now = new Date();
@@ -1985,6 +2201,11 @@ function tanggalAsal_(m){
     selesai: m.selesaiServer || m.timestamp
   };
 }
+function blokSusulan_(m){
+  if(!m.susulan) return '';
+  const tgl = m.tglKerjaManual ? m.tglKerjaManual.split('-').reverse().join('/') : '-';
+  return `<div class="meta" style="color:var(--warn);font-weight:700;">📝 SUSULAN — pengerjaan sebenarnya (diisi manual): ${tgl} ${esc(m.jamMulaiManual||'')}–${esc(m.jamSelesaiManual||'')}</div>`;
+}
 function blokTanggal_(m){
   const d = tanggalAsal_(m);
   const lama = selisih_(d.lapor, d.selesai);
@@ -2006,14 +2227,16 @@ function renderLaporan(){
       <div class="row1">
         <div>
           <div class="nm">${esc(m.client)}</div>
-          <div class="meta">${esc(m.isp)} • Teknisi: ${esc(m.teknisi||'-')} • Redaman ${esc(m.redaman||'-')}dB</div>
+          <div class="meta">${esc(m.isp)} • Teknisi: ${esc(teknisiTampil_(m))} • Redaman ${esc(m.redaman||'-')}dB</div>
           ${m.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(m.diinputOleh)}</div>` : ''}
+          ${m.isPiket ? `<div class="meta" style="color:var(--warn);font-weight:700;">🗓️ Dikerjakan di hari piket${m.teknisiPiket ? ' — (P): ' + esc(m.teknisiPiket) : ''}</div>` : ''}
         </div>
         <span class="badge ${sttsCls}">${esc(m.stts)}</span>
       </div>
       <div class="meta" style="margin-top:8px;">${esc(m.keterangan||'')}</div>
       ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
       ${blokTanggal_(m)}
+      ${blokSusulan_(m)}
       ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
       ${mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
       ${lampiranLinks_(m.fotoUrl)}
@@ -2110,11 +2333,12 @@ function renderPeta(){
     marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
-  if(pts.length){
+  mapObj.invalidateSize();
+  if(pts.length && mapNeedFit){
     const group = L.featureGroup(mapMarkers);
     mapObj.fitBounds(group.getBounds().pad(0.2));
+    mapNeedFit = false;
   }
-  mapObj.invalidateSize();
 }
 
 // Data test (isTest) tidak dihitung di dashboard, laporan, export, dan peta
@@ -2598,6 +2822,29 @@ function isiJamSekarang(){
   hitungDurasi();
 }
 
+function toggleSusulan(p){
+  const on = document.getElementById(p + '_susulan').checked;
+  document.getElementById(p + '_susulanBox').classList.toggle('hide', !on);
+  if(on && !document.getElementById(p + '_tglmanual').value){
+    const el = document.getElementById(p + '_tglmanual'), now = new Date();
+    const f = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    el.max = f(now); el.min = f(new Date(now.getTime() - 7*86400000)); el.value = f(now);
+  }
+}
+function susulanPayload_(p){
+  if(!document.getElementById(p + '_susulan').checked) return { susulan: false };
+  return { susulan: true, tglKerjaManual: val(p + '_tglmanual'), jamMulaiManual: val(p + '_jammulai'), jamSelesaiManual: val(p + '_jamselesaim') };
+}
+function susulanValid_(pl){
+  if(!pl.tglKerjaManual || !pl.jamMulaiManual || !pl.jamSelesaiManual){ toast('Susulan: isi tanggal, jam mulai, dan jam selesai'); return false; }
+  return true;
+}
+function resetSusulan_(p){
+  document.getElementById(p + '_susulan').checked = false;
+  document.getElementById(p + '_susulanBox').classList.add('hide');
+  ['_tglmanual','_jammulai','_jamselesaim'].forEach(x => document.getElementById(p + x).value = '');
+}
+
 async function submitRealisasiPemasangan(){
   const linkId = val('rp_link');
   if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
@@ -2606,8 +2853,9 @@ async function submitRealisasiPemasangan(){
     teknisi: val('rp_teknisi'), stok: val('rp_stok'), redaman: val('rp_redaman'),
     ...matPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
     barrel: val('rp_barrel'), jenisKabel: val('rp_jeniskabel'), kabel: val('rp_jeniskabel') ? val('rp_kabel') : 0, keterangan: val('rp_ket'),
-    files: filesPayload('pasang')
+    files: filesPayload('pasang'), ...susulanPayload_('rp')
   };
+  if(payload.susulan && !susulanValid_(payload)) return;
   toast('⏳ Mengirim laporan...');
   const data = await apiCall('addMaintenance', payload);
   if(data){
@@ -2621,6 +2869,7 @@ async function submitRealisasiPemasangan(){
     document.getElementById('rp_link').value='';
     document.getElementById('rp_isp').value=''; document.getElementById('rp_test').checked=false;
     document.getElementById('rp_client').value='';
+    resetSusulan_('rp'); kotakMikrotik_('rp_link','rp_mikrotikInfo','');
     FILES.pasang = []; renderFiles('pasang');
     loadAll();
   }
@@ -2634,8 +2883,9 @@ async function submitMaintenance(){
     ...matPayload_('m'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
     barrel: val('m_barrel'), jenisKabel: val('m_jeniskabel'), kabel: val('m_jeniskabel') ? val('m_kabel') : 0, keterangan: val('m_ket'),
     jamLaporan: val('m_jamlaporan'), jamSelesai: val('m_jamselesai'),
-    files: filesPayload('maint')
+    files: filesPayload('maint'), ...susulanPayload_('m')
   };
+  if(payload.susulan && !susulanValid_(payload)) return;
   if(!payload.client){ toast('Nama client wajib diisi'); return; }
   toast('⏳ Mengirim laporan...');
   const data = await apiCall('addMaintenance', payload);
@@ -2649,7 +2899,7 @@ async function submitMaintenance(){
     document.getElementById('m_jeniskabel').value=''; toggleMeter('m');
     document.getElementById('m_ticket').value='';
     document.getElementById('m_jamlaporan').readOnly = false;
-    document.getElementById('durasiInfo').textContent = 'Isi kedua jam buat hitung durasi pengerjaan otomatis.';
+    resetSusulan_('m'); kotakMikrotik_('m_ticket','m_mikrotikInfo','');
     FILES.maint = []; renderFiles('maint'); document.getElementById('m_test').checked=false;
     loadAll();
   }
@@ -2698,8 +2948,10 @@ async function promptResetPassword(nama){
   if(data && data.ok) toast('✅ Password direset');
 }
 async function promptChangeRole(nama){
-  const role = prompt('Role baru untuk '+nama+' (CS, Marketing, Sales, Teknisi, Admin Server, Office):');
-  if(!role) return;
+  const input = prompt('Role baru untuk '+nama+' (CS, Marketing, Sales, Teknisi, Admin Server, Office):');
+  if(!input) return;
+  const role = ['CS','Marketing','Sales','Teknisi','Admin Server','Office'].find(r => r.toLowerCase() === input.trim().toLowerCase());
+  if(!role){ toast('Role tidak dikenal. Pilih salah satu dari daftar.'); return; }
   const data = await apiCall('updateUser', { nama, newRole: role });
   if(data && data.ok){ toast('✅ Role diubah'); loadUsers(); }
 }
@@ -2740,21 +2992,555 @@ function exportExcel(){
   unduhCsv_(pasang, 'laporan-pemasangan-aisnet.csv');
   setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
 }
-function unduhCsv_(list, namaFile){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)']];
+function barisLaporan_(list){
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual'])]];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
     const td = tanggalAsal_(m);
-    rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, m.teknisi, m.stok, m.redaman,
+    rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, teknisiTampil_(m), m.stok, m.redaman,
       m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
       m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamSelesai, m.durasi, m.keterangan,
-      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai)]);
+      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai), m.isPiket ? 'P' : '', m.susulan ? 'SUSULAN' : '', m.tglKerjaManual||'', m.jamMulaiManual||'', m.jamSelesaiManual||'', ...(ROLE_EXPORT_.includes(USER.role) ? kolomKred_(m) : [])]);
   });
-  const csv = rows.map(r => r.map(csvCell_).join(',')).join('\n');
+  return rows;
+}
+function unduhCsv_(list, namaFile){
+  const rows = barisLaporan_(list);
+  const csv = rows.map(r => r.map(c => (c && typeof c === 'object' && 'teks' in c) ? teksExcel_(c.teks) : csvCell_(c)).join(',')).join('\n');
   const blob = new Blob(["\ufeff"+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = namaFile; a.click();
+}
+function exportLaporan(fmt){
+  const semua = hidup_(STATE.maintenance);
+  const olah = rows => rows.map((r, i) => r.map((c, k) => (i > 0 && k === 26) ? fmtTs_(c) : sel_(c)));
+  const a = olah(barisLaporan_(semua.filter(m => m.pendaftaranId)));
+  const b = olah(barisLaporan_(semua.filter(m => !m.pendaftaranId)));
+  const pdfK = [0,1,3,4,5,7,23,27,29,30,31];
+  eksporTabel_({ judul:'Laporan AIS.NET', subjudul:`Pemasangan ${a.length - 1} • Maintenance ${b.length - 1}`, format:fmt, landscape:true,
+    namaFile:`laporan-aisnet-${hariIniKey_()}`,
+    sections:[ { judul:'Pemasangan', kolom:a[0], baris:a.slice(1), pdfKolom:pdfK }, { judul:'Maintenance', kolom:b[0], baris:b.slice(1), pdfKolom:pdfK } ] });
+}
+
+/* ---- Export pendaftaran & tiket (Admin) ---- */
+function teksExcel_(v){
+  const rumus = '="' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  return '"' + rumus.replace(/"/g, '""') + '"';
+}
+function unduhBaris_(rows, namaFile){
+  const cell = c => (c && typeof c === 'object' && 'tel' in c) ? teksExcel_(String(c.tel || '').replace(/[^0-9+]/g, ''))
+    : (c && typeof c === 'object' && 'teks' in c) ? teksExcel_(c.teks)
+    : csvCell_(c);
+  const csv = rows.map(r => r.map(cell).join(',')).join('\n');
+  const blob = new Blob(["\ufeff" + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = namaFile; a.click();
+}
+const ROLE_EXPORT_ = ['Admin','Office','Admin Server','CS'];
+function kolomKred_(m){
+  const p = m.pendaftaranId ? STATE.pendaftaran.find(x => x.id === m.pendaftaranId) : null;
+  const t = m.tiketId ? STATE.tiket.find(x => x.id === m.tiketId) : null;
+  return [{ teks:(p && p.ssid) || '' }, { teks:(p && p.password) || '' },
+          { teks:(p && p.mikrotikUser) || (t && t.mikrotikUser) || '' }, { teks:(p && p.mikrotikPass) || (t && t.mikrotikPass) || '' }];
+}
+function exportPendaftaran(fmt){
+  if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
+  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Password WiFi','Mikrotik User','Mikrotik Password']];
+  hidup_(STATE.pendaftaran).forEach(p => {
+    rows.push([p.id, p.nama, {tel:p.noHp}, {tel:p.noHpCadangan}, p.alamatKtp, p.alamatPasang,
+      {link: mapsUrl_(p.mapsLink, p.alamatPasang, p.lat, p.lng)}, p.paket, p.isp, p.ssid, p.tglPemasangan, p.noOdc, p.noOdp,
+      p.statusTinggal, p.status, p.diinputOleh||'', fmtTs_(p.dibuatServer || p.timestamp), p.konfirmasiOleh||'',
+      p.diambilServer ? fmtTs_(p.diambilServer) : (p.tglKonfirmasi||''), p.mikrotikOleh||'', p.tglMikrotik||'',
+      { teks:p.password||'' }, { teks:p.mikrotikUser||'' }, { teks:p.mikrotikPass||'' }]);
+  });
+  logAksi_('export data pendaftaran', `${fmt || 'csv'}${fmt === 'pdf' ? '' : ' (memuat password)'} • ${rows.length - 1} baris`);
+  if(fmt === 'xlsx' || fmt === 'pdf'){
+    const flat = rows.map(r => r.map(sel_));
+    return eksporTabel_({ judul:'Data Pendaftaran', subjudul:`Total ${flat.length - 1} pendaftaran` + (fmt === 'xlsx' ? ' • BERISI PASSWORD, simpan dengan aman' : ''), format:fmt, landscape:true, namaFile:`pendaftaran-aisnet-${hariIniKey_()}`,
+      sections:[{ judul:'Pendaftaran', kolom:flat[0], baris:flat.slice(1), pdfKolom:[1,2,5,7,8,14,15,16,17,18] }] });
+  }
+  unduhBaris_(rows, `pendaftaran-aisnet-${hariIniKey_()}.csv`);
+}
+function exportTiket(fmt){
+  if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
+  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Mikrotik User','Mikrotik Password']];
+  hidup_(STATE.tiket).forEach(t => {
+    rows.push([t.id, t.namaPelanggan, {tel:t.noHp}, {tel:t.noHpCadangan}, t.alamat,
+      {link: mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng)}, t.kendala, t.status, fmtTs_(t.timestamp), fmtTs_(t.dibuatServer || t.timestamp),
+      t.teknisiHandling||'', t.diambilServer ? fmtTs_(t.diambilServer) : (t.tglDitangani||''),
+      t.mikrotikReq||'', t.mikrotikCatatan||'', t.mikrotikOleh||'', t.tglMikrotik||'', t.diinputOleh||'',
+      { teks:t.mikrotikUser||'' }, { teks:t.mikrotikPass||'' }]);
+  });
+  logAksi_('export data tiket', `${fmt || 'csv'}${fmt === 'pdf' ? '' : ' (memuat password Mikrotik)'} • ${rows.length - 1} baris`);
+  if(fmt === 'xlsx' || fmt === 'pdf'){
+    const flat = rows.map(r => r.map(sel_));
+    return eksporTabel_({ judul:'Data Tiket Gangguan', subjudul:`Total ${flat.length - 1} tiket` + (fmt === 'xlsx' ? ' • BERISI PASSWORD, simpan dengan aman' : ''), format:fmt, landscape:true, namaFile:`tiket-aisnet-${hariIniKey_()}`,
+      sections:[{ judul:'Tiket', kolom:flat[0], baris:flat.slice(1), pdfKolom:[1,2,4,6,7,8,10,11] }] });
+  }
+  unduhBaris_(rows, `tiket-aisnet-${hariIniKey_()}.csv`);
+}
+
+/* ================= Chat per kasus ================= */
+let CHAT = null;   // { tipe, id }
+function seenKey_(){ return 'pesanSeen_' + (USER ? USER.name : ''); }
+function bacaSeen_(){ try{ return JSON.parse(localStorage.getItem(seenKey_()) || '{}'); }catch(e){ return {}; } }
+function tulisSeen_(m){ try{ localStorage.setItem(seenKey_(), JSON.stringify(m)); }catch(e){} }
+
+function bolehChat_(tipe, x){
+  if(!USER) return false;
+  if(['Admin','Admin Server','Office'].includes(USER.role)) return true;
+  return tipe === 'pendaftaran' ? [x.diinputOleh, x.konfirmasiOleh].includes(USER.name)
+                                : [x.diinputOleh, x.teknisiHandling].includes(USER.name);
+}
+function pesanPerKasus_(){
+  const per = {};
+  [...(STATE.pesan || [])].reverse().forEach(m => { const k = m.refTipe + ':' + m.refId; (per[k] = per[k] || []).push(m); });
+  return per;
+}
+function renderPesan(){
+  if(!USER) return;
+  const per = pesanPerKasus_(), seen = bacaSeen_();
+  const kasus = [];
+  STATE.pendaftaran.forEach(x => { if(bolehChat_('pendaftaran', x)) kasus.push({ tipe:'pendaftaran', id:x.id, judul:x.nama, status:x.status, aktif:['Dikonfirmasi','MikrotikSiap'].includes(x.status) }); });
+  STATE.tiket.forEach(t => { if(bolehChat_('tiket', t)) kasus.push({ tipe:'tiket', id:t.id, judul:t.namaPelanggan, status:t.status, aktif:(t.status === 'Ditangani' || t.mikrotikReq === 'Diminta') && t.status !== 'Selesai' }); });
+  const tampil = kasus.filter(k => per[k.tipe + ':' + k.id] || k.aktif);
+  tampil.forEach(k => {
+    const l = per[k.tipe + ':' + k.id] || [];
+    k.last = l[l.length - 1];
+    const sk = k.tipe + ':' + k.id;
+    k.unread = !!k.last && k.last.pengirim !== USER.name && (!seen[sk] || new Date(k.last.dibuat) > new Date(seen[sk]));
+  });
+  tampil.sort((a, b) => (b.last ? new Date(b.last.dibuat) : 0) - (a.last ? new Date(a.last.dibuat) : 0));
+  document.getElementById('pesanCount').textContent = tampil.length;
+  setBadge_('badgePesan', tampil.filter(k => k.unread).length);
+  document.getElementById('pesanList').innerHTML = tampil.length ? tampil.map(k => `
+    <div class="card thread ${k.tipe === 'tiket' ? 'st-baru' : 'st-konfirmasi'}" onclick="bukaChat_('${k.tipe}','${k.id}')">
+      <div class="row1"><div>
+        <div class="nm">${k.unread ? '<span class="dot"></span>' : ''}${esc(k.judul)}</div>
+        <div class="meta">${k.tipe === 'tiket' ? '🎫 Tiket' : '📝 Pendaftaran'} • ${esc(k.status)}</div>
+        <div class="meta">${k.last ? esc(k.last.pengirim) + ': ' + esc(String(k.last.isi).slice(0, 60)) + ' • ' + fmtTs_(k.last.dibuat) : 'Belum ada pesan. Ketuk untuk memulai.'}</div>
+      </div></div>
+    </div>`).join('') : `<div class="empty"><span class="ic">💬</span>Belum ada percakapan.<br>Percakapan muncul untuk kasus yang Anda buat atau ambil.</div>`;
+  if(CHAT) renderChat_(false);
+}
+function bukaChat_(tipe, id){
+  gotoTab_('pesan');
+  CHAT = { tipe, id };
+  document.getElementById('pesanListView').classList.add('hide');
+  document.getElementById('pesanThreadView').classList.remove('hide');
+  renderChat_(true);
+  setTimeout(() => { const i = document.getElementById('chatInput'); if(i) i.focus(); }, 200);
+}
+function tutupChat(){
+  CHAT = null;
+  document.getElementById('pesanThreadView').classList.add('hide');
+  document.getElementById('pesanListView').classList.remove('hide');
+  renderPesan();
+}
+function renderChat_(turunkan){
+  if(!CHAT) return;
+  const x = CHAT.tipe === 'pendaftaran' ? STATE.pendaftaran.find(p => p.id === CHAT.id) : STATE.tiket.find(t => t.id === CHAT.id);
+  if(!x){ tutupChat(); return; }
+  const judul = CHAT.tipe === 'pendaftaran' ? x.nama : x.namaPelanggan;
+  const pemegang = CHAT.tipe === 'pendaftaran' ? x.konfirmasiOleh : x.teknisiHandling;
+  document.getElementById('chatHead').innerHTML = `<div class="nm">${esc(judul)}</div>
+    <div class="meta">${CHAT.tipe === 'tiket' ? '🎫 Tiket' : '📝 Pendaftaran'} • ${esc(x.status)}${pemegang ? ' • 🙋 ' + esc(pemegang) : ''}</div>`;
+  const box = document.getElementById('chatMsgs');
+  const dekatBawah = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+  const msgs = (STATE.pesan || []).filter(m => m.refTipe === CHAT.tipe && m.refId === CHAT.id).reverse();
+  box.innerHTML = msgs.length ? msgs.map(m => {
+    const saya = m.pengirim === USER.name;
+    return `<div class="bub ${saya ? 'me' : 'other'}">${saya ? '' : `<span class="who">${esc(m.pengirim)}</span>`}${esc(m.isi)}<small>${fmtTs_(m.dibuat)}</small></div>`;
+  }).join('') : `<div class="empty" style="margin:auto;"><span class="ic">💬</span>Belum ada pesan</div>`;
+  if(turunkan || dekatBawah) box.scrollTop = box.scrollHeight;
+  const tabAktif = !document.getElementById('tab-pesan').classList.contains('hide');
+  if(tabAktif){
+    const seen = bacaSeen_(); seen[CHAT.tipe + ':' + CHAT.id] = new Date().toISOString(); tulisSeen_(seen);
+  }
+}
+async function kirimPesan(){
+  if(!CHAT) return;
+  const inp = document.getElementById('chatInput');
+  const isi = inp.value.trim();
+  if(!isi) return;
+  inp.value = '';
+  const { error } = await sb.from('pesan').insert({ refTipe: CHAT.tipe, refId: CHAT.id, isi });
+  if(error){ inp.value = isi; toast('❌ Gagal kirim: ' + (error.message || 'cek koneksi')); return; }
+  await loadAll();
+  renderChat_(true);
+}
+
+/* ================= Suara notifikasi ================= */
+let suaraAktif_ = (() => { try{ return localStorage.getItem('aisSuara') !== 'off'; }catch(e){ return true; } })();
+function updateTombolSuara_(){
+  const b = document.getElementById('btnSuara');
+  if(b) b.textContent = suaraAktif_ ? '🔊 Suara' : '🔇 Suara';
+}
+function toggleSuara(){
+  suaraAktif_ = !suaraAktif_;
+  try{ localStorage.setItem('aisSuara', suaraAktif_ ? 'on' : 'off'); }catch(e){}
+  updateTombolSuara_();
+  if(suaraAktif_) bicara_(['Suara notifikasi aktif'], true);
+  else { try{ speechSynthesis.cancel(); }catch(e){} toast('🔇 Suara dimatikan'); }
+}
+function bunyi_(){
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    if(!window._ac) window._ac = new AC();
+    const ac = window._ac; if(ac.state === 'suspended') ac.resume();
+    const t = ac.currentTime;
+    [[880, 0], [1175, 0.16]].forEach(([f, d]) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + d);
+      g.gain.exponentialRampToValueAtTime(0.25, t + d + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.14);
+      o.connect(g); g.connect(ac.destination); o.start(t + d); o.stop(t + d + 0.16);
+    });
+  }catch(e){}
+}
+function bicara_(daftar, paksa){
+  if(!suaraAktif_ && !paksa) return;
+  bunyi_();
+  if(!('speechSynthesis' in window)) return;
+  try{
+    daftar.forEach(teks => {
+      const u = new SpeechSynthesisUtterance(teks);
+      u.lang = 'id-ID'; u.rate = 1; u.volume = 1;
+      speechSynthesis.speak(u);
+    });
+  }catch(e){}
+}
+// Bandingkan data baru dengan sebelumnya: kalau ada kejadian baru, bunyikan suara sesuai peran
+const SEEN_ = { init:false, daftar:{}, tiket:{}, pesan:new Set() };
+function deteksiEvent_(){
+  if(!USER) return;
+  const first = !SEEN_.init, role = USER.role, nama = USER.name;
+  const piket = piketPerTanggal_()[hariIniKey_()] || [];
+  const tek = role === 'Admin' || (role === 'Teknisi' && (!piket.length || piket.includes(nama)));
+  const mik = ['Admin Server','Office','Admin'].includes(role);
+  const ucap = [];
+  STATE.pendaftaran.forEach(p => {
+    const lama = SEEN_.daftar[p.id];
+    if(!first){
+      if(lama === undefined && p.status === 'Baru' && !p.isTest && tek) ucap.push('Pendaftaran masuk');
+      if(lama === 'Baru' && p.status === 'Dikonfirmasi' && mik) ucap.push('Siap isi Mikrotik');
+      if(lama && lama !== 'MikrotikSiap' && p.status === 'MikrotikSiap' && p.konfirmasiOleh === nama) ucap.push('Mikrotik sudah siap');
+    }
+    SEEN_.daftar[p.id] = p.status;
+  });
+  STATE.tiket.forEach(t => {
+    const lama = SEEN_.tiket[t.id];
+    if(!first){
+      if(!lama && t.status === 'Baru' && !t.isTest && tek) ucap.push('Tiket masuk');
+      if(lama && lama.m !== 'Diminta' && t.mikrotikReq === 'Diminta' && mik) ucap.push('Minta Mikrotik');
+      if(lama && lama.m !== 'Siap' && t.mikrotikReq === 'Siap' && t.teknisiHandling === nama) ucap.push('Mikrotik tiket sudah siap');
+    }
+    SEEN_.tiket[t.id] = { m: t.mikrotikReq || '' };
+  });
+  (STATE.pesan || []).forEach(m => {
+    if(!SEEN_.pesan.has(m.id)){
+      SEEN_.pesan.add(m.id);
+      if(!first && m.pengirim !== nama) ucap.push('Pesan baru');
+    }
+  });
+  SEEN_.init = true;
+  const unik = [...new Set(ucap)];
+  if(unik.length){ toast('🔔 ' + unik.join(' • ')); bicara_(unik); }
+}
+async function tesNotif(){
+  toast('⏳ Mengirim tes notifikasi...');
+  const { data, error } = await sb.functions.invoke('kirim-push', { body: { type: 'TEST_SELF' } });
+  if(error){
+    let msg = error.message;
+    try{ const j = await error.context.json(); msg = j.error || msg; }catch(e){}
+    toast('❌ Tes gagal: ' + msg + ' (cek Edge Function kirim-push sudah di-deploy)');
+    return;
+  }
+  const d = (typeof data === 'string') ? JSON.parse(data) : data;
+  toast(d && d.terkirim > 0
+    ? '✅ Notifikasi terkirim ke ' + d.terkirim + ' perangkat. Harusnya muncul di layar.'
+    : '⚠️ Belum ada perangkat terdaftar untuk akun ini. Tekan 🔔 Aktifkan Notif dulu.');
+}
+
+/* ================= Export PDF & Excel (berdesain) ================= */
+const LIB_ = {};
+function muatSkrip_(url){
+  if(!LIB_[url]) LIB_[url] = new Promise((ok, gagal) => {
+    const sc = document.createElement('script');
+    sc.src = url; sc.onload = ok;
+    sc.onerror = () => { delete LIB_[url]; gagal(new Error('Pustaka export gagal dimuat. Cek koneksi internet.')); };
+    document.head.appendChild(sc);
+  });
+  return LIB_[url];
+}
+const URL_EXCELJS = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+const URL_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const URL_AUTOTABLE = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
+
+function unduhBlob_(blob, nama){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nama; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+const pdfTeks_ = v => String(v == null ? '' : v).replace(/[^\u0020-\u007E\u00A0-\u00FF\u2013\u2014\u2022\u2018\u2019\u201C\u201D]/g, '').replace(/\s+/g, ' ').trim();
+const sel_ = c => (c && typeof c === 'object') ? (('tel' in c) ? c.tel : (('teks' in c) ? c.teks : (c.link || ''))) : c;
+function angka_(v){ return (typeof v === 'string' && /^(0|[1-9][0-9]{0,8})$/.test(v)) ? Number(v) : (v == null ? '' : v); }
+
+async function eksporXlsx_(o){
+  await muatSkrip_(URL_EXCELJS);
+  const wb = new ExcelJS.Workbook(); wb.creator = 'AIS.NET'; wb.created = new Date();
+  const garis = { style:'thin', color:{ argb:'FFC9D6E2' } };
+  const batas = { top:garis, left:garis, bottom:garis, right:garis };
+  o.sections.forEach((sec, i) => {
+    const nama = String(sec.judul || ('Data ' + (i+1))).replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31);
+    const ws = wb.addWorksheet(nama, { views:[{ state:'frozen', ySplit:4 }], pageSetup:{ orientation: o.landscape ? 'landscape' : 'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0 } });
+    const n = sec.kolom.length;
+    ws.mergeCells(1, 1, 1, n);
+    const t = ws.getCell(1, 1);
+    t.value = o.judul + ' — ' + sec.judul;
+    t.font = { bold:true, size:15, color:{ argb:'FFFFFFFF' } };
+    t.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF0B3D66' } };
+    t.alignment = { vertical:'middle', indent:1 };
+    ws.getRow(1).height = 30;
+    ws.mergeCells(2, 1, 2, n);
+    const sub = ws.getCell(2, 1);
+    sub.value = o.subjudul || '';
+    sub.font = { italic:true, size:10, color:{ argb:'FF4A6178' } };
+    sub.alignment = { indent:1 };
+    ws.mergeCells(3, 1, 3, n);
+    ws.getCell(3, 1).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF7A1A' } };
+    ws.getRow(3).height = 4;
+    const h = ws.getRow(4); h.height = 24;
+    sec.kolom.forEach((k, c) => {
+      const cell = h.getCell(c + 1);
+      cell.value = k;
+      cell.font = { bold:true, color:{ argb:'FFFFFFFF' }, size:11 };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF135C99' } };
+      cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+      cell.border = batas;
+    });
+    sec.baris.forEach((r, ri) => {
+      const row = ws.getRow(5 + ri);
+      r.forEach((v, c) => {
+        const cell = row.getCell(c + 1);
+        cell.value = angka_(v);
+        cell.border = batas;
+        cell.alignment = { vertical:'top', wrapText:true, horizontal: typeof cell.value === 'number' ? 'center' : 'left' };
+        if(ri % 2 === 1) cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEEF4FA' } };
+      });
+      const label = String(r[0] == null ? '' : r[0]).toLowerCase();
+      if(label.startsWith('total')) row.eachCell(cell => { cell.font = { bold:true }; cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFFE9D6' } }; });
+    });
+    sec.kolom.forEach((k, c) => {
+      const maks = Math.max(String(k).length, ...sec.baris.map(r => String(r[c] == null ? '' : r[c]).length));
+      ws.getColumn(c + 1).width = Math.min(46, Math.max(10, maks + 3));
+    });
+    const ft = ws.getRow(6 + sec.baris.length).getCell(1);
+    ft.value = 'Dicetak ' + nowStr_() + ' oleh ' + USER.name;
+    ft.font = { italic:true, size:9, color:{ argb:'FF7A8CA0' } };
+  });
+  const buf = await wb.xlsx.writeBuffer();
+  unduhBlob_(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), o.namaFile + '.xlsx');
+}
+
+async function eksporPdf_(o){
+  await muatSkrip_(URL_JSPDF); await muatSkrip_(URL_AUTOTABLE);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: o.landscape ? 'landscape' : 'portrait', unit:'pt', format:'a4' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const logo = document.querySelector('img[src^="data:image"]');
+  const kepala = () => {
+    doc.setFillColor(11, 61, 102); doc.rect(0, 0, W, 60, 'F');
+    doc.setFillColor(255, 122, 26); doc.rect(0, 60, W, 3, 'F');
+    try{ if(logo) doc.addImage(logo.src, 'JPEG', 22, 10, 75, 40); }catch(e){}
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+    doc.text(pdfTeks_(o.judul), logo ? 108 : 24, 29);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text(pdfTeks_(o.subjudul || ''), logo ? 108 : 24, 46);
+  };
+  o.sections.forEach((sec, i) => {
+    if(i > 0) doc.addPage();
+    const idx = sec.pdfKolom || sec.kolom.map((_, k) => k);
+    kepala();
+    doc.setTextColor(11, 61, 102); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text(pdfTeks_(sec.judul), 24, 86);
+    doc.autoTable({
+      head: [idx.map(k => pdfTeks_(sec.kolom[k]))],
+      body: sec.baris.map(r => idx.map(k => pdfTeks_(r[k]))),
+      startY: 96,
+      margin: { top: 78, left: 24, right: 24, bottom: 40 },
+      theme: 'grid',
+      styles: { fontSize: idx.length > 7 ? 7.5 : 9, cellPadding: 4, lineColor: [205, 218, 230], lineWidth: 0.4, textColor: [30, 45, 60], valign: 'middle' },
+      headStyles: { fillColor: [19, 92, 153], textColor: 255, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: [238, 244, 250] },
+      didParseCell: (d) => {
+        if(d.section === 'body' && String(d.row.raw[0] || '').toLowerCase().startsWith('total')){
+          d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [255, 233, 214];
+        }
+      },
+      didDrawPage: () => { kepala(); }
+    });
+  });
+  const total = doc.getNumberOfPages();
+  for(let p = 1; p <= total; p++){
+    doc.setPage(p);
+    doc.setFontSize(8); doc.setTextColor(120, 135, 150); doc.setFont('helvetica', 'normal');
+    doc.text(pdfTeks_('Dicetak ' + nowStr_() + ' oleh ' + USER.name), 24, H - 18);
+    doc.text('Halaman ' + p + ' / ' + total, W - 24, H - 18, { align:'right' });
+  }
+  doc.save(o.namaFile + '.pdf');
+}
+
+async function eksporTabel_(o){
+  toast('⏳ Menyiapkan ' + (o.format === 'pdf' ? 'PDF' : 'Excel') + '...');
+  try{
+    if(o.format === 'pdf') await eksporPdf_(o); else await eksporXlsx_(o);
+    toast('✅ ' + (o.format === 'pdf' ? 'PDF' : 'Excel') + ' siap diunduh');
+  }catch(e){
+    toast('❌ ' + (e.message || 'Export gagal') + ' — coba CSV atau ulangi saat koneksi bagus');
+  }
+}
+function tabelDom_(sel){
+  const t = document.querySelector(sel + ' table'); if(!t) return null;
+  const kolom = [...t.querySelectorAll('thead th')].map(th => th.textContent.trim());
+  const baris = [...t.querySelectorAll('tbody tr')].map(tr => [...tr.children].map(td => td.textContent.trim()));
+  return (kolom.length && baris.length) ? { kolom, baris } : null;
+}
+function exportDashboard(fmt){
+  if(!USER || !['Admin','Office'].includes(USER.role)){ toast('Hanya Admin/Office yang bisa export dashboard'); return; }
+  const selP = document.getElementById('dashPeriode');
+  let periode = selP.options[selP.selectedIndex].text.replace(/…|\.\.\./g, '').trim();
+  const bln = document.getElementById('dashBulan').value;
+  if(selP.value === 'pilih' && bln) periode = 'Bulan ' + bln;
+  const sections = [{ judul:'Ringkasan Aktivitas', kolom:['Aktivitas','Jumlah'], baris:[
+    ['Pendaftaran masuk', document.getElementById('actDaftar').textContent],
+    ['Pemasangan selesai', document.getElementById('actPasang').textContent],
+    ['Maintenance', document.getElementById('actMaint').textContent],
+    ['Tiket masuk', document.getElementById('actTiket').textContent]] }];
+  [['Per Teknisi','#dashTeknisi'], ['Piket per Teknisi','#dashPiket'], ['Pemasangan Harian per ISP','#dashIspHarian'], ['Market ISP','#dashMarket']].forEach(([judul, sel]) => {
+    const t = tabelDom_(sel); if(t) sections.push({ judul, kolom:t.kolom, baris:t.baris });
+  });
+  eksporTabel_({ judul:'Dashboard AIS.NET', subjudul:'Periode: ' + periode, sections, namaFile:'dashboard-aisnet-' + hariIniKey_(), format:fmt });
+}
+function exportPiket(fmt){
+  const per = piketPerTanggal_(), hariIni = hariIniKey_();
+  const akhir = daftarMinggu_(0, 8).slice(-1)[0].key;
+  const jadwal = [];
+  for(let d = new Date(hariIni.slice(0, 8) + '01T00:00:00Z'); d <= new Date(akhir + 'T00:00:00Z'); d = new Date(d.getTime() + 86400000)){
+    if(d.getUTCDay() !== 0) continue;
+    const k = d.toISOString().slice(0, 10), n = per[k] || [], [y, m, dd] = k.split('-');
+    jadwal.push([`${dd}/${m}/${y}`, 'Minggu', n.length ? n.join(', ') : '-', n.length, k === hariIni ? 'Hari ini' : (k < hariIni ? 'Sudah lewat' : 'Akan datang')]);
+  }
+  const rekap = rekapPiketBulan_().map(r => [r.nama, r.hari, r.pasang, r.maint, r.pasang + r.maint]);
+  const sections = [{ judul:'Jadwal Piket Hari Minggu', kolom:['Tanggal','Hari','Teknisi Piket','Jumlah Orang','Status'], baris:jadwal }];
+  if(rekap.length) sections.push({ judul:'Rekap Piket Bulan Ini', kolom:['Teknisi','Hari Piket','Pemasangan (P)','Maintenance (P)','Total Pekerjaan (P)'], baris:rekap });
+  eksporTabel_({ judul:'Jadwal & Rekap Piket AIS.NET', subjudul:'Bulan ' + hariIni.slice(0, 7), sections, namaFile:'piket-aisnet-' + hariIni, format:fmt });
+}
+
+/* ================= Jadwal Piket ================= */
+let PK_TGL = '', PK_SEL = new Set();
+const HARI_ = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const hariIniKey_ = () => new Date(Date.now() + 7*3600*1000).toISOString().slice(0,10);   // tanggal WIB
+function piketPerTanggal_(){
+  const m = {};
+  (STATE.piket || []).forEach(x => { (m[x.tanggal] = m[x.tanggal] || []).push(x.nama); });
+  return m;
+}
+function teknisiTampil_(m){
+  const pik = String(m.teknisiPiket||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const names = String(m.teknisi||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(!names.length) return '-';
+  return names.map(n => pik.includes(n.toLowerCase()) ? n + ' (P)' : n).join(', ');
+}
+function daftarMinggu_(mundur, maju){
+  const base = new Date(Date.now() + 7*3600*1000);                       // jam WIB
+  const minggu0 = new Date(base.getTime() + ((7 - base.getUTCDay()) % 7) * 86400000);   // Minggu terdekat (hari ini kalau Minggu)
+  const out = [];
+  for(let i = -mundur; i < maju; i++){
+    const d = new Date(minggu0.getTime() + i*7*86400000);
+    const key = d.toISOString().slice(0,10);
+    const tgl = `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`;
+    out.push({ key, tgl, label: `Minggu, ${tgl}${key === hariIniKey_() ? ' (hari ini)' : ''}` });
+  }
+  return out;
+}
+function renderPiket(){
+  if(!USER) return;
+  const per = piketPerTanggal_();
+  const hariIni = hariIniKey_();
+
+  // Beranda: siapa piket hari ini
+  const ph = document.getElementById('piketHariIni');
+  if(per[hariIni] && per[hariIni].length){
+    ph.textContent = '🗓️ Piket hari ini: ' + per[hariIni].join(', ');
+    ph.classList.remove('hide');
+  } else ph.classList.add('hide');
+
+  // Form atur piket (Admin & Office): pilihan hanya hari Minggu
+  const canEdit = ['Admin','Office'].includes(USER.role);
+  document.getElementById('piketForm').classList.toggle('hide', !canEdit);
+  const minggu = daftarMinggu_(USER.role === 'Admin' ? 4 : 0, 8);
+  if(canEdit){
+    const tglEl = document.getElementById('pk_tgl');
+    if(!PK_TGL){ PK_TGL = (minggu.find(x => x.key >= hariIni) || minggu[0]).key; PK_SEL = new Set(per[PK_TGL] || []); }
+    tglEl.innerHTML = minggu.map(x => `<option value="${x.key}" ${x.key === PK_TGL ? 'selected' : ''}>${x.label}</option>`).join('');
+    renderPiketCheck_();
+  }
+
+  // Daftar Minggu ke depan
+  const ke_depan = daftarMinggu_(0, 8);
+  document.getElementById('piketList').innerHTML = ke_depan.map(x => {
+    const names = per[x.key] || [];
+    return `<div class="card ${names.length ? 'st-konfirmasi' : 'st-selesai'}" style="padding:10px 13px;">
+      <div class="row1"><div>
+        <div class="nm">${x.label}</div>
+        <div class="meta">${names.length ? '🗓️ ' + names.map(esc).join(', ') : 'Belum ada jadwal piket (notif ke semua teknisi)'}</div>
+      </div></div></div>`;
+  }).join('');
+
+  // Rekap bulan ini
+  const rekap = rekapPiketBulan_();
+  document.getElementById('piketRekap').innerHTML = rekap.length
+    ? `<div class="dwrap"><table class="dtable"><thead><tr><th>Teknisi</th><th>Hari piket</th><th>Pasang (P)</th><th>Maint (P)</th></tr></thead><tbody>${
+        rekap.map(r => `<tr><td style="text-align:left;">${esc(r.nama)}</td><td>${r.hari}</td><td>${r.pasang}</td><td>${r.maint}</td></tr>`).join('')
+      }</tbody></table></div><div class="mini-note" style="margin-top:8px;">Pasang (P) dan Maint (P) = laporan yang dikirim di hari piket dan memuat nama teknisi tersebut. Data test tidak dihitung.</div>`
+    : `<div class="empty"><span class="ic">🗓️</span>Belum ada data piket bulan ini</div>`;
+}
+function rekapPiketBulan_(){
+  const bulan = hariIniKey_().slice(0,7);
+  const hari = {}, ps = {}, mt = {};
+  (STATE.piket || []).filter(x => String(x.tanggal).startsWith(bulan)).forEach(x => { hari[x.nama] = (hari[x.nama]||0) + 1; });
+  hidup_(STATE.maintenance).forEach(m => {
+    if(!m.teknisiPiket) return;
+    if(tglKey_(m.selesaiServer || m.timestamp).slice(0,7) !== bulan) return;
+    String(m.teknisiPiket).split(',').map(x => x.trim()).filter(Boolean).forEach(n => {
+      if(m.pendaftaranId) ps[n] = (ps[n]||0) + 1; else mt[n] = (mt[n]||0) + 1;
+    });
+  });
+  return [...new Set([...Object.keys(hari), ...Object.keys(ps), ...Object.keys(mt)])].sort()
+    .map(n => ({ nama:n, hari:hari[n]||0, pasang:ps[n]||0, maint:mt[n]||0 }));
+}
+function renderPiketCheck_(){
+  const box = document.getElementById('pk_box');
+  const list = STATE.teknisiList || [];
+  if(!list.length){ box.innerHTML = '<div class="mini-note">Belum ada akun teknisi.</div>'; return; }
+  box.innerHTML = list.map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${PK_SEL.has(n) ? 'checked' : ''} onchange="togglePiketNama(this)"> ${esc(n)}</label>`).join('');
+}
+function togglePiketNama(cb){ cb.checked ? PK_SEL.add(cb.value) : PK_SEL.delete(cb.value); }
+function pilihTanggalPiket(){
+  PK_TGL = document.getElementById('pk_tgl').value;
+  PK_SEL = new Set(piketPerTanggal_()[PK_TGL] || []);
+  renderPiketCheck_();
+}
+async function simpanPiket(){
+  const tanggal = document.getElementById('pk_tgl').value;
+  if(!tanggal){ toast('Pilih tanggalnya dulu'); return; }
+  if(new Date(tanggal + 'T00:00:00Z').getUTCDay() !== 0){ toast('Piket hanya hari Minggu'); return; }
+  const data = await apiCall('setPiket', { tanggal, names: [...PK_SEL] });
+  if(data && data.ok){ toast('✅ Jadwal piket tersimpan'); loadAll(); }
 }
 
 /* ================= PWA, Notifikasi Push, Realtime, Badge ================= */
@@ -2774,6 +3560,11 @@ function bukaTabDariLink_(){
   const tab = new URLSearchParams(location.search).get('tab');
   if(tab){ gotoTab_(tab); history.replaceState(null, '', location.pathname); }
 }
+
+/* ---- Peta: ukur ulang saat layar berputar / ukuran berubah ---- */
+['resize','orientationchange'].forEach(ev => window.addEventListener(ev, () => {
+  if(mapObj) setTimeout(() => mapObj.invalidateSize(), 150);
+}));
 
 /* ---- Pasang aplikasi (tombol "Pasang") ---- */
 let deferredInstall_ = null;
@@ -2813,7 +3604,7 @@ async function initNotifUI_(){
   if(!vapidReady_()){ btn.classList.add('hide'); return; }
   if(isIOS_() && !isStandalone_()){ btn.classList.remove('hide'); return; }   // iPhone: harus dipasang dulu
   if(!pushSupported_()){ btn.classList.add('hide'); return; }
-  if(Notification.permission === 'granted'){ await daftarPush_(true); btn.classList.add('hide'); }
+  if(Notification.permission === 'granted'){ await daftarPush_(true); btn.classList.add('hide'); document.getElementById('btnTesNotif').classList.remove('hide'); }
   else if(Notification.permission === 'denied'){ btn.classList.remove('hide'); btn.textContent = '🔕 Notif diblokir'; }
   else { btn.classList.remove('hide'); }
 }
@@ -2826,7 +3617,7 @@ async function aktifkanNotif(){
   if(Notification.permission === 'denied'){ alert('Notifikasi diblokir. Buka pengaturan browser/HP → Notifikasi → izinkan untuk AIS.NET, lalu buka ulang aplikasi.'); return; }
   const perm = await Notification.requestPermission();
   if(perm === 'granted'){
-    if(await daftarPush_(false)){ toast('🔔 Notifikasi aktif'); document.getElementById('btnNotif').classList.add('hide'); }
+    if(await daftarPush_(false)){ toast('🔔 Notifikasi aktif'); document.getElementById('btnNotif').classList.add('hide'); document.getElementById('btnTesNotif').classList.remove('hide'); }
   } else { toast('Notifikasi tidak diizinkan'); }
 }
 async function daftarPush_(silent){
@@ -2859,6 +3650,7 @@ function initRealtime_(){
   rtChannel_ = sb.channel('aisnet-live')
     .on('postgres_changes', { event:'*', schema:'public', table:'pendaftaran' }, kick)
     .on('postgres_changes', { event:'*', schema:'public', table:'tiket' }, kick)
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'pesan' }, kick)
     .subscribe();
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && USER) loadAll(); });
 }

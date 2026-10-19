@@ -1,8 +1,8 @@
 /* AIS.NET service worker: PWA (bisa dipasang) + penerima notifikasi push */
-const CACHE = 'aisnet-v1';
-const SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
-const ICON = new URL('icons/icon-192.png', self.registration.scope).href;
-const BADGE = new URL('icons/badge-96.png', self.registration.scope).href;
+const CACHE = 'aisnet-v2';
+const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const ICON = new URL('icon-192.png', self.registration.scope).href;
+const BADGE = new URL('badge-96.png', self.registration.scope).href;
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
