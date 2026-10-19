@@ -2835,8 +2835,23 @@ function susulanPayload_(p){
   if(!document.getElementById(p + '_susulan').checked) return { susulan: false };
   return { susulan: true, tglKerjaManual: val(p + '_tglmanual'), jamMulaiManual: val(p + '_jammulai'), jamSelesaiManual: val(p + '_jamselesaim') };
 }
+function tglWib_(ts){ return new Date(ts).toLocaleDateString('en-CA', { timeZone:'Asia/Jakarta' }); }
+function jamWib_(ts){ return new Date(ts).toLocaleTimeString('en-GB', { timeZone:'Asia/Jakarta', hour:'2-digit', minute:'2-digit', hour12:false }); }
 function susulanValid_(pl){
   if(!pl.tglKerjaManual || !pl.jamMulaiManual || !pl.jamSelesaiManual){ toast('Susulan: isi tanggal, jam mulai, dan jam selesai'); return false; }
+  if(pl.jamSelesaiManual <= pl.jamMulaiManual){ toast('Jam selesai susulan harus setelah jam mulai'); return false; }
+  const hari = hariIniKey_();
+  if(pl.tglKerjaManual > hari){ toast('Tanggal susulan tidak boleh di masa depan'); return false; }
+  if(pl.tglKerjaManual === hari && pl.jamSelesaiManual > jamWib_(Date.now())){ toast('Jam selesai susulan tidak boleh melewati waktu sekarang (' + jamWib_(Date.now()) + ')'); return false; }
+  // pekerjaan tidak mungkin terjadi sebelum pendaftaran/tiketnya dicatat
+  let ts = null, jenis = '';
+  if(pl.linkId){ const x = STATE.pendaftaran.find(p => p.id === pl.linkId); if(x){ ts = x.dibuatServer || x.timestamp; jenis = 'pendaftaran'; } }
+  else if(pl.ticketId){ const t = STATE.tiket.find(x => x.id === pl.ticketId); if(t){ ts = t.timestamp; jenis = 'tiket'; } }
+  if(ts){
+    const tglAsal = tglWib_(ts), jamAsal = jamWib_(ts);
+    if(pl.tglKerjaManual < tglAsal){ toast('Tanggal susulan tidak boleh sebelum ' + jenis + ' dicatat (' + tglAsal.split('-').reverse().join('/') + ')'); return false; }
+    if(pl.tglKerjaManual === tglAsal && pl.jamMulaiManual < jamAsal){ toast('Jam mulai susulan tidak boleh sebelum ' + jenis + ' dicatat (' + jamAsal + ')'); return false; }
+  }
   return true;
 }
 function resetSusulan_(p){
