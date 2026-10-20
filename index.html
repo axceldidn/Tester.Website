@@ -372,10 +372,6 @@ button{font-family:'Inter',sans-serif;}
         <div class="stat good"><b id="cntSelesai">0</b><span>Selesai</span></div>
       </div>
       <div class="mini-note hide" id="piketHariIni" style="margin:0 0 10px;"></div>
-      <div class="exp-row hide" id="expDashboard">
-        <button type="button" class="btn btn-outline" onclick="exportDashboard('xlsx')">⬇️ Dashboard Excel</button>
-        <button type="button" class="btn btn-outline" onclick="exportDashboard('pdf')">⬇️ Dashboard PDF</button>
-      </div>
       <div class="sect-h"><h2>Jumlah Aktivitas</h2></div>
       <div class="field" style="margin-bottom:10px;"><select id="dashPeriode" onchange="renderBeranda()">
         <option value="hari">Hari ini</option>
@@ -399,6 +395,8 @@ button{font-family:'Inter',sans-serif;}
       <div id="dashTeknisi"></div>
       <div class="sect-h"><h2>🗓️ Piket per Teknisi</h2></div>
       <div id="dashPiket"></div>
+      <div class="sect-h"><h2>🛠️ Jenis Penanganan Maintenance</h2></div>
+      <div id="dashPenanganan"></div>
       <div class="sect-h"><h2>Pemasangan Harian per ISP</h2></div>
       <div id="dashIspHarian"></div>
       <div class="sect-h"><h2>Market ISP (berdasarkan pemasangan)</h2></div>
@@ -476,11 +474,6 @@ button{font-family:'Inter',sans-serif;}
         <button class="btn btn-primary btn-block" onclick="submitPendaftaran()">Kirim Pendaftaran</button>
       </div>
       <div class="sect-h"><h2>Daftar Terbaru</h2><span class="count" id="daftarCount">0</span></div>
-      <div class="exp-row hide" id="btnExportDaftar">
-        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('xlsx')">⬇️ Excel</button>
-        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('pdf')">⬇️ PDF</button>
-        <button type="button" class="btn btn-outline" onclick="exportPendaftaran('csv')">⬇️ CSV</button>
-      </div>
       <div id="daftarList"></div>
     </div>
 
@@ -497,6 +490,10 @@ button{font-family:'Inter',sans-serif;}
       <div id="prosesTiketMikrotikWrap">
         <div class="sect-h"><h2>🎫 Tiket Minta Mikrotik</h2><span class="count" id="tiketMikrotikCount">0</span></div>
         <div id="tiketMikrotikList"></div>
+      </div>
+      <div id="prosesServerWrap">
+        <div class="sect-h"><h2>🖥️ Mikrotik dari Teknisi: Perlu Didaftarkan di Server</h2><span class="count" id="serverCount">0</span></div>
+        <div id="serverList"></div>
       </div>
     </div>
 
@@ -545,11 +542,6 @@ button{font-family:'Inter',sans-serif;}
         <button class="btn btn-primary btn-block" onclick="submitTiket()">Kirim Laporan Gangguan</button>
       </div>
       <div class="sect-h"><h2>Tiket Berjalan</h2><span class="count" id="tiketCount">0</span></div>
-      <div class="exp-row hide" id="btnExportTiket">
-        <button type="button" class="btn btn-outline" onclick="exportTiket('xlsx')">⬇️ Excel</button>
-        <button type="button" class="btn btn-outline" onclick="exportTiket('pdf')">⬇️ PDF</button>
-        <button type="button" class="btn btn-outline" onclick="exportTiket('csv')">⬇️ CSV</button>
-      </div>
       <div class="sect-h"><h2>🆕 Belum Ditangani</h2><span class="count" id="tiketBaruCount">0</span></div>
       <div id="tiketList"></div>
       <div class="sect-h"><h2>🔧 Sedang Diproses</h2><span class="count" id="tiketProsesCount">0</span></div>
@@ -558,6 +550,8 @@ button{font-family:'Inter',sans-serif;}
 
     <!-- ---- TAB: REALISASI PEMASANGAN ---- -->
     <div id="tab-pasang" class="tabpane hide">
+      <div class="sect-h"><h2>📝 Pendaftaran yang Saya Ambil</h2><span class="count" id="pasangKerjaCount">0</span></div>
+      <div id="pasangKerjaList"></div>
       <div class="form-card">
         <h3>📶 Pemasangan Ais.net</h3>
         <div class="mini-note" style="margin-top:-6px;">Khusus buat nutup pendaftaran baru yang udah siap dipasang. Bukan buat laporan gangguan/perbaikan — itu di tab Maintenance.</div>
@@ -627,6 +621,8 @@ button{font-family:'Inter',sans-serif;}
 
     <!-- ---- TAB: MAINTENANCE ---- -->
     <div id="tab-maint" class="tabpane hide">
+      <div class="sect-h"><h2>🔧 Tiket yang Saya Tangani</h2><span class="count" id="maintKerjaCount">0</span></div>
+      <div id="maintKerjaList"></div>
       <div class="form-card">
         <h3>#Realisasi Maintenance</h3>
         <div class="mini-note" style="margin-top:-6px;">Khusus buat gangguan/perbaikan. Buat nutup pendaftaran baru, pakai tab Pemasangan.</div>
@@ -648,6 +644,7 @@ button{font-family:'Inter',sans-serif;}
           <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
         </div>
         <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
+        <div class="field"><label>Penanganan yang dilakukan (centang, bisa lebih dari satu)</label><input type="hidden" id="m_penanganan"><div id="m_penangananBox" class="teknisi-box"></div></div>
         <h3 style="margin-top:18px;">⏱️ Waktu Pengerjaan</h3>
         <div class="field"><label>Jam Laporan (otomatis dari tiket; isi manual hanya kalau tanpa tiket)</label><input id="m_jamlaporan" type="time"></div>
         <input type="hidden" id="m_jamselesai">
@@ -721,6 +718,13 @@ button{font-family:'Inter',sans-serif;}
           <button type="button" class="btn btn-outline" onclick="exportTiket('xlsx')">⬇️ Excel</button>
           <button type="button" class="btn btn-outline" onclick="exportTiket('pdf')">⬇️ PDF</button>
           <button type="button" class="btn btn-outline" onclick="exportTiket('csv')">⬇️ CSV</button>
+        </div>
+        <div id="expDashboardLaporan" class="hide">
+          <div class="mini-note" style="margin:6px 0;"><b>⬇️ Export Dashboard</b> (periode mengikuti filter di Beranda)</div>
+          <div class="exp-row">
+            <button type="button" class="btn btn-outline" onclick="exportDashboard('xlsx')">⬇️ Excel</button>
+            <button type="button" class="btn btn-outline" onclick="exportDashboard('pdf')">⬇️ PDF</button>
+          </div>
         </div>
       </div>
       <div class="sect-h"><h2>⏳ Status Pengerjaan</h2></div>
@@ -829,6 +833,14 @@ button{font-family:'Inter',sans-serif;}
           <button class="btn btn-primary" onclick="submitMasterItem('Kendala','mk_nilai')">Tambah</button>
         </div>
         <div id="masterKendalaList" style="margin-top:12px;"></div>
+      </div>
+      <div class="form-card">
+        <h3>🛠️ Kelola Daftar Penanganan (Maintenance)</h3>
+        <div style="display:flex;gap:8px;">
+          <input id="mh_nilai" placeholder="cth: Ganti modem" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+          <button class="btn btn-primary" onclick="submitMasterItem('Penanganan','mh_nilai')">Tambah</button>
+        </div>
+        <div id="masterPenangananList" style="margin-top:12px;"></div>
       </div>
       <div class="form-card">
         <h3>🔌 Kelola Daftar Modem</h3>
@@ -1018,8 +1030,8 @@ function applyRoleAccess(){
   document.getElementById('prosesKonfirmasiWrap').classList.toggle('hide', !showKonf);
   document.getElementById('prosesMikrotikWrap').classList.toggle('hide', !showMik);
   document.getElementById('prosesTiketMikrotikWrap').classList.toggle('hide', !showMik);
-  ['btnExportDaftar','btnExportTiket'].forEach(id => document.getElementById(id).classList.toggle('hide', !ROLE_EXPORT_.includes(USER.role)));
-  document.getElementById('expDashboard').classList.toggle('hide', !['Admin','Office'].includes(USER.role));
+  document.getElementById('prosesServerWrap').classList.toggle('hide', !showMik);
+  document.getElementById('expDashboardLaporan').classList.toggle('hide', !['Admin','Office'].includes(USER.role));
   document.getElementById('expLaporanAdmin').classList.toggle('hide', !ROLE_EXPORT_.includes(USER.role));
   // Pendaftaran: yang isi form baru adalah Marketing/CS, Sales, Office, Admin
   document.querySelector('#tab-daftar .form-card').classList.toggle('hide', !USER);
@@ -1277,6 +1289,19 @@ ACT.setPiket = async (p) => {
   return { ok:true };
 };
 
+ACT.mikrotikDariTeknisi = async (p) => {
+  const { error } = await sb.rpc('mikrotik_dari_teknisi', { p_tipe: p.tipe, p_id: p.id, p_user: p.mikrotikUser, p_pass: p.mikrotikPass });
+  if(error) return { ok:false, error: error.message };
+  await logAksi_('mengisi Mikrotik buatan sendiri', `${p.nama||''} (${p.tipe}) — perlu didaftarkan di server`);
+  return { ok:true };
+};
+ACT.tandaiMikrotikServer = async (p) => {
+  const { error } = await sb.rpc('tandai_mikrotik_server', { p_tipe: p.tipe, p_id: p.id });
+  if(error) return { ok:false, error: error.message };
+  await logAksi_('menandai Mikrotik sudah didaftarkan di server', `${p.nama||''} (${p.tipe})`);
+  return { ok:true };
+};
+
 ACT.mintaMikrotikTiket = async (p) => {
   const { error } = await sb.rpc('minta_mikrotik_tiket', { p_id: p.id, p_catatan: txt_(p.catatan) });
   if(error) return { ok:false, error: error.message };
@@ -1317,6 +1342,7 @@ ACT.addMaintenance = async (p) => {
     adaptor: int_(p.adaptor), patchcore: int_(p.patchcore),
     barrel: int_(p.barrel), jenisKabel: txt_(p.jenisKabel), kabel: int_(p.kabel),
     keterangan: txt_(p.keterangan), fotoUrl, isTest: !!p.isTest, diinputOleh: USER.name,
+    ...(p.penanganan ? { penanganan: txt_(p.penanganan) } : {}),
     jamLaporan: txt_(p.jamLaporan), jamSelesai: txt_(p.jamSelesai),
     durasi: durasi_(p.jamLaporan, p.jamSelesai),
     susulan: !!p.susulan, tglKerjaManual: p.susulan ? txt_(p.tglKerjaManual) : null,
@@ -1341,7 +1367,7 @@ ACT.resolveMapsLink = async (p) => {
 };
 
 ACT.addMasterItem = async (p) => {
-  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP','ISP'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
+  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP','ISP','Penanganan'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
   const nilai = txt_(p.nilai).trim();
   if(!nilai) return { ok:false, error:'Isi nilainya dulu' };
   const { error } = await sb.from('master_data').insert({ tipe: p.tipe, nilai });
@@ -1450,6 +1476,8 @@ function renderAll(){
   renderTiket();
   renderPiket();
   renderPesan();
+  renderKerja_();
+  renderPenangananChecks_();
   updateBadges();
   renderPasangLinkOptions();
   renderMaintLinkOptions();
@@ -1520,6 +1548,21 @@ function renderDashTeknisi_(maint){
       <tr class="tot"><td>Total pekerjaan</td><td>${jobPasang}</td><td>${jobMaint}</td><td>${jobPasang + jobMaint}</td></tr>
     </tbody></table></div>
     <div class="mini-note">Satu pekerjaan yang dikerjakan beberapa teknisi dihitung untuk tiap teknisi. Baris total menghitung jumlah pekerjaan.</div>`;
+}
+function renderDashPenanganan_(maint){
+  const box = document.getElementById('dashPenanganan'); if(!box) return;
+  const hit = {}; let total = 0;
+  maint.filter(m => m.penanganan).forEach(m => {
+    total++;
+    String(m.penanganan).split(' | ').filter(Boolean).forEach(n => { hit[n] = (hit[n] || 0) + 1; });
+  });
+  const rows = Object.entries(hit).sort((a, b) => b[1] - a[1]);
+  box.innerHTML = rows.length
+    ? `<div class="dwrap"><table class="dtable"><thead><tr><th>Penanganan</th><th>Jumlah</th></tr></thead><tbody>${
+        rows.map(([n, c]) => `<tr><td style="text-align:left;">${esc(n)}</td><td>${c}</td></tr>`).join('')
+      }<tr class="tot"><td>Total laporan maintenance berpenanganan</td><td>${total}</td></tr></tbody></table></div>
+      <div class="mini-note" style="margin-top:8px;">Satu laporan bisa memuat lebih dari satu penanganan. Periode mengikuti filter di atas.</div>`
+    : `<div class="empty"><span class="ic">🛠️</span>Belum ada data penanganan pada periode ini</div>`;
 }
 function renderDashPiket_(maint){
   const box = document.getElementById('dashPiket');
@@ -1838,6 +1881,7 @@ function hitungAktivitas_(){
   const maint = hidup_(STATE.maintenance).filter(dalam);
   renderDashTeknisi_(maint);
   renderDashPiket_(maint);
+  renderDashPenanganan_(maint);
   renderDashIspHarian_(maint);
   renderDashMarket_(maint, per, now);
   renderDashKelola_();
@@ -1870,6 +1914,9 @@ function pendaftaranCard(x){
     actions = `<button class="btn btn-good" onclick="confirmTeknisi('${x.id}')">✅ Done Confirm</button>`;
   } else if(x.status==='Dikonfirmasi'){
     actions = `<button class="btn btn-info" onclick="openMikrotikPrompt('${x.id}')">🌐 Isi Mikrotik</button>`;
+    if(USER && (USER.role === 'Admin' || (USER.role === 'Teknisi' && x.konfirmasiOleh === USER.name))){
+      actions += `<button class="btn btn-outline" onclick="mikrotikSendiri('pendaftaran','${x.id}')">🌐 Mikrotik Buat Sendiri</button>`;
+    }
   } else if(x.status==='MikrotikSiap'){
     actions = `<span class="mini-note" style="margin:0;">Lanjut isi Pemasangan Ais.net di tab Pemasangan</span>`;
   }
@@ -1881,6 +1928,7 @@ function pendaftaranCard(x){
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
         ${x.konfirmasiOleh ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Diambil oleh ${esc(x.konfirmasiOleh)}</div>` : ''}
         ${x.mikrotikUser ? `<div class="meta">🔐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}</div>` : ''}
+        ${statusServer_(x)}
         ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
         ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
@@ -1919,6 +1967,10 @@ function renderProses(){
   document.getElementById('tiketMikrotikCount').textContent = tm.length;
   document.getElementById('tiketMikrotikList').innerHTML = tm.length ? tm.map(tiketMikrotikCard).join('') :
     `<div class="empty"><span class="ic">👌</span>Tidak ada tiket yang minta Mikrotik</div>`;
+  const sv = daftarServer_();
+  document.getElementById('serverCount').textContent = sv.length;
+  document.getElementById('serverList').innerHTML = sv.length ? sv.map(serverCard_).join('') :
+    `<div class="empty"><span class="ic">👌</span>Tidak ada Mikrotik dari teknisi yang menunggu didaftarkan</div>`;
 }
 
 function renderPasangLinkOptions(){
@@ -1933,6 +1985,82 @@ function renderPasangLinkOptions(){
     + (milikSaya.length ? `<optgroup label="📌 Diambil saya">${milikSaya.map(opsi).join('')}</optgroup>` : '')
     + (lainnya.length ? `<optgroup label="Siap pasang (lainnya)">${lainnya.map(opsi).join('')}</optgroup>` : '');
   if(current && [...sel.options].some(o=>o.value===current)) sel.value = current;
+}
+
+function statusServer_(x){
+  if(x.mikrotikSumber !== 'Teknisi') return '';
+  return x.tglMikrotikServer
+    ? `<div class="meta" style="color:var(--good);font-weight:600;">🖥️ Dibuat teknisi • ✅ sudah didaftarkan di server${x.mikrotikServerOleh ? ' oleh ' + esc(x.mikrotikServerOleh) : ''}</div>`
+    : `<div class="meta" style="color:var(--warn);font-weight:600;">🖥️ Dibuat teknisi • ⏳ belum didaftarkan di server</div>`;
+}
+function daftarServer_(){
+  const out = [];
+  STATE.pendaftaran.forEach(x => { if(x.mikrotikSumber === 'Teknisi' && !x.tglMikrotikServer && !x.isTest) out.push({ tipe:'pendaftaran', id:x.id, nama:x.nama, oleh:x.mikrotikOleh, user:x.mikrotikUser, pass:x.mikrotikPass, tgl:x.tglMikrotik, x }); });
+  STATE.tiket.forEach(t => { if(t.mikrotikSumber === 'Teknisi' && !t.tglMikrotikServer && !t.isTest) out.push({ tipe:'tiket', id:t.id, nama:t.namaPelanggan, oleh:t.mikrotikOleh, user:t.mikrotikUser, pass:t.mikrotikPass, tgl:t.tglMikrotik, x:t }); });
+  return out;
+}
+function serverCard_(k){
+  return `<div class="card st-mikrotik">
+    <div class="row1"><div>
+      <div class="nm">${esc(k.nama)}</div>
+      <div class="meta">${k.tipe === 'tiket' ? '🎫 Tiket' : '📝 Pendaftaran'} • dibuat oleh ${esc(k.oleh || '-')}${k.tgl ? ' • ' + esc(k.tgl) : ''}</div>
+      <div class="meta">🌐 Mikrotik: <b>${esc(k.user || '-')}</b> / ${esc(k.pass || '-')}</div>
+    </div></div>
+    <div class="actions">
+      <button class="btn btn-good" onclick="tandaiServer('${k.tipe}','${k.id}')">✅ Sudah di Server</button>
+      ${bolehChat_(k.tipe, k.x) ? `<button class="btn btn-outline" onclick="bukaChat_('${k.tipe}','${k.id}')">💬 Chat</button>` : ''}
+    </div></div>`;
+}
+async function tandaiServer(tipe, id){
+  const x = tipe === 'tiket' ? STATE.tiket.find(t => t.id === id) : STATE.pendaftaran.find(p => p.id === id);
+  if(!x) return;
+  const data = await apiCall('tandaiMikrotikServer', { tipe, id, nama: tipe === 'tiket' ? x.namaPelanggan : x.nama });
+  if(data){ toast('✅ Ditandai sudah didaftarkan di server'); loadAll(); }
+}
+async function mikrotikSendiri(tipe, id){
+  const x = tipe === 'tiket' ? STATE.tiket.find(t => t.id === id) : STATE.pendaftaran.find(p => p.id === id);
+  if(!x) return;
+  const user = prompt('Nama Mikrotik yang Anda buat sendiri:'); if(user === null) return;
+  const pass = prompt('Password Mikrotik:'); if(pass === null) return;
+  if(!user.trim() || !pass.trim()){ toast('Nama dan password wajib diisi'); return; }
+  const data = await apiCall('mikrotikDariTeknisi', { tipe, id, mikrotikUser: user.trim(), mikrotikPass: pass.trim(), nama: tipe === 'tiket' ? x.namaPelanggan : x.nama });
+  if(data){ toast('✅ Tersimpan. Admin Server/Office akan mendaftarkannya di server.'); loadAll(); }
+}
+function kartuKerja_(tipe, x){
+  const nama = tipe === 'tiket' ? x.namaPelanggan : x.nama;
+  const detail = tipe === 'tiket' ? esc(x.kendala || '-') : `${esc(x.paket || '-')} • ${esc(x.alamatPasang || '')}`;
+  const sejak = x.diambilServer ? fmtTs_(x.diambilServer) : '';
+  const mik = tipe === 'tiket' ? mikrotikTiketInfo_(x)
+    : (x.mikrotikUser ? `<div class="meta" style="color:var(--good);font-weight:600;">🌐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass || '-')}</div>${statusServer_(x)}` : '<div class="meta">🌐 Mikrotik belum diisi</div>');
+  const butuhMik = tipe === 'tiket' ? (!x.mikrotikReq) : (x.status === 'Dikonfirmasi');
+  return `<div class="card ${tipe === 'tiket' ? 'st-konfirmasi' : 'st-mikrotik'}" style="padding:10px 13px;">
+    <div class="nm">${esc(nama)}</div>
+    <div class="meta">${detail}${sejak ? ' • diambil ' + sejak : ''}</div>
+    ${mik}
+    <div class="actions">
+      <button class="btn btn-good" onclick="pilihUntukLaporan_('${tipe}','${x.id}')">📝 Isi Laporan</button>
+      ${butuhMik ? `<button class="btn btn-outline" onclick="mikrotikSendiri('${tipe}','${x.id}')">🌐 Mikrotik Buat Sendiri</button>` : ''}
+      ${bolehChat_(tipe, x) ? `<button class="btn btn-outline" onclick="bukaChat_('${tipe}','${x.id}')">💬 Chat</button>` : ''}
+    </div></div>`;
+}
+function renderKerja_(){
+  if(!USER) return;
+  const me = USER.name, adm = USER.role === 'Admin';
+  const t = STATE.tiket.filter(x => x.status === 'Ditangani' && (adm || x.teknisiHandling === me));
+  const p = STATE.pendaftaran.filter(x => ['Dikonfirmasi','MikrotikSiap'].includes(x.status) && (adm || x.konfirmasiOleh === me));
+  document.getElementById('maintKerjaCount').textContent = t.length;
+  document.getElementById('pasangKerjaCount').textContent = p.length;
+  document.getElementById('maintKerjaList').innerHTML = t.length ? t.map(x => kartuKerja_('tiket', x)).join('') :
+    `<div class="empty"><span class="ic">🔧</span>Belum ada tiket yang Anda tangani</div>`;
+  document.getElementById('pasangKerjaList').innerHTML = p.length ? p.map(x => kartuKerja_('pendaftaran', x)).join('') :
+    `<div class="empty"><span class="ic">📝</span>Belum ada pendaftaran yang Anda ambil</div>`;
+}
+function pilihUntukLaporan_(tipe, id){
+  const sel = document.getElementById(tipe === 'tiket' ? 'm_ticket' : 'rp_link');
+  sel.value = id;
+  if(sel.value !== id){ toast('Kasus ini tidak ada di pilihan form. Muat ulang halaman.'); return; }
+  if(tipe === 'tiket') isiDariTiket(); else isiDariPendaftaran();
+  sel.scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
 function kotakMikrotik_(idSelect, idBox, html){
@@ -1950,6 +2078,7 @@ function isiDariPendaftaran(){
   const id = document.getElementById('rp_link').value;
   const x = STATE.pendaftaran.find(p=>p.id===id);
   document.getElementById('rp_client').value = x ? x.nama : '';
+  if(x) tandaiPenangan_('rp', x.konfirmasiOleh);
   kotakMikrotik_('rp_link', 'rp_mikrotikInfo', x && x.mikrotikUser
     ? `🌐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}` : (x ? '🌐 Mikrotik belum diisi Admin Server/Office' : ''));
 
@@ -1976,6 +2105,7 @@ function isiDariTiket(){
   const t = STATE.tiket.find(x=>x.id===id);
   if(!t) return;
   document.getElementById('m_client').value = t.namaPelanggan;
+  tandaiPenangan_('m', t.teknisiHandling);
   kotakMikrotik_('m_ticket', 'm_mikrotikInfo', t.mikrotikReq === 'Siap' && t.mikrotikUser
     ? `🌐 Mikrotik: <b>${esc(t.mikrotikUser)}</b> / ${esc(t.mikrotikPass||'-')}` : (t.mikrotikReq === 'Diminta' ? '🌐 Menunggu Admin Server/Office mengisi Mikrotik' : ''));
   jl.value = t.jamLaporan || '';
@@ -2011,6 +2141,7 @@ function tiketCard_(t){
         ${ruteUrl_(t.lat, t.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(t.lat, t.lng))}" target="_blank">🧭 Rute</a>` : ''}
         ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
         ${canMinta ? `<button class="btn btn-info" onclick="mintaMikrotikTiket('${t.id}')">🌐 Minta Mikrotik</button>` : ''}
+        ${canMinta ? `<button class="btn btn-outline" onclick="mikrotikSendiri('tiket','${t.id}')">🌐 Mikrotik Buat Sendiri</button>` : ''}
         ${bolehChat_('tiket', t) ? `<button class="btn btn-outline" onclick="bukaChat_('tiket','${t.id}')">💬 Chat</button>` : ''}
       </div>
       ${t.status==='Ditangani' ? `<div class="mini-note" style="margin:8px 0 0;">Ditangani ${esc(t.teknisiHandling||'-')} — lanjut isi di tab Maintenance</div>` : ''}
@@ -2072,7 +2203,7 @@ function mikrotikTiketInfo_(t){
   if(!t.mikrotikReq) return '';
   let h = `<div class="meta" style="color:var(--info);font-weight:600;">🌐 Minta Mikrotik oleh ${esc(t.mikrotikMinta||'-')}${t.mikrotikCatatan ? ': '+esc(t.mikrotikCatatan) : ''}</div>`;
   if(t.mikrotikReq==='Diminta') h += `<div class="meta" style="color:var(--warn);font-weight:600;">⏳ Menunggu Admin Server / Office</div>`;
-  if(t.mikrotikReq==='Siap') h += `<div class="meta" style="color:var(--good);font-weight:600;">✅ Mikrotik siap${t.mikrotikOleh ? ' (oleh '+esc(t.mikrotikOleh)+')' : ''}${t.mikrotikUser ? ` — <b>${esc(t.mikrotikUser)}</b> / ${esc(t.mikrotikPass||'-')}` : ''}</div>`;
+  if(t.mikrotikReq==='Siap') h += `<div class="meta" style="color:var(--good);font-weight:600;">✅ Mikrotik siap${t.mikrotikOleh ? ' (oleh '+esc(t.mikrotikOleh)+')' : ''}${t.mikrotikUser ? ` — <b>${esc(t.mikrotikUser)}</b> / ${esc(t.mikrotikPass||'-')}` : ''}</div>` + statusServer_(t);
   return h;
 }
 function tiketMikrotikCard(t){
@@ -2237,6 +2368,7 @@ function renderLaporan(){
       ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
       ${blokTanggal_(m)}
       ${blokSusulan_(m)}
+      ${m.penanganan ? `<div class="meta">🛠️ Penanganan: <b>${esc(String(m.penanganan).split(' | ').join(', '))}</b></div>` : ''}
       ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
       ${mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
       ${lampiranLinks_(m.fotoUrl)}
@@ -2389,6 +2521,30 @@ function renderTeknisiChecks(){
     }
     box.innerHTML = list.map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihTeknisi('${pre}', this)"> ${esc(n)}</label>`).join('');
   });
+}
+const PENANGANAN_AWAL_ = ['Ganti modem','Perbaikan FO','Sambung kabel FO (splicing)','Ganti adaptor modem','Ganti patchcore','Ganti konektor / barrel','Ganti splitter','Rapikan / ganti box ODP','Setting ulang modem','Ganti SSID / password WiFi','Pindah / reposisi modem','Tarik kabel baru','Bersihkan konektor','Lainnya (isi di keterangan)'];
+function daftarPenanganan_(){
+  const m = (STATE.master || []).filter(x => x.tipe === 'Penanganan').map(x => x.nilai);
+  return m.length ? m : PENANGANAN_AWAL_;
+}
+function renderPenangananChecks_(){
+  const box = document.getElementById('m_penangananBox'); if(!box) return;
+  const hid = document.getElementById('m_penanganan');
+  const dipilih = (hid.value || '').split(' | ').filter(Boolean);
+  box.innerHTML = daftarPenanganan_().map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihPenanganan_()"> ${esc(n)}</label>`).join('');
+}
+function pilihPenanganan_(){
+  const box = document.getElementById('m_penangananBox');
+  document.getElementById('m_penanganan').value = [...box.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value).join(' | ');
+}
+function tandaiPenangan_(pre, nama){
+  // teknisi yang mengambil kasus otomatis tercentang pertama di daftar "yang ikut mengerjakan"
+  if(!nama) return;
+  const hid = document.getElementById(pre + '_teknisi');
+  const ada = (hid.value || '').split(',').map(x => x.trim()).filter(Boolean);
+  if(!ada.includes(nama)) ada.unshift(nama);
+  hid.value = ada.slice(0, 4).join(', ');
+  renderTeknisiChecks();
 }
 function pilihTeknisi(pre, cb){
   const box = document.getElementById(pre + '_teknisiBox');
@@ -2703,6 +2859,8 @@ function renderMasterLists(){
   const kendala = STATE.master.filter(m=>m.tipe==='Kendala');
   pBox.innerHTML = paket.length ? paket.map(chip).join('') : `<div class="mini-note">Belum ada paket.</div>`;
   kBox.innerHTML = kendala.length ? kendala.map(chip).join('') : `<div class="mini-note">Belum ada kendala.</div>`;
+  const hBox = document.getElementById('masterPenangananList');
+  if(hBox){ const it = STATE.master.filter(m => m.tipe === 'Penanganan'); hBox.innerHTML = it.length ? it.map(chip).join('') : `<div class="mini-note">Belum ada penanganan. Daftar bawaan dipakai di form Maintenance.</div>`; }
   const boxIsp = document.getElementById('master_isp');
   if(boxIsp){
     const isps = STATE.master.filter(x => x.tipe === 'ISP');
@@ -2894,7 +3052,7 @@ async function submitMaintenance(){
   const payload = {
     ticketId: val('m_ticket'), isTest: document.getElementById('m_test').checked,
     client: val('m_client'), isp: val('m_isp'), stts: val('m_stts'),
-    teknisi: val('m_teknisi'), stok: val('m_stok'), redaman: val('m_redaman'),
+    teknisi: val('m_teknisi'), stok: val('m_stok'), redaman: val('m_redaman'), penanganan: val('m_penanganan'),
     ...matPayload_('m'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
     barrel: val('m_barrel'), jenisKabel: val('m_jeniskabel'), kabel: val('m_jeniskabel') ? val('m_kabel') : 0, keterangan: val('m_ket'),
     jamLaporan: val('m_jamlaporan'), jamSelesai: val('m_jamselesai'),
@@ -2902,10 +3060,12 @@ async function submitMaintenance(){
   };
   if(payload.susulan && !susulanValid_(payload)) return;
   if(!payload.client){ toast('Nama client wajib diisi'); return; }
+  if(!payload.penanganan){ toast('Pilih minimal satu penanganan yang dilakukan'); return; }
   toast('⏳ Mengirim laporan...');
   const data = await apiCall('addMaintenance', payload);
   if(data){
     toast('✅ Realisasi Maintenance terkirim');
+    document.getElementById('m_penanganan').value = ''; renderPenangananChecks_();
     ['m_client','m_teknisi','m_stok','m_redaman','m_ket','m_jamlaporan','m_jamselesai'].forEach(id=>document.getElementById(id).value='');
     renderTeknisiChecks();
     ['m_modem','m_splitter','m_closure','m_boxodp','m_adaptor','m_patchcore','m_barrel','m_kabel'].forEach(id=>document.getElementById(id).value='0');
@@ -3008,14 +3168,14 @@ function exportExcel(){
   setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
 }
 function barisLaporan_(list){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual'])]];
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','Penanganan','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual','Penanganan'])]];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
     const td = tanggalAsal_(m);
     rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, teknisiTampil_(m), m.stok, m.redaman,
       m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
       m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamSelesai, m.durasi, m.keterangan,
-      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai), m.isPiket ? 'P' : '', m.susulan ? 'SUSULAN' : '', m.tglKerjaManual||'', m.jamMulaiManual||'', m.jamSelesaiManual||'', ...(ROLE_EXPORT_.includes(USER.role) ? kolomKred_(m) : [])]);
+      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai), m.isPiket ? 'P' : '', m.susulan ? 'SUSULAN' : '', m.tglKerjaManual||'', m.jamMulaiManual||'', m.jamSelesaiManual||'', String(m.penanganan||'').split(' | ').join(', '), ...(ROLE_EXPORT_.includes(USER.role) ? kolomKred_(m) : [])]);
   });
   return rows;
 }
@@ -3032,7 +3192,7 @@ function exportLaporan(fmt){
   const olah = rows => rows.map((r, i) => r.map((c, k) => (i > 0 && k === 26) ? fmtTs_(c) : sel_(c)));
   const a = olah(barisLaporan_(semua.filter(m => m.pendaftaranId)));
   const b = olah(barisLaporan_(semua.filter(m => !m.pendaftaranId)));
-  const pdfK = [0,1,3,4,5,7,23,27,29,30,31];
+  const pdfK = [0,1,3,4,5,7,23,27,29,30,31,35];
   eksporTabel_({ judul:'Laporan AIS.NET', subjudul:`Pemasangan ${a.length - 1} • Maintenance ${b.length - 1}`, format:fmt, landscape:true,
     namaFile:`laporan-aisnet-${hariIniKey_()}`,
     sections:[ { judul:'Pemasangan', kolom:a[0], baris:a.slice(1), pdfKolom:pdfK }, { judul:'Maintenance', kolom:b[0], baris:b.slice(1), pdfKolom:pdfK } ] });
@@ -3062,12 +3222,12 @@ function kolomKred_(m){
 }
 function exportPendaftaran(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Password WiFi','Mikrotik User','Mikrotik Password']];
+  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Sumber Mikrotik','Tgl Didaftarkan di Server','Password WiFi','Mikrotik User','Mikrotik Password']];
   hidup_(STATE.pendaftaran).forEach(p => {
     rows.push([p.id, p.nama, {tel:p.noHp}, {tel:p.noHpCadangan}, p.alamatKtp, p.alamatPasang,
       {link: mapsUrl_(p.mapsLink, p.alamatPasang, p.lat, p.lng)}, p.paket, p.isp, p.ssid, p.tglPemasangan, p.noOdc, p.noOdp,
       p.statusTinggal, p.status, p.diinputOleh||'', fmtTs_(p.dibuatServer || p.timestamp), p.konfirmasiOleh||'',
-      p.diambilServer ? fmtTs_(p.diambilServer) : (p.tglKonfirmasi||''), p.mikrotikOleh||'', p.tglMikrotik||'',
+      p.diambilServer ? fmtTs_(p.diambilServer) : (p.tglKonfirmasi||''), p.mikrotikOleh||'', p.tglMikrotik||'', p.mikrotikSumber||'', p.tglMikrotikServer||'',
       { teks:p.password||'' }, { teks:p.mikrotikUser||'' }, { teks:p.mikrotikPass||'' }]);
   });
   logAksi_('export data pendaftaran', `${fmt || 'csv'}${fmt === 'pdf' ? '' : ' (memuat password)'} • ${rows.length - 1} baris`);
@@ -3080,12 +3240,12 @@ function exportPendaftaran(fmt){
 }
 function exportTiket(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Mikrotik User','Mikrotik Password']];
+  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Sumber Mikrotik','Tgl Didaftarkan di Server','Mikrotik User','Mikrotik Password']];
   hidup_(STATE.tiket).forEach(t => {
     rows.push([t.id, t.namaPelanggan, {tel:t.noHp}, {tel:t.noHpCadangan}, t.alamat,
       {link: mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng)}, t.kendala, t.status, fmtTs_(t.timestamp), fmtTs_(t.dibuatServer || t.timestamp),
       t.teknisiHandling||'', t.diambilServer ? fmtTs_(t.diambilServer) : (t.tglDitangani||''),
-      t.mikrotikReq||'', t.mikrotikCatatan||'', t.mikrotikOleh||'', t.tglMikrotik||'', t.diinputOleh||'',
+      t.mikrotikReq||'', t.mikrotikCatatan||'', t.mikrotikOleh||'', t.tglMikrotik||'', t.diinputOleh||'', t.mikrotikSumber||'', t.tglMikrotikServer||'',
       { teks:t.mikrotikUser||'' }, { teks:t.mikrotikPass||'' }]);
   });
   logAksi_('export data tiket', `${fmt || 'csv'}${fmt === 'pdf' ? '' : ' (memuat password Mikrotik)'} • ${rows.length - 1} baris`);
@@ -3229,7 +3389,7 @@ function bicara_(daftar, paksa){
   }catch(e){}
 }
 // Bandingkan data baru dengan sebelumnya: kalau ada kejadian baru, bunyikan suara sesuai peran
-const SEEN_ = { init:false, daftar:{}, tiket:{}, pesan:new Set() };
+const SEEN_ = { init:false, daftar:{}, tiket:{}, pesan:new Set(), msum:{} };
 function deteksiEvent_(){
   if(!USER) return;
   const first = !SEEN_.init, role = USER.role, nama = USER.name;
@@ -3244,6 +3404,8 @@ function deteksiEvent_(){
       if(lama === 'Baru' && p.status === 'Dikonfirmasi' && mik) ucap.push('Siap isi Mikrotik');
       if(lama && lama !== 'MikrotikSiap' && p.status === 'MikrotikSiap' && p.konfirmasiOleh === nama) ucap.push('Mikrotik sudah siap');
     }
+    if(!first && mik && SEEN_.msum['d' + p.id] !== 'Teknisi' && p.mikrotikSumber === 'Teknisi' && !p.tglMikrotikServer) ucap.push('Mikrotik dari teknisi');
+    SEEN_.msum['d' + p.id] = p.mikrotikSumber || '';
     SEEN_.daftar[p.id] = p.status;
   });
   STATE.tiket.forEach(t => {
@@ -3253,6 +3415,8 @@ function deteksiEvent_(){
       if(lama && lama.m !== 'Diminta' && t.mikrotikReq === 'Diminta' && mik) ucap.push('Minta Mikrotik');
       if(lama && lama.m !== 'Siap' && t.mikrotikReq === 'Siap' && t.teknisiHandling === nama) ucap.push('Mikrotik tiket sudah siap');
     }
+    if(!first && mik && SEEN_.msum['t' + t.id] !== 'Teknisi' && t.mikrotikSumber === 'Teknisi' && !t.tglMikrotikServer) ucap.push('Mikrotik dari teknisi');
+    SEEN_.msum['t' + t.id] = t.mikrotikSumber || '';
     SEEN_.tiket[t.id] = { m: t.mikrotikReq || '' };
   });
   (STATE.pesan || []).forEach(m => {
@@ -3435,7 +3599,7 @@ function exportDashboard(fmt){
     ['Pemasangan selesai', document.getElementById('actPasang').textContent],
     ['Maintenance', document.getElementById('actMaint').textContent],
     ['Tiket masuk', document.getElementById('actTiket').textContent]] }];
-  [['Per Teknisi','#dashTeknisi'], ['Piket per Teknisi','#dashPiket'], ['Pemasangan Harian per ISP','#dashIspHarian'], ['Market ISP','#dashMarket']].forEach(([judul, sel]) => {
+  [['Per Teknisi','#dashTeknisi'], ['Piket per Teknisi','#dashPiket'], ['Jenis Penanganan Maintenance','#dashPenanganan'], ['Pemasangan Harian per ISP','#dashIspHarian'], ['Market ISP','#dashMarket']].forEach(([judul, sel]) => {
     const t = tabelDom_(sel); if(t) sections.push({ judul, kolom:t.kolom, baris:t.baris });
   });
   eksporTabel_({ judul:'Dashboard AIS.NET', subjudul:'Periode: ' + periode, sections, namaFile:'dashboard-aisnet-' + hariIniKey_(), format:fmt });
@@ -3688,6 +3852,7 @@ function updateBadges(){
   if(isMik){
     p += STATE.pendaftaran.filter(x=>x.status==='Dikonfirmasi').length;
     p += STATE.tiket.filter(x=>x.mikrotikReq==='Diminta' && x.status!=='Selesai').length;
+    p += daftarServer_().length;
   }
   setBadge_('badgeProses', p);
   setBadge_('badgeTiket', t);
