@@ -74,9 +74,10 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 .dtable th:first-child,.dtable td:first-child{text-align:left;}
 .dtable th{background:var(--surface2);color:var(--text-dim);font-weight:600;}
 .dtable tr.tot td{font-weight:700;background:var(--surface2);}
-.teknisi-box{display:flex;flex-wrap:wrap;gap:8px;}
-.chk-teknisi{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);font-size:13px;cursor:pointer;}
-.chk-teknisi input{width:auto;margin:0;}
+.teknisi-box{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.chk-teknisi{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);font-size:13px;line-height:1.25;word-break:break-word;cursor:pointer;}
+.chk-teknisi input{width:18px;height:18px;padding:0;margin:0;flex:0 0 18px;}
+@media(min-width:560px){.teknisi-box{grid-template-columns:repeat(3,minmax(0,1fr));}}
 .logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:14px;border:2px solid rgba(255,255,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 4px rgba(255,122,26,.25);}
 .logo-small{height:38px;width:auto;border-radius:7px;flex:none;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.35);}
 /* layar sempit: nama teks disembunyikan karena logo sudah memuat tulisan AIS.NET */
@@ -565,10 +566,8 @@ button{font-family:'Inter',sans-serif;}
           <select id="rp_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
         </div>
         <div class="field"><label>ISP</label><select id="rp_isp" onchange="ispBaru(this)"></select></div>
-        <div class="grid2">
-          <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="rp_teknisi"><div id="rp_teknisiBox" class="teknisi-box"></div></div>
-          <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
-        </div>
+        <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="rp_teknisi"><div id="rp_teknisiBox" class="teknisi-box"></div></div>
+        <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
         <div class="field"><label>Redaman (dB)</label><input id="rp_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
         <h3 style="margin-top:18px;">Material Terpakai</h3>
         <div class="grid2">
@@ -639,10 +638,8 @@ button{font-family:'Inter',sans-serif;}
           <label>STTS</label>
           <select id="m_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
         </div>
-        <div class="grid2">
-          <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="m_teknisi"><div id="m_teknisiBox" class="teknisi-box"></div></div>
-          <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
-        </div>
+        <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="m_teknisi"><div id="m_teknisiBox" class="teknisi-box"></div></div>
+        <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
         <div class="field"><label>Redaman (dB)</label><input id="m_redaman" type="number" step="0.1" placeholder="cth: -18"></div>
         <div class="field"><label>Penanganan yang dilakukan (centang, bisa lebih dari satu)</label><input type="hidden" id="m_penanganan"><div id="m_penangananBox" class="teknisi-box"></div></div>
         <h3 style="margin-top:18px;">⏱️ Waktu Pengerjaan</h3>
@@ -2522,16 +2519,19 @@ function renderTeknisiChecks(){
     box.innerHTML = list.map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihTeknisi('${pre}', this)"> ${esc(n)}</label>`).join('');
   });
 }
-const PENANGANAN_AWAL_ = ['Ganti modem','Perbaikan FO','Sambung kabel FO (splicing)','Ganti adaptor modem','Ganti patchcore','Ganti konektor / barrel','Ganti splitter','Rapikan / ganti box ODP','Setting ulang modem','Ganti SSID / password WiFi','Pindah / reposisi modem','Tarik kabel baru','Bersihkan konektor','Lainnya (isi di keterangan)'];
 function daftarPenanganan_(){
-  const m = (STATE.master || []).filter(x => x.tipe === 'Penanganan').map(x => x.nilai);
-  return m.length ? m : PENANGANAN_AWAL_;
+  return (STATE.master || []).filter(x => x.tipe === 'Penanganan').map(x => x.nilai);
 }
 function renderPenangananChecks_(){
   const box = document.getElementById('m_penangananBox'); if(!box) return;
   const hid = document.getElementById('m_penanganan');
   const dipilih = (hid.value || '').split(' | ').filter(Boolean);
-  box.innerHTML = daftarPenanganan_().map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihPenanganan_()"> ${esc(n)}</label>`).join('');
+  const daftar = daftarPenanganan_();
+  if(!daftar.length){
+    box.innerHTML = '<div class="mini-note" style="grid-column:1/-1;margin:0;">Belum ada daftar penanganan. Minta Admin menambahkannya di Pengguna → Kelola Daftar Penanganan.</div>';
+    return;
+  }
+  box.innerHTML = daftar.map(n => `<label class="chk-teknisi"><input type="checkbox" value="${esc(n)}" ${dipilih.includes(n) ? 'checked' : ''} onchange="pilihPenanganan_()"> ${esc(n)}</label>`).join('');
 }
 function pilihPenanganan_(){
   const box = document.getElementById('m_penangananBox');
@@ -2860,7 +2860,7 @@ function renderMasterLists(){
   pBox.innerHTML = paket.length ? paket.map(chip).join('') : `<div class="mini-note">Belum ada paket.</div>`;
   kBox.innerHTML = kendala.length ? kendala.map(chip).join('') : `<div class="mini-note">Belum ada kendala.</div>`;
   const hBox = document.getElementById('masterPenangananList');
-  if(hBox){ const it = STATE.master.filter(m => m.tipe === 'Penanganan'); hBox.innerHTML = it.length ? it.map(chip).join('') : `<div class="mini-note">Belum ada penanganan. Daftar bawaan dipakai di form Maintenance.</div>`; }
+  if(hBox){ const it = STATE.master.filter(m => m.tipe === 'Penanganan'); hBox.innerHTML = it.length ? it.map(chip).join('') : `<div class="mini-note">Belum ada penanganan. Tambahkan di kolom di atas.</div>`; }
   const boxIsp = document.getElementById('master_isp');
   if(boxIsp){
     const isps = STATE.master.filter(x => x.tipe === 'ISP');
@@ -3060,7 +3060,7 @@ async function submitMaintenance(){
   };
   if(payload.susulan && !susulanValid_(payload)) return;
   if(!payload.client){ toast('Nama client wajib diisi'); return; }
-  if(!payload.penanganan){ toast('Pilih minimal satu penanganan yang dilakukan'); return; }
+  if(daftarPenanganan_().length && !payload.penanganan){ toast('Pilih minimal satu penanganan yang dilakukan'); return; }
   toast('⏳ Mengirim laporan...');
   const data = await apiCall('addMaintenance', payload);
   if(data){
