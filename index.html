@@ -472,6 +472,16 @@ button{font-family:'Inter',sans-serif;}
           <div id="fileListDaftar"></div>
         </div>
 <div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="f_test" style="width:auto;"><label for="f_test" style="margin:0;">Data test (tidak masuk dashboard & export)</label></div>
+        <div class="susulan-box">
+          <label class="chk"><input type="checkbox" id="f_susulan" onchange="toggleSusulan('f')"> 📝 Input susulan (pendaftaran sudah terjadi sebelumnya)</label>
+          <div id="f_susulanBox" class="hide" style="margin-top:10px;">
+            <div class="grid2">
+              <div class="field"><label>Tanggal daftar sebenarnya</label><input id="f_tglmanual" type="date"></div>
+              <div class="field"><label>Jam daftar sebenarnya</label><input id="f_jammanual" type="time"></div>
+            </div>
+            <div class="mini-note" style="margin:0;">Maksimal 7 hari ke belakang. Waktu sistem (kapan data ini dikirim) tetap dicatat server dan tidak bisa diubah. Laporan ditandai SUSULAN.</div>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block" onclick="submitPendaftaran()">Kirim Pendaftaran</button>
       </div>
       <div class="sect-h"><h2>Daftar Terbaru</h2><span class="count" id="daftarCount">0</span></div>
@@ -1234,7 +1244,8 @@ ACT.addPendaftaran = async (p) => {
     noHp: txt_(p.noHp), noHpCadangan: txt_(p.noHpCadangan), paket: txt_(p.paket), ssid: txt_(p.ssid), password: txt_(p.password),
     tglPemasangan: txt_(p.tglPemasangan), noOdc: txt_(p.noOdc), noOdp: txt_(p.noOdp),
     statusTinggal: txt_(p.statusTinggal), isp: txt_(p.isp), isTest: !!p.isTest, status: 'Baru', diinputOleh: USER.name,
-    lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran
+    lat: num_(p.lat), lng: num_(p.lng), mapsLink: txt_(p.mapsLink), lampiran,
+    susulan: !!p.susulan, tglDaftarManual: p.susulan ? txt_(p.tglDaftarManual) : null, jamDaftarManual: p.susulan ? txt_(p.jamDaftarManual) : null
   });
   if(error) return fail_(error);
   await logAksi_('mendaftarkan calon pelanggan baru', `${p.nama} — ${p.alamatPasang||''}`);
@@ -1929,7 +1940,10 @@ function pendaftaranCard(x){
         ${waBtn_(x.noHp, x.noHpCadangan)}
         ${x.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
         ${x.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(x.diinputOleh)}</div>` : ''}
-        <div class="meta">🕐 Daftar: ${fmtTs_(x.dibuatServer || x.timestamp)}${x.diambilServer ? ` • Diambil: ${fmtTs_(x.diambilServer)}` : ''}</div>
+        ${x.susulan
+          ? `<div class="meta" style="color:var(--warn);font-weight:700;">📝 SUSULAN — daftar sebenarnya: ${fmtTs_(x.timestamp)}</div>
+             <div class="meta">🕐 Dicatat sistem: ${fmtTs_(x.dibuatServer || x.timestamp)}${x.diambilServer ? ` • Diambil: ${fmtTs_(x.diambilServer)}` : ''}</div>`
+          : `<div class="meta">🕐 Daftar: ${fmtTs_(x.dibuatServer || x.timestamp)}${x.diambilServer ? ` • Diambil: ${fmtTs_(x.diambilServer)}` : ''}</div>`}
         ${lampiranLinks_(x.lampiran)}
       </div>
       ${statusBadge(x.status)}
@@ -2890,6 +2904,19 @@ async function removeMasterItem(tipe, nilai){
   if(data && data.ok){ toast('✅ Dihapus'); loadAll(); }
 }
 
+function daftarSusulanPayload_(){
+  if(!document.getElementById('f_susulan').checked) return { susulan: false };
+  return { susulan: true, tglDaftarManual: val('f_tglmanual'), jamDaftarManual: val('f_jammanual') };
+}
+function daftarSusulanValid_(pl){
+  if(!pl.tglDaftarManual || !pl.jamDaftarManual){ toast('Susulan: isi tanggal dan jam daftar'); return false; }
+  const waktu = new Date(pl.tglDaftarManual + 'T' + pl.jamDaftarManual + ':00');
+  const sekarang = new Date();
+  if(waktu > sekarang){ toast('Tanggal/jam susulan tidak boleh di masa depan'); return false; }
+  if(waktu < new Date(sekarang.getTime() - 7*86400000)){ toast('Susulan maksimal 7 hari ke belakang'); return false; }
+  return true;
+}
+
 async function submitPendaftaran(){
   const payload = {
     nama: val('f_nama'), alamatKtp: val('f_alamatktp'), alamatPasang: val('f_alamatpasang'), isp: val('f_isp'), isTest: document.getElementById('f_test').checked,
@@ -2900,9 +2927,14 @@ async function submitPendaftaran(){
     files: filesPayload('daftar')
   };
   if(!payload.nama || !payload.noHp){ toast('Nama dan No HP wajib diisi'); return; }
+  const sus = daftarSusulanPayload_();
+  Object.assign(payload, sus);
+  if(sus.susulan && !daftarSusulanValid_(sus)) return;
   const data = await apiCall('addPendaftaran', payload);
   if(data){
     toast('✅ Pendaftaran terkirim');
+    document.getElementById('f_susulan').checked = false; toggleSusulan('f');
+    document.getElementById('f_tglmanual').value = ''; document.getElementById('f_jammanual').value = '';
     ['f_nama','f_alamatktp','f_alamatpasang','f_hp','f_hp2','f_ssid','f_pass','f_tgl','f_odc','f_odp','f_lat','f_lng','f_mapslink','f_paket_manual'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f_isp').value=''; document.getElementById('f_test').checked=false;
     document.getElementById('f_paket').value = document.getElementById('f_paket').options[0].value;
