@@ -407,6 +407,7 @@ button{font-family:'Inter',sans-serif;}
       <div class="sect-h"><h2>Komplain per Client</h2></div>
       <div id="dashComplaint"></div>
       <div id="dashKelola"></div>
+      <div id="dashKelolaDaftar"></div>
       <div class="sect-h"><h2>Perlu Ditindak</h2></div>
       <div id="berandaList"></div>
     </div>
@@ -1182,6 +1183,48 @@ ACT.hapusMaintenance = async (p) => {
   return { ok:true };
 };
 
+ACT.ralatRealisasi = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa meralat data' };
+  const isi = { client: txt_(p.client), isp: txt_(p.isp), teknisi: txt_(p.teknisi), redaman: txt_(p.redaman), keterangan: txt_(p.keterangan) };
+  const r1 = await sb.from('maintenance').update(isi).eq('id', p.id).select('id');
+  const r2 = await sb.from('pemasangan').update(isi).eq('id', p.id).select('id');
+  if(r1.error || r2.error) return fail_(r1.error || r2.error);
+  if(!((r1.data || []).length + (r2.data || []).length)) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  await logAksi_('meralat realisasi', p.id);
+  return { ok:true };
+};
+
+ACT.ralatDaftar = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa meralat data' };
+  const isi = p.tipe === 'tiket'
+    ? { namaPelanggan: txt_(p.nama), alamat: txt_(p.alamat), noHp: txt_(p.noHp) }
+    : { nama: txt_(p.nama), alamatPasang: txt_(p.alamat), noHp: txt_(p.noHp) };
+  const tabel = p.tipe === 'tiket' ? 'tiket' : 'pendaftaran';
+  const r = await sb.from(tabel).update(isi).eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  await logAksi_('meralat ' + p.tipe, p.id);
+  return { ok:true };
+};
+
+ACT.hapusDaftar = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
+  const id = p.id;
+  let r;
+  if(p.tipe === 'tiket'){
+    await sb.from('maintenance').delete().eq('tiketId', id);
+    r = await sb.from('tiket').delete().eq('id', id).select('id');
+  } else {
+    await sb.from('maintenance').delete().eq('pendaftaranId', id);
+    await sb.from('pemasangan').delete().eq('pendaftaranId', id);
+    r = await sb.from('pendaftaran').delete().eq('id', id).select('id');
+  }
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak terhapus. Izin hapus Admin di database belum ada: jalankan sql/hapus-ubah-admin.sql' };
+  await logAksi_('menghapus ' + p.tipe, id);
+  return { ok:true };
+};
+
 ACT.getAllData = async () => {
   const q = (tabel, order) => sb.from(tabel).select('*').order(order.col, { ascending: order.asc }).limit(500);
   const [p, m, pas, t, l, mas] = await Promise.all([
@@ -1505,6 +1548,7 @@ function renderAll(){
   renderIspOptions();
   renderTeknisiChecks();
   isiTanggalHariIni_();
+  terapkanRoleSusulan_();
 }
 
 function renderBeranda(){
@@ -1699,10 +1743,23 @@ function renderDashKelola_(){
           <td>${m.pendaftaranId ? 'Pemasangan' : 'Maintenance'}</td>
           <td style="text-align:left;">${esc(m.client || '-')}</td>
           <td><input type="date" value="${tgl}" onchange="ubahTanggalMaint('${m.id}', this.value)" style="background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:6px;font-size:12px;"></td>
-          <td><button onclick="hapusMaint('${m.id}')" style="background:none;border:none;color:#E5484D;font-size:16px;cursor:pointer;">🗑️</button></td>
+          <td><button onclick="ralatRealisasi('${m.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;">✏️</button><button onclick="hapusMaint('${m.id}')" style="background:none;border:none;color:#E5484D;font-size:16px;cursor:pointer;">🗑️</button></td>
         </tr>`;
       }).join('')}</tbody></table></div>`;
 }
+// Ralat realisasi pemasangan/maintenance oleh Admin (client, ISP, teknisi, redaman, keterangan)
+async function ralatRealisasi(id){
+  const m = STATE.maintenance.find(x => x.id === id);
+  if(!m) return;
+  const client = prompt('Nama client:', m.client || ''); if(client === null) return;
+  const isp = prompt('ISP:', m.isp || ''); if(isp === null) return;
+  const teknisi = prompt('Teknisi (pisahkan dengan koma):', m.teknisi || ''); if(teknisi === null) return;
+  const redaman = prompt('Redaman (dB):', m.redaman || ''); if(redaman === null) return;
+  const keterangan = prompt('Keterangan:', m.keterangan || ''); if(keterangan === null) return;
+  const data = await apiCall('ralatRealisasi', { id, client, isp, teknisi, redaman, keterangan });
+  if(data){ toast('✅ Realisasi diralat'); loadAll(); }
+}
+
 async function ubahTanggalMaint(id, nilai){
   if(!nilai) return;
   const m = STATE.maintenance.find(x => x.id === id);
@@ -1714,6 +1771,65 @@ async function ubahTanggalMaint(id, nilai){
   if(data){ toast('✅ Tanggal diubah'); loadAll(); }
 }
 // Hapus semua pemasangan & maintenance pada satu bulan atau satu hari (Admin)
+// Input susulan hanya untuk Admin (role lain tidak melihat kotaknya)
+function terapkanRoleSusulan_(){
+  const admin = !!(USER && USER.role === 'Admin');
+  ['f','rp','m'].forEach(p => {
+    const cb = document.getElementById(p + '_susulan'); if(!cb) return;
+    const box = document.getElementById(p + '_susulanBox');
+    if(cb.parentElement) cb.parentElement.classList.toggle('hide', !admin);
+    if(!admin){ cb.checked = false; if(box) box.classList.add('hide'); }
+  });
+}
+// Ralat data pendaftaran/tiket oleh Admin (alamat/nama/nomor yang salah ketik)
+async function ralatDaftar(tipe, id){
+  const x = tipe === 'tiket' ? STATE.tiket.find(t => t.id === id) : STATE.pendaftaran.find(p => p.id === id);
+  if(!x) return;
+  const nama = prompt('Nama client:', tipe === 'tiket' ? x.namaPelanggan : x.nama); if(nama === null) return;
+  const alamat = prompt('Alamat:', tipe === 'tiket' ? (x.alamat || '') : (x.alamatPasang || '')); if(alamat === null) return;
+  const noHp = prompt('No HP:', x.noHp || ''); if(noHp === null) return;
+  const data = await apiCall('ralatDaftar', { tipe, id, nama, alamat, noHp });
+  if(data){ toast('✅ Data diralat'); loadAll(); }
+}
+
+// Pendaftaran & tiket (admin): hapus juga realisasinya, supaya tidak tersisa di Status/Komplain/Laporan
+function renderDashKelolaDaftar_(){
+  const box = document.getElementById('dashKelolaDaftar');
+  if(!box) return;
+  if(!USER || USER.role !== 'Admin'){ box.innerHTML = ''; return; }
+  if(!document.getElementById('cariDaftar')){
+    box.innerHTML = `<div class="sect-h"><h2>Pendaftaran & Tiket (Admin)</h2></div>
+      <div class="mini-note" style="margin-bottom:8px;">Hapus di sini juga menghapus realisasi dan pesannya, jadi tidak tersisa di Status Pengerjaan, Komplain per Client, atau Laporan.</div>
+      <input id="cariDaftar" placeholder="Cari nama client..." oninput="renderListDaftar_()" style="width:100%;margin-bottom:8px;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;box-sizing:border-box;">
+      <div id="listDaftar"></div>`;
+  }
+  renderListDaftar_();
+}
+function renderListDaftar_(){
+  const box = document.getElementById('listDaftar');
+  if(!box) return;
+  const cari = (document.getElementById('cariDaftar')?.value || '').trim().toLowerCase();
+  const urut = arr => arr.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  let tik = urut(hidup_(STATE.tiket)), pen = urut(hidup_(STATE.pendaftaran));
+  if(cari){
+    tik = tik.filter(t => String(t.namaPelanggan || '').toLowerCase().includes(cari)).slice(0, 50);
+    pen = pen.filter(x => String(x.nama || '').toLowerCase().includes(cari)).slice(0, 50);
+  } else { tik = tik.slice(0, 20); pen = pen.slice(0, 20); }
+  const baris = (tipe, id, judul, sub, ts) => `<tr>
+      <td>${tipe}</td><td style="text-align:left;">${esc(judul || '-')}<div class="meta" style="margin:0;">${esc(sub || '')}</div></td>
+      <td>${fmtTs_(ts)}</td>
+      <td><button onclick="ralatDaftar('${tipe === 'Tiket' ? 'tiket' : 'pendaftaran'}','${id}')" style="background:none;border:none;font-size:16px;cursor:pointer;">✏️</button><button onclick="hapusDaftar('${tipe === 'Tiket' ? 'tiket' : 'pendaftaran'}','${id}')" style="background:none;border:none;color:#E5484D;font-size:16px;cursor:pointer;">🗑️</button></td></tr>`;
+  const isi = [
+    ...tik.map(t => baris('Tiket', t.id, t.namaPelanggan, t.kendala, t.timestamp)),
+    ...pen.map(x => baris('Pendaftaran', x.id, x.nama, x.alamatPasang, x.timestamp))
+  ].join('');
+  box.innerHTML = `<div class="dwrap"><table class="dtable"><thead><tr><th>Jenis</th><th>Nama</th><th>Tanggal</th><th></th></tr></thead><tbody>${isi || '<tr><td colspan="4">Tidak ada data</td></tr>'}</tbody></table></div>`;
+}
+async function hapusDaftar(tipe, id){
+  if(!confirm('Hapus ' + (tipe === 'tiket' ? 'tiket' : 'pendaftaran') + ' ini beserta realisasinya? Tidak bisa dikembalikan.')) return;
+  const data = await apiCall('hapusDaftar', { tipe, id });
+  if(data){ toast('✅ Data dihapus'); loadAll(); }
+}
 async function hapusPeriode(jenis){
   if(!USER || USER.role !== 'Admin'){ toast('Hanya Admin'); return; }
   const nilai = val(jenis === 'bulan' ? 'hapusBulan' : 'hapusHari');
@@ -1899,6 +2015,7 @@ function hitungAktivitas_(){
   renderDashIspHarian_(maint);
   renderDashMarket_(maint, per, now);
   renderDashKelola_();
+  renderDashKelolaDaftar_();
   gambarGrafik_(maint);
   renderDashKendala_(now);
   renderDashComplaint_(hidup_(STATE.tiket).filter(dalam));
@@ -3329,6 +3446,14 @@ function renderPesan(){
   const kasus = [];
   STATE.pendaftaran.forEach(x => { if(bolehChat_('pendaftaran', x)) kasus.push({ tipe:'pendaftaran', id:x.id, judul:x.nama, status:x.status, aktif:['Dikonfirmasi','MikrotikSiap'].includes(x.status) }); });
   STATE.tiket.forEach(t => { if(bolehChat_('tiket', t)) kasus.push({ tipe:'tiket', id:t.id, judul:t.namaPelanggan, status:t.status, aktif:(t.status === 'Ditangani' || t.mikrotikReq === 'Diminta') && t.status !== 'Selesai' }); });
+  if(USER.role === 'Admin'){
+    const ada = new Set(kasus.map(k => k.tipe + ':' + k.id));
+    Object.keys(per).forEach(k => {
+      if(ada.has(k)) return;
+      const i = k.indexOf(':');
+      kasus.push({ tipe:k.slice(0, i), id:k.slice(i + 1), judul:'(kasus sudah dihapus)', status:'dihapus', aktif:false });
+    });
+  }
   const tampil = kasus.filter(k => per[k.tipe + ':' + k.id] || k.aktif);
   tampil.forEach(k => {
     const l = per[k.tipe + ':' + k.id] || [];
@@ -3371,7 +3496,8 @@ function lampiranChat_(raw){
 }
 function renderChat_(turunkan){
   if(!CHAT) return;
-  const x = CHAT.tipe === 'pendaftaran' ? STATE.pendaftaran.find(p => p.id === CHAT.id) : STATE.tiket.find(t => t.id === CHAT.id);
+  let x = CHAT.tipe === 'pendaftaran' ? STATE.pendaftaran.find(p => p.id === CHAT.id) : STATE.tiket.find(t => t.id === CHAT.id);
+  if(!x && USER && USER.role === 'Admin') x = { status:'dihapus', nama:'(kasus sudah dihapus)', namaPelanggan:'(kasus sudah dihapus)', konfirmasiOleh:'', teknisiHandling:'' };
   if(!x){ tutupChat(); return; }
   const judul = CHAT.tipe === 'pendaftaran' ? x.nama : x.namaPelanggan;
   const pemegang = CHAT.tipe === 'pendaftaran' ? x.konfirmasiOleh : x.teknisiHandling;
