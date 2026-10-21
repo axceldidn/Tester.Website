@@ -754,7 +754,9 @@ button{font-family:'Inter',sans-serif;}
         <button type="button" class="btn btn-outline" onclick="tutupChat()" style="margin-bottom:10px;">← Kembali</button>
         <div class="card" id="chatHead" style="margin-bottom:8px;"></div>
         <div class="chat-msgs" id="chatMsgs"></div>
+        <div id="chatPreview" class="meta" style="padding:0 8px;"></div>
         <div class="chat-send">
+          <label class="btn btn-outline" style="padding:8px 10px;cursor:pointer;">📎<input type="file" id="chatFile" accept="image/*,application/pdf" multiple hidden onchange="pilihLampiranChat()"></label>
           <input id="chatInput" placeholder="Tulis pesan..." maxlength="1000" autocomplete="off" onkeydown="if(event.key==='Enter')kirimPesan()">
           <button type="button" class="btn btn-primary" onclick="kirimPesan()">Kirim</button>
         </div>
@@ -2473,7 +2475,7 @@ function renderPeta(){
       html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0B3D66;${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484D55;':''}"></div>`
     });
     const marker = L.marker([parseFloat(x.lat), parseFloat(x.lng)], { icon }).addTo(mapObj);
-    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
+    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.riwayat ? `<br><span style="color:#cfe0f5;">+${x.riwayat} riwayat di lokasi ini</span>` : ''}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
   mapObj.invalidateSize();
@@ -2795,17 +2797,19 @@ async function ambilDariLinkMaps(){
 }
 
 function titikPeta_(){
-  const pend = hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({
-    jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
-    sub:x.alamatPasang||'', info:x.paket||'', status:x.status,
-    maps: coordLink_(x.lat, x.lng)
-  }));
-  const tik = hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({
-    jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
-    sub:x.alamat||'', info:x.kendala||'', status:x.status,
-    maps: coordLink_(x.lat, x.lng)
-  }));
-  return [...pend, ...tik];
+  const semua = [
+    ...hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
+      sub:x.alamatPasang||'', info:x.paket||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) })),
+    ...hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
+      sub:x.alamat||'', info:x.kendala||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) }))
+  ];
+  // Lokasi yang sama (±1 m) jadi satu titik: yang terbaru yang tampil, sisanya dihitung sebagai riwayat
+  const grup = {};
+  semua.forEach(x => { const k = x.lat.toFixed(5) + ',' + x.lng.toFixed(5); (grup[k] = grup[k] || []).push(x); });
+  return Object.values(grup).map(arr => {
+    arr.sort((p, q) => q.waktu.localeCompare(p.waktu));
+    return { ...arr[0], riwayat: arr.length - 1 };
+  });
 }
 function exportKML(){
   const pts = titikPeta_();
@@ -3254,11 +3258,11 @@ function kolomKred_(m){
 }
 function exportPendaftaran(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Sumber Mikrotik','Tgl Didaftarkan di Server','Password WiFi','Mikrotik User','Mikrotik Password']];
+  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Tgl Daftar Sebenarnya','Susulan','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Sumber Mikrotik','Tgl Didaftarkan di Server','Password WiFi','Mikrotik User','Mikrotik Password']];
   hidup_(STATE.pendaftaran).forEach(p => {
     rows.push([p.id, p.nama, {tel:p.noHp}, {tel:p.noHpCadangan}, p.alamatKtp, p.alamatPasang,
       {link: mapsUrl_(p.mapsLink, p.alamatPasang, p.lat, p.lng)}, p.paket, p.isp, p.ssid, p.tglPemasangan, p.noOdc, p.noOdp,
-      p.statusTinggal, p.status, p.diinputOleh||'', fmtTs_(p.dibuatServer || p.timestamp), p.konfirmasiOleh||'',
+      p.statusTinggal, p.status, p.diinputOleh||'', fmtTs_(p.dibuatServer || p.timestamp), fmtTs_(p.timestamp), p.susulan ? 'Ya' : 'Tidak', p.konfirmasiOleh||'',
       p.diambilServer ? fmtTs_(p.diambilServer) : (p.tglKonfirmasi||''), p.mikrotikOleh||'', p.tglMikrotik||'', p.mikrotikSumber||'', p.tglMikrotikServer||'',
       { teks:p.password||'' }, { teks:p.mikrotikUser||'' }, { teks:p.mikrotikPass||'' }]);
   });
@@ -3346,6 +3350,12 @@ function tutupChat(){
   document.getElementById('pesanListView').classList.remove('hide');
   renderPesan();
 }
+function lampiranChat_(raw){
+  const urls = String(raw || '').split(/\s+/).filter(u => /^https?:\/\//.test(u));
+  return urls.map(u => /\.(png|jpe?g|gif|webp)(\?|$)/i.test(u)
+    ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" style="max-width:200px;border-radius:8px;display:block;margin-top:6px;"></a>`
+    : `<a href="${esc(u)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;">📎 Buka lampiran</a>`).join('');
+}
 function renderChat_(turunkan){
   if(!CHAT) return;
   const x = CHAT.tipe === 'pendaftaran' ? STATE.pendaftaran.find(p => p.id === CHAT.id) : STATE.tiket.find(t => t.id === CHAT.id);
@@ -3359,7 +3369,7 @@ function renderChat_(turunkan){
   const msgs = (STATE.pesan || []).filter(m => m.refTipe === CHAT.tipe && m.refId === CHAT.id).reverse();
   box.innerHTML = msgs.length ? msgs.map(m => {
     const saya = m.pengirim === USER.name;
-    return `<div class="bub ${saya ? 'me' : 'other'}">${saya ? '' : `<span class="who">${esc(m.pengirim)}</span>`}${esc(m.isi)}<small>${fmtTs_(m.dibuat)}</small></div>`;
+    return `<div class="bub ${saya ? 'me' : 'other'}">${saya ? '' : `<span class="who">${esc(m.pengirim)}</span>`}${esc(m.isi)}${lampiranChat_(m.lampiran)}<small>${fmtTs_(m.dibuat)}</small></div>`;
   }).join('') : `<div class="empty" style="margin:auto;"><span class="ic">💬</span>Belum ada pesan</div>`;
   if(turunkan || dekatBawah) box.scrollTop = box.scrollHeight;
   const tabAktif = !document.getElementById('tab-pesan').classList.contains('hide');
@@ -3367,13 +3377,32 @@ function renderChat_(turunkan){
     const seen = bacaSeen_(); seen[CHAT.tipe + ':' + CHAT.id] = new Date().toISOString(); tulisSeen_(seen);
   }
 }
+let chatFiles_ = [];
+function pilihLampiranChat(){
+  chatFiles_ = [...document.getElementById('chatFile').files].slice(0, 4);
+  document.getElementById('chatPreview').textContent = chatFiles_.length ? '📎 ' + chatFiles_.map(f => f.name).join(', ') : '';
+}
 async function kirimPesan(){
   if(!CHAT) return;
   const inp = document.getElementById('chatInput');
   const isi = inp.value.trim();
-  if(!isi) return;
+  if(!isi && !chatFiles_.length) return;
+  let lampiran = null;
+  if(chatFiles_.length){
+    const urls = [];
+    for(const f of chatFiles_){
+      if(f.size > 10 * 1024 * 1024){ toast('❌ ' + f.name + ' lebih dari 10 MB'); return; }
+      const aman = f.name.replace(/[^\w.\-]+/g, '_');
+      const path = `pesan/${CHAT.tipe}-${CHAT.id}/${Date.now()}_${aman}`;
+      const up = await sb.storage.from('lampiran').upload(path, f, { contentType: f.type || 'application/octet-stream' });
+      if(up.error){ toast('❌ Gagal unggah: ' + up.error.message); return; }
+      urls.push(sb.storage.from('lampiran').getPublicUrl(path).data.publicUrl);
+    }
+    lampiran = urls.join('\n');
+  }
   inp.value = '';
-  const { error } = await sb.from('pesan').insert({ refTipe: CHAT.tipe, refId: CHAT.id, isi });
+  chatFiles_ = []; document.getElementById('chatFile').value = ''; document.getElementById('chatPreview').textContent = '';
+  const { error } = await sb.from('pesan').insert({ refTipe: CHAT.tipe, refId: CHAT.id, isi: isi || '📎 Lampiran', lampiran });
   if(error){ inp.value = isi; toast('❌ Gagal kirim: ' + (error.message || 'cek koneksi')); return; }
   await loadAll();
   renderChat_(true);
