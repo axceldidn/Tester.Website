@@ -1150,10 +1150,11 @@ ACT.logout = async () => { await hapusPushDevice_(); await sb.auth.signOut(); re
 
 ACT.ubahTanggalMaintenance = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa mengubah tanggal' };
-  const r1 = await sb.from('maintenance').update({ timestamp: p.timestamp }).eq('id', p.id);
-  const r2 = await sb.from('pemasangan').update({ timestamp: p.timestamp }).eq('id', p.id);
+  const r1 = await sb.from('maintenance').update({ timestamp: p.timestamp }).eq('id', p.id).select('id');
+  const r2 = await sb.from('pemasangan').update({ timestamp: p.timestamp }).eq('id', p.id).select('id');
   const error = r1.error || r2.error;
   if(error) return fail_(error);
+  if(!((r1.data || []).length + (r2.data || []).length)) return { ok:false, error:'Tanggal tidak berubah. Izin ubah Admin di database belum ada: jalankan sql/hapus-ubah-admin.sql' };
   await logAksi_('mengubah tanggal data maintenance', p.id);
   return { ok:true };
 };
@@ -1161,19 +1162,22 @@ ACT.hapusMaintenanceBanyak = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
   const ids = (p.ids || []).filter(Boolean);
   if(!ids.length) return { ok:false, error:'Tidak ada data dipilih' };
-  const r1 = await sb.from('maintenance').delete().in('id', ids);
-  const r2 = await sb.from('pemasangan').delete().in('id', ids);
+  const r1 = await sb.from('maintenance').delete().in('id', ids).select('id');
+  const r2 = await sb.from('pemasangan').delete().in('id', ids).select('id');
   const error = r1.error || r2.error;
   if(error) return fail_(error);
-  await logAksi_('menghapus data maintenance massal', `${ids.length} data`);
-  return { ok:true, jumlah: ids.length };
+  const terhapus = (r1.data || []).length + (r2.data || []).length;
+  if(terhapus < ids.length) return { ok:false, error:`Hanya ${terhapus} dari ${ids.length} data yang terhapus. Izin hapus Admin di database belum ada: jalankan sql/hapus-ubah-admin.sql` };
+  await logAksi_('menghapus data maintenance massal', `${terhapus} data`);
+  return { ok:true, jumlah: terhapus };
 };
 ACT.hapusMaintenance = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus data' };
-  const r1 = await sb.from('maintenance').delete().eq('id', p.id);
-  const r2 = await sb.from('pemasangan').delete().eq('id', p.id);
+  const r1 = await sb.from('maintenance').delete().eq('id', p.id).select('id');
+  const r2 = await sb.from('pemasangan').delete().eq('id', p.id).select('id');
   const error = r1.error || r2.error;
   if(error) return fail_(error);
+  if(!((r1.data || []).length + (r2.data || []).length)) return { ok:false, error:'Data tidak terhapus. Izin hapus Admin di database belum ada: jalankan sql/hapus-ubah-admin.sql' };
   await logAksi_('menghapus data maintenance', p.id);
   return { ok:true };
 };
@@ -2350,11 +2354,20 @@ function blokSusulan_(m){
   const tgl = m.tglKerjaManual ? m.tglKerjaManual.split('-').reverse().join('/') : '-';
   return `<div class="meta" style="color:var(--warn);font-weight:700;">📝 SUSULAN — pengerjaan sebenarnya (diisi manual): ${tgl} ${esc(m.jamMulaiManual||'')}–${esc(m.jamSelesaiManual||'')}</div>`;
 }
+function durasiManual_(m){
+  if(!m.jamMulaiManual || !m.jamSelesaiManual) return '';
+  const [h1, m1] = m.jamMulaiManual.split(':').map(Number), [h2, m2] = m.jamSelesaiManual.split(':').map(Number);
+  let d = (h2*60 + m2) - (h1*60 + m1); if(d < 0) d += 1440;
+  return `${Math.floor(d/60)} jam ${d%60} menit`;
+}
 function blokTanggal_(m){
   const d = tanggalAsal_(m);
-  const lama = selisih_(d.lapor, d.selesai);
   const diubah = m.selesaiServer && m.timestamp && Math.abs(new Date(m.timestamp) - new Date(m.selesaiServer)) > 60000;
-  return `<div class="meta" style="margin-top:6px;">📅 ${m.pendaftaranId ? 'Daftar' : 'Lapor'}: <b>${fmtTs_(d.lapor)}</b>${d.diambil ? ` • 🙋 Diambil: <b>${fmtTs_(d.diambil)}</b>` : ''} • ✅ Dikerjakan: <b>${fmtTs_(d.selesai)}</b>${lama ? ` • ⏳ ${lama}` : ''}</div>`
+  // Pendaftaran (pemasangan): tampilkan tanggal daftar. Tiket (maintenance): jam lapor sudah di atas, jadi tanggal lapor tidak diulang.
+  const awal = m.pendaftaranId ? `📅 Daftar: <b>${fmtTs_(d.lapor)}</b> • ` : '';
+  const sistem = m.susulan ? `🕐 Dicatat sistem: <b>${fmtTs_(d.selesai)}</b>` : `✅ Dikerjakan: <b>${fmtTs_(d.selesai)}</b>`;
+  const lama = (!m.susulan && m.pendaftaranId) ? selisih_(d.lapor, d.selesai) : '';
+  return `<div class="meta" style="margin-top:6px;">${awal}${d.diambil ? `🙋 Diambil: <b>${fmtTs_(d.diambil)}</b> • ` : ''}${sistem}${lama ? ` • ⏳ ${lama}` : ''}</div>`
     + (diubah ? `<div class="meta" style="color:var(--warn);">⚠️ Tanggal di dashboard digeser Admin ke ${fmtTs_(m.timestamp)}</div>` : '');
 }
 
@@ -2378,7 +2391,7 @@ function renderLaporan(){
         <span class="badge ${sttsCls}">${esc(m.stts)}</span>
       </div>
       <div class="meta" style="margin-top:8px;">${esc(m.keterangan||'')}</div>
-      ${(m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : ''}
+      ${m.susulan ? (durasiManual_(m) ? `<div class="meta">⏱️ Durasi pengerjaan: <b>${esc(durasiManual_(m))}</b></div>` : '') : ((m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : '')}
       ${blokTanggal_(m)}
       ${blokSusulan_(m)}
       ${m.penanganan ? `<div class="meta">🛠️ Penanganan: <b>${esc(String(m.penanganan).split(' | ').join(', '))}</b></div>` : ''}
