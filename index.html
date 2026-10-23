@@ -551,12 +551,15 @@ button{font-family:'Inter',sans-serif;}
           <input type="hidden" id="t_lat"><input type="hidden" id="t_lng">
         </div>
         <div class="field"><label>ISP</label><select id="t_isp"></select></div>
-        <div class="field"><label>No ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="t_odp" list="odpOpsi" placeholder="cth: ODP-KLP-01" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
+        <details id="t_odpDetails" style="margin:6px 0 12px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP (opsional, biasanya diisi teknisi)</summary>
+        <div class="mini-note" style="margin-top:-6px;">CS boleh mengosongkan semua kolom di sini. Tidak wajib.</div>
+        <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="t_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
         <div class="grid2">
           <div class="field"><label>Tipe ODP (opsional)</label><select id="t_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
-          <div class="field"><label>Jumlah pelanggan terdampak</label><select id="t_jmlterdampak"></select></div>
+          <div class="field"><label>Jumlah pelanggan terdampak (opsional)</label><select id="t_jmlterdampak"></select></div>
         </div>
         <div class="field"><label>Pelanggan terdampak (opsional, kalau gangguan satu ODP; pisahkan dengan koma)</label><textarea id="t_terdampak" rows="2" placeholder="cth: Sarip, Budi, Ani"></textarea></div>
+        </details>
         <div class="field">
           <label>Kendala</label>
           <select id="t_kendala" onchange="toggleKendalaManual()"></select>
@@ -668,27 +671,27 @@ button{font-family:'Inter',sans-serif;}
           <select id="m_ticket" onchange="isiDariTiket()"><option value="">— Pilih dari tiket yang ditangani —</option></select>
         </div>
         <div class="field hide" id="m_tiketLainWrap">
-          <label>Client lain yang ikut selesai (satu pekerjaan, mis. 1 ODP)</label>
+          <label>Client lain dari tiket CS yang ikut selesai (satu pekerjaan, mis. 1 ODP)</label>
           <div id="m_tiketLainBox" class="teknisi-box"></div>
           <div class="mini-note hide" id="m_tiketLainHint" style="margin:4px 0 0;color:var(--warn);"></div>
           <div class="mini-note" style="margin:4px 0 0;">Semua client yang dicentang masuk ke <b>satu laporan</b> ini (satu ODP), dan tiket mereka ikut ditutup. Isi redaman tiap client di bawah namanya.</div>
         </div>
-        <details class="odp-opsi" style="margin-top:16px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Ternyata satu ODP splitter kena? (opsional)</summary>
-        <div class="mini-note" style="margin-top:-6px;">Kalau laporan awal cuma 1 pelanggan tapi di lapangan ODP-nya ikut kena, isi ODP di bawah dan tambahkan pelanggan lain yang belum punya tiket.</div>
-        <div class="field"><label>No ODP</label><input id="m_odp" list="odpOpsi" placeholder="cth: ODP-KLP-01" autocomplete="off"></div>
+        <details class="odp-opsi" style="margin-top:16px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP splitter (opsional)</summary>
+        <div class="mini-note" style="margin-top:-6px;">Isi kalau teknisi menemukan ODP/splitter-nya yang bermasalah. Kalau tidak ada client, Nama Client boleh kosong dan laporan memakai nama ODP-nya (mis. ODP BujangGadung). Client lain ditambahkan di bawah kolom Nama Client.</div>
+        <div class="field"><label>Nama ODP</label><input id="m_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
         <div class="grid2">
           <div class="field"><label>Tipe ODP</label><select id="m_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
           <div class="field"><label>Jumlah pelanggan terdampak</label><select id="m_jmlterdampak"></select></div>
         </div>
-        <div class="field">
-          <label>Tambah pelanggan lain yang ikut terdampak (belum punya tiket)</label>
-          <div id="m_tambahBox" class="rdm-box"></div>
-          <button type="button" class="btn btn-info" onclick="tambahPelangganOdp_()">+ Tambah pelanggan</button>
-          <div class="mini-note" style="margin:4px 0 0;">Semua nama masuk ke satu laporan ini, bukan laporan terpisah. Isi redaman tiap pelanggan lewat daftar redaman; tombol <b>+ Sebelum &amp; Sesudah</b> kalau mau membandingkan siapa yang terdampak.</div>
-        </div>
-        <label class="chk-teknisi" style="margin-top:6px;"><input type="checkbox" id="m_pisah"> Pisah jadi laporan sendiri-sendiri per pelanggan (biasanya tidak perlu)</label>
         </details>
-        <div class="field"><label>Nama Client</label><input id="m_client"></div>
+        <div class="field"><label>Nama Client (utama)</label><input id="m_client"></div>
+        <div class="field">
+          <label>Client lain (satu pekerjaan / satu ODP yang sama)</label>
+          <div id="m_tambahBox" class="rdm-box"></div>
+          <button type="button" class="btn btn-info" onclick="tambahPelangganOdp_()">+ Tambah client lain</button>
+          <div class="mini-note" style="margin:4px 0 0;">Satu client satu baris, jangan ditulis berderet di kolom Nama Client. Semua masuk ke satu laporan ini. Isi redaman tiap client di bawah namanya; tombol <b>+ Sebelum &amp; Sesudah</b> kalau mau membandingkan.</div>
+          <label class="chk-teknisi" style="margin-top:6px;"><input type="checkbox" id="m_pisah"> Pisah jadi laporan sendiri-sendiri per client (biasanya tidak perlu)</label>
+        </div>
         <div class="field">
           <label>ISP</label>
           <select id="m_isp" onchange="ispBaru(this)"></select>
@@ -2344,6 +2347,8 @@ function pelangganOdpTeks_(m){
   if(!l.length) return '';
   return [m.client + ': ' + (m.redaman || '-'), ...l.map(x => x.n + ': ' + (x.r || '-'))].join(' | ');
 }
+// Nama ODP rapi: "BujangGadung" -> "ODP BujangGadung"; yang sudah diawali ODP dibiarkan
+function odpNama_(v){ v = String(v || '').trim(); return !v ? '' : (/^odp\b/i.test(v) ? v : 'ODP ' + v); }
 function kapasitasOdp_(tipe){ return ({ '1:2': 2, '1:4': 4, '1:8': 8, '1:16': 16 })[tipe] || 0; }
 function isiOpsiTerdampak_(){
   ['t', 'm'].forEach(pre => {
@@ -2361,7 +2366,7 @@ function isiOpsiTerdampak_(){
 function tambahPelangganOdp_(){
   const b = document.getElementById('m_tambahBox'); if(!b) return;
   b.insertAdjacentHTML('beforeend', `<div class="tmb-blok" style="border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface2);">
-    <div class="rdm-row"><input class="rdm-label tmb-nama" placeholder="Nama pelanggan"><button type="button" class="rdm-del" onclick="this.closest('.tmb-blok').remove()">✕</button></div>
+    <div class="rdm-row"><input class="rdm-label tmb-nama" placeholder="Nama client (cth: Ciwaduk.Hambali)"><button type="button" class="rdm-del" onclick="this.closest('.tmb-blok').remove()">✕</button></div>
     <div class="rdm-box tmb-redaman" style="margin-top:6px;">${barisRedaman_()}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button type="button" class="btn btn-info" onclick="tambahRedamanKe_(this.closest('.tmb-blok').querySelector('.tmb-redaman'))">+ Titik redaman</button>
@@ -2384,7 +2389,7 @@ function payloadPelangganTambahan_(p, o){
     teknisi: p.teknisi, stok: p.stok, redaman: o.redaman,
     modem: 0, jenisModem: '', splitter: 0, jenisSplitter: '', closure: 0, jenisClosure: '', boxOdp: 0, jenisBoxOdp: '',
     adaptor: 0, patchcore: 0, barrel: 0, jenisKabel: '', kabel: 0,
-    keterangan: `Keterangan: ikut terdampak, satu ODP${p.noOdp ? ' ' + p.noOdp : ''} (laporan awal ${p.client})\nHandling: ${handlingDariKet_(p.keterangan).join(', ')}`,
+    keterangan: `Keterangan: ikut terdampak, ${p.noOdp ? odpNama_(p.noOdp) : 'satu ODP'} (laporan awal ${p.client})\nHandling: ${handlingDariKet_(p.keterangan).join(', ')}`,
     jamLaporan: p.jamLaporan, jamSelesai: '', files: [],
     noOdp: p.noOdp, tipeOdp: p.tipeOdp, jumlahTerdampak: p.jumlahTerdampak,
     susulan: p.susulan, tglKerjaManual: p.tglKerjaManual, jamMulaiManual: p.jamMulaiManual, jamSelesaiManual: p.jamSelesaiManual
@@ -2470,7 +2475,7 @@ function isiDariTiket(){
   const dt = document.querySelector('.odp-opsi'); if(dt && (t.noOdp || t.tipeOdp)) dt.open = true;
   if(t.tipeOdp){ document.getElementById('m_tipeodp').value = t.tipeOdp; isiOpsiTerdampak_(); }
   if(t.jumlahTerdampak) document.getElementById('m_jmlterdampak').value = String(t.jumlahTerdampak);
-  document.getElementById('m_ket').value = `Keterangan: ${t.kendala}${t.noOdp ? ' (ODP ' + t.noOdp + (t.tipeOdp ? ' pasif ' + t.tipeOdp : '') + ')' : ''}${(t.jumlahTerdampak || t.pelangganTerdampak) ? ' — terdampak: ' + [t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : '', t.pelangganTerdampak || ''].filter(Boolean).join(', ') : ''}\nHandling: `;
+  document.getElementById('m_ket').value = `Keterangan: ${t.kendala}${t.noOdp ? ' (' + odpNama_(t.noOdp) + (t.tipeOdp ? ' pasif ' + t.tipeOdp : '') + ')' : ''}${(t.jumlahTerdampak || t.pelangganTerdampak) ? ' — terdampak: ' + [t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : '', t.pelangganTerdampak || ''].filter(Boolean).join(', ') : ''}\nHandling: `;
 }
 
 /* ---------------- Tiket Masuk (Laporan Gangguan) ---------------- */
@@ -2534,8 +2539,8 @@ async function submitTiket(){
     lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), isTest: document.getElementById('t_test').checked, kendala: getKendalaValue(),
     jamLaporan: val('t_jamlaporan'), tglLaporan: val('t_tgl'), isp: val('t_isp'), noOdp: val('t_odp'), pelangganTerdampak: val('t_terdampak'), tipeOdp: val('t_tipeodp'), jumlahTerdampak: val('t_jmlterdampak')
   };
-  if(!payload.namaPelanggan && !payload.noOdp){ toast('Isi nama pelanggan atau No ODP dulu'); return; }
-  if(!payload.namaPelanggan) payload.namaPelanggan = 'ODP ' + payload.noOdp;   // tiket satu ODP: nama tiket = ODP-nya
+  if(!payload.namaPelanggan && !payload.noOdp){ toast('Isi nama pelanggan atau Nama ODP dulu'); const d = document.getElementById('t_odpDetails'); if(d) d.open = true; return; }
+  if(!payload.namaPelanggan) payload.namaPelanggan = odpNama_(payload.noOdp);   // tiket satu ODP: nama tiket = ODP-nya
   if(STATE.master.some(x => x.tipe === 'ISP') && !payload.isp){ toast('Pilih ISP-nya dulu'); return; }
   if(!payload.kendala){ toast('Isi kendalanya dulu'); return; }
   const data = await apiCall('addTiket', payload);
@@ -3488,7 +3493,8 @@ async function submitMaintenance(){
     files: filesPayload('maint'), ...susulanPayload_('m')
   };
   if(payload.susulan && !susulanValid_(payload)) return;
-  if(!payload.client){ toast('Nama client wajib diisi'); return; }
+  if(!payload.client && payload.noOdp) payload.client = odpNama_(payload.noOdp);   // laporan khusus ODP
+  if(!payload.client){ toast('Isi Nama Client atau Nama ODP dulu'); const d = document.querySelector('.odp-opsi'); if(d) d.open = true; return; }
   if(!handlingDariKet_(payload.keterangan).length){ toast('Isi bagian Handling: dulu (apa yang dikerjakan)'); return; }
   const extra = payload.ticketId ? tiketLainTerpilih_() : [];
   const namaBaru = namaTambahan_(payload.client);
@@ -3623,7 +3629,7 @@ function exportExcel(){
   setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
 }
 function barisLaporan_(list){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Laporan (Server)','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual','No ODP','Tipe ODP','Jumlah Terdampak','Pelanggan Satu ODP (semua)',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual'])]];
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Laporan (Server)','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual','Nama ODP','Tipe ODP','Jumlah Terdampak','Pelanggan Satu ODP (semua)',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual'])]];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
     const td = tanggalAsal_(m);
@@ -3696,7 +3702,7 @@ function exportPendaftaran(fmt){
 }
 function exportTiket(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','ISP','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Sumber Mikrotik','Tgl Didaftarkan di Server','Mikrotik User','Mikrotik Password','No ODP','Pelanggan Terdampak','Tipe ODP','Jumlah Terdampak']];
+  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','ISP','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Sumber Mikrotik','Tgl Didaftarkan di Server','Mikrotik User','Mikrotik Password','Nama ODP','Pelanggan Terdampak','Tipe ODP','Jumlah Terdampak']];
   hidup_(STATE.tiket).forEach(t => {
     rows.push([t.id, t.namaPelanggan, {tel:t.noHp}, {tel:t.noHpCadangan}, t.alamat,
       {link: mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng)}, t.kendala, t.isp||'', t.status, fmtTs_(t.timestamp), fmtTs_(t.dibuatServer || t.timestamp),
