@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>AIS.NET — Pemasangan &amp; Maintenance</title>
-<meta name="theme-color" content="#0B3D66">
+<meta name="theme-color" content="#DCEEFC">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -17,27 +17,28 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
-  --bg:#0B3D66;
-  --surface:#0F4C81;
-  --surface2:#135C99;
-  --line:#2578B5;
-  --text:#EAF4FF;
-  --text-dim:#AFD3F0;
-  --accent:#FF7A1A;
-  --accent-dim:#7A3D14;
-  --good:#21C77A;
-  --good-bg:#12301F;
-  --warn:#F5B942;
-  --warn-bg:#332B10;
-  --bad:#E5484D;
-  --bad-bg:#331414;
-  --info:#4FA3E3;
+  color-scheme:light;
+  --bg:#F2F8FE;
+  --surface:#FFFFFF;
+  --surface2:#EEF6FD;
+  --line:#CFE2F5;
+  --text:#12306B;
+  --text-dim:#5B7699;
+  --accent:#1E88E5;
+  --accent-dim:#BBDDF8;
+  --good:#1B9A5F;
+  --good-bg:#E2F6EB;
+  --warn:#B7791F;
+  --warn-bg:#FFF4D9;
+  --bad:#D6383D;
+  --bad-bg:#FDECEC;
+  --info:#2F8FE8;
   --radius:10px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
-  background:linear-gradient(175deg,#124F85 0%,#0B3D66 45%,#072A47 100%) fixed;
+  background:linear-gradient(175deg,#FFFFFF 0%,#F2F8FE 45%,#E1EFFB 100%) fixed;
   color:var(--text);
   font-family:'Inter',sans-serif;
   min-height:100vh;
@@ -56,17 +57,17 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 /* ---------- Top bar ---------- */
 .topbar{
   position:sticky;top:0;z-index:20;
-  background:linear-gradient(180deg,#165E9E 0%,#0B3D66 100%);
+  background:linear-gradient(180deg,#DCEEFC 0%,#FFFFFF 100%);
   padding:14px 16px 10px;
   border-bottom:1px solid transparent;
-  box-shadow:0 1px 0 rgba(255,122,26,.45), 0 6px 18px rgba(0,0,0,.25);
+  box-shadow:0 1px 0 rgba(30,136,229,.35), 0 6px 18px rgba(30,100,180,.12);
 }
 .brand{display:flex;align-items:center;gap:10px;}
 .brand .mark{
   width:34px;height:34px;border-radius:8px;
-  background:linear-gradient(135deg,var(--accent),#c95c0f);
+  background:linear-gradient(135deg,#4FA9F2,#1565C0);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Space Grotesk';font-weight:700;color:#0F1B2B;font-size:15px;
+  font-family:'Space Grotesk';font-weight:700;color:#fff;font-size:15px;
 }
 .dwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin-bottom:14px;}
 .dtable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:300px;}
@@ -78,8 +79,8 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 .chk-teknisi{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);font-size:13px;line-height:1.25;word-break:break-word;cursor:pointer;}
 .chk-teknisi input{width:18px;height:18px;padding:0;margin:0;flex:0 0 18px;}
 @media(min-width:560px){.teknisi-box{grid-template-columns:repeat(3,minmax(0,1fr));}}
-.logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:14px;border:2px solid rgba(255,255,255,.9);box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 0 4px rgba(255,122,26,.25);}
-.logo-small{height:38px;width:auto;border-radius:7px;flex:none;border:1.5px solid rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.35);}
+.logo-big{width:240px;max-width:72%;height:auto;margin-bottom:14px;border-radius:14px;border:1px solid var(--line);background:#fff;box-shadow:0 8px 24px rgba(30,100,180,.18), 0 0 0 4px rgba(30,136,229,.12);}
+.logo-small{height:38px;width:auto;border-radius:7px;flex:none;border:1px solid var(--line);background:#fff;box-shadow:0 2px 8px rgba(30,100,180,.2);}
 /* layar sempit: nama teks disembunyikan karena logo sudah memuat tulisan AIS.NET */
 @media (max-width:480px){ .brand .name{display:none;} }
 .brand .name{font-family:'Space Grotesk';font-weight:700;font-size:17px;letter-spacing:.2px;}
@@ -134,7 +135,7 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 }
 .badge.baru{background:var(--bad-bg);color:var(--bad);}
 .badge.konfirmasi{background:var(--warn-bg);color:var(--warn);}
-.badge.mikrotik{background:#12263f;color:var(--info);}
+.badge.mikrotik{background:#E3F0FC;color:#1F78D1;}
 .badge.selesai{background:var(--good-bg);color:var(--good);}
 .card .actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
 
@@ -144,12 +145,12 @@ button{font-family:'Inter',sans-serif;}
   border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;
   cursor:pointer;display:inline-flex;align-items:center;gap:6px;
 }
-.btn-primary{background:var(--accent);color:#1a0e04;}
-.btn-primary:active{background:#e06d15;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:#1565C0;}
 .btn-outline{background:transparent;border:1px solid var(--line);color:var(--text);}
 .btn-outline.sel{border-color:var(--accent);color:var(--accent);background:var(--surface2);}
-.btn-good{background:var(--good);color:#06210f;}
-.btn-info{background:var(--info);color:#062036;}
+.btn-good{background:var(--good);color:#fff;}
+.btn-info{background:var(--info);color:#fff;}
 .btn-block{width:100%;justify-content:center;padding:12px;font-size:14px;}
 .btn:disabled{opacity:.4;}
 
@@ -163,7 +164,7 @@ button{font-family:'Inter',sans-serif;}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
 .field textarea{resize:vertical;min-height:56px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.form-card{background:linear-gradient(160deg,#135A94 0%,#0F4C81 100%);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.form-card{background:linear-gradient(160deg,#F7FBFF 0%,#E8F3FD 100%);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
 .form-card h3{margin:0 0 14px;font-size:14.5px;}
 .mini-note{font-size:11.5px;color:var(--text-dim);margin:-6px 0 14px;}
 
@@ -187,7 +188,7 @@ button{font-family:'Inter',sans-serif;}
 .log-item{display:flex;gap:10px;margin-bottom:14px;}
 .log-dot{
   width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:6px;flex-shrink:0;
-  box-shadow:0 0 0 3px rgba(255,122,26,.18);
+  box-shadow:0 0 0 3px rgba(30,136,229,.2);
 }
 .log-item .lbody{flex:1;border-bottom:1px solid var(--line);padding-bottom:12px;}
 .log-item .ltxt{font-size:13px;line-height:1.5;}
@@ -197,7 +198,7 @@ button{font-family:'Inter',sans-serif;}
 /* ---------- Bottom nav ---------- */
 .navbar{
   position:fixed;bottom:0;left:0;right:0;z-index:30;
-  background:var(--surface);border-top:1px solid var(--line);
+  background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(30,100,180,.08);
   display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
   padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));
   scrollbar-width:none;
@@ -219,8 +220,8 @@ button{font-family:'Inter',sans-serif;}
 }
 .login-wrap .mark-big{
   width:64px;height:64px;border-radius:16px;margin-bottom:16px;
-  background:linear-gradient(135deg,var(--accent),#c95c0f);
-  display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#1a0e04;
+  background:linear-gradient(135deg,#4FA9F2,#1565C0);
+  display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:26px;color:#fff;
 }
 .login-wrap h1{font-size:21px;margin:0 0 4px;}
 .login-wrap p{color:var(--text-dim);font-size:13px;margin:0 0 26px;}
@@ -237,8 +238,8 @@ button{font-family:'Inter',sans-serif;}
 .empty .ic{font-size:28px;display:block;margin-bottom:8px;}
 .toast{
   position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-  background:var(--surface2);border:1px solid var(--line);color:var(--text);
-  padding:10px 16px;border-radius:20px;font-size:13px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.35);
+  background:#12306B;border:1px solid #12306B;color:#fff;
+  padding:10px 16px;border-radius:20px;font-size:13px;z-index:50;box-shadow:0 6px 20px rgba(18,48,107,.3);
   opacity:0;transition:opacity .25s;pointer-events:none;
 }
 .toast.show{opacity:1;}
@@ -277,7 +278,7 @@ button{font-family:'Inter',sans-serif;}
 .chat-msgs{display:flex;flex-direction:column;gap:2px;padding:10px 4px;min-height:200px;max-height:55vh;overflow-y:auto;}
 .bub{max-width:82%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.35;word-break:break-word;white-space:pre-wrap;}
 .bub small{display:block;opacity:.7;font-size:11px;margin-top:3px;white-space:normal;}
-.bub.me{align-self:flex-end;background:var(--accent);color:#1a1a1a;border-bottom-right-radius:4px;}
+.bub.me{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px;}
 .bub.other{align-self:flex-start;background:var(--surface2);border:1px solid var(--line);border-bottom-left-radius:4px;}
 .bub .who{display:block;font-size:11px;font-weight:700;margin-bottom:2px;opacity:.95;}
 .peran{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:5px;vertical-align:middle;letter-spacing:.2px;color:#fff;line-height:1.5;}
@@ -291,7 +292,7 @@ button{font-family:'Inter',sans-serif;}
 .chat-send input{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:11px;border-radius:10px;font-size:14px;}
 .thread{cursor:pointer;}
 .thread .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#E5484D;margin-right:6px;}
-.susulan-box{border:1px dashed var(--warn);border-radius:10px;padding:10px;margin:10px 0;background:rgba(245,185,66,.07);}
+.susulan-box{border:1px dashed var(--warn);border-radius:10px;padding:10px;margin:10px 0;background:rgba(245,185,66,.14);}
 .susulan-box label.chk{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;}
 .susulan-box input[type=checkbox]{width:auto;margin:0;}
 .exp-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
@@ -558,7 +559,7 @@ button{font-family:'Inter',sans-serif;}
           <div class="field"><label>Tipe ODP (opsional)</label><select id="t_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
           <div class="field"><label>Jumlah pelanggan terdampak (opsional)</label><select id="t_jmlterdampak"></select></div>
         </div>
-        <div class="field"><label>Pelanggan terdampak (opsional, kalau gangguan satu ODP; pisahkan dengan koma)</label><textarea id="t_terdampak" rows="2" placeholder="cth: Sarip, Budi, Ani"></textarea></div>
+        <div class="field"><label>Pelanggan terdampak (opsional; pisahkan dengan koma, alamat boleh di dalam kurung)</label><textarea id="t_terdampak" rows="2" placeholder="cth: Sarip (Gg Mawar 3), Budi (Gg Melati 5)"></textarea></div>
         </details>
         <div class="field">
           <label>Kendala</label>
@@ -855,6 +856,7 @@ Handling: </textarea></div>
         <span><i style="background:var(--warn);"></i>Dikonfirmasi</span>
         <span><i style="background:var(--info);"></i>Mikrotik Siap</span>
         <span><i style="background:var(--good);"></i>Selesai</span>
+        <span><i style="background:#7C5CC4;"></i>Client ikut terdampak (Maintenance)</span>
       </div>
       <div id="mapView"></div>
       <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="exportKML()">⬇️ Export KML (Google Earth / My Maps)</button>
@@ -1790,7 +1792,7 @@ function renderDashMarket_(maint, per, now){
         <td>${esc(k)}</td>
         <td>${c}</td>
         <td><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
-          <div style="width:60px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;"><div style="width:${pct.toFixed(1)}%;height:100%;background:#E8771D;"></div></div>
+          <div style="width:60px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;"><div style="width:${pct.toFixed(1)}%;height:100%;background:var(--accent);"></div></div>
           <span>${pct.toFixed(1)}%</span></div></td>
         <td>${(c / jumlahHari).toFixed(1)}</td></tr>`;
     }).join('')}
@@ -1959,7 +1961,7 @@ function geserBulan(n){
 
 // ---- Grafik dashboard (Chart.js) ----
 const CHARTS = {};
-const PALET = ['#E8771D','#4FA3E3','#2ECC71','#9B59B6','#F1C40F','#95A5A6'];
+const PALET = ['#1E88E5','#7CC0F5','#0D47A1','#B6DBF8','#5C7FB8','#9FB3CC'];   // deretan biru lembut, senada dengan logo
 function gambarChart_(key, canvasId, cfg){
   const cv = document.getElementById(canvasId);
   if(!cv) return;
@@ -1968,8 +1970,8 @@ function gambarChart_(key, canvasId, cfg){
     return;
   }
   if(CHARTS[key]) CHARTS[key].destroy();
-  Chart.defaults.color = '#cfe0f5';
-  Chart.defaults.borderColor = 'rgba(255,255,255,.12)';
+  Chart.defaults.color = '#12306B';
+  Chart.defaults.borderColor = 'rgba(30,100,180,.14)';
   CHARTS[key] = new Chart(cv, cfg);
 }
 function gambarGrafik_(maint){
@@ -2150,7 +2152,7 @@ function pendaftaranCard(x){
       <div>
         <div class="nm">${esc(x.nama)}</div>
         <div class="meta">${x.isp?esc(x.isp)+' • ':''}${esc(x.paket||'-')} • ${esc(x.noHp||'-')}<br>${esc(x.alamatPasang||'')}</div>
-        ${x.konfirmasiOleh ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Diambil oleh ${esc(x.konfirmasiOleh)}</div>` : ''}
+        ${x.konfirmasiOleh ? `<div class="meta" style="color:var(--good);font-weight:600;">🙋 Diambil oleh ${esc(x.konfirmasiOleh)}</div>` : ''}
         ${x.mikrotikUser ? `<div class="meta">🔐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}</div>` : ''}
         ${statusServer_(x)}
         ${wifiBaris_(x)}
@@ -2345,10 +2347,21 @@ function pelangganOdpList_(m){
 function pelangganOdpTeks_(m){
   const l = pelangganOdpList_(m);
   if(!l.length) return '';
-  return [m.client + ': ' + (m.redaman || '-'), ...l.map(x => x.n + ': ' + (x.r || '-'))].join(' | ');
+  const lk = lokasiMaintenance_(m);
+  return [m.client + (lk.alamat ? ' (' + lk.alamat + ')' : '') + (lk.mapsLink ? ' <' + lk.mapsLink + '>' : '') + ': ' + (m.redaman || '-'), ...l.map(x => x.n + (x.a ? ' (' + x.a + ')' : '') + (x.m ? ' <' + x.m + '>' : '') + ': ' + (x.r || '-'))].join(' | ');
 }
 // Nama ODP rapi: "BujangGadung" -> "ODP BujangGadung"; yang sudah diawali ODP dibiarkan
 function odpNama_(v){ v = String(v || '').trim(); return !v ? '' : (/^odp\b/i.test(v) ? v : 'ODP ' + v); }
+// Tombol buka Google Maps (hanya link http/https)
+function mapsBtn_(u){
+  u = String(u || '').trim();
+  if(!/^https?:\/\//i.test(u)) return '';
+  return `<a href="${esc(u)}" target="_blank" rel="noopener" style="display:inline-block;padding:3px 9px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:var(--info);text-decoration:none;">🗺️ Buka Maps</a>`;
+}
+function barisPelangganOdp_(nama, red, alamat, maps){
+  const loc = [alamat ? '📍 ' + esc(alamat) : '', mapsBtn_(maps)].filter(Boolean).join(' ');
+  return '• ' + esc(nama) + ': ' + esc(redamanTampil_(red)) + (loc ? '\n   ' + loc : '');
+}
 function kapasitasOdp_(tipe){ return ({ '1:2': 2, '1:4': 4, '1:8': 8, '1:16': 16 })[tipe] || 0; }
 function isiOpsiTerdampak_(){
   ['t', 'm'].forEach(pre => {
@@ -2363,10 +2376,50 @@ function isiOpsiTerdampak_(){
   });
 }
 // Pelanggan tambahan di Maintenance (tanpa tiket): tiap nama dibuatkan laporan sendiri
+// Pin client tambahan: dari GPS HP (saat di rumah client) atau dari link Google Maps
+function setPinClient_(blok, la, ln, ket){
+  blok.dataset.la = Number(la).toFixed(6); blok.dataset.ln = Number(ln).toFixed(6);
+  blok.querySelector('.tmb-pininfo').textContent = `✅ Pin tersimpan (${Number(la).toFixed(5)}, ${Number(ln).toFixed(5)})${ket ? ' — ' + ket : ''}. Akan muncul di tab Peta setelah laporan dikirim.`;
+}
+function pinClientGps_(btn){
+  const blok = btn.closest('.tmb-blok');
+  if(!navigator.geolocation){ toast('HP/browser ini tidak mendukung GPS'); return; }
+  const asli = btn.textContent; btn.disabled = true; btn.textContent = '📍 Mencari posisi...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    setPinClient_(blok, pos.coords.latitude, pos.coords.longitude, 'akurasi ±' + Math.round(pos.coords.accuracy) + ' m');
+    btn.disabled = false; btn.textContent = asli;
+  }, err => {
+    toast('Gagal ambil lokasi: ' + err.message); btn.disabled = false; btn.textContent = asli;
+  }, { enableHighAccuracy: true, timeout: 20000 });
+}
+async function pinClientLink_(btn){
+  const blok = btn.closest('.tmb-blok');
+  const link = blok.querySelector('.tmb-maps').value.trim();
+  if(!link){ toast('Isi Link Google Maps client dulu'); return; }
+  const lokal = coordsDariUrl_(link);
+  if(lokal){ setPinClient_(blok, lokal.lat, lokal.lng, 'dari link'); return; }
+  const asli = btn.textContent; btn.disabled = true; btn.textContent = '⏳...';
+  const data = await apiCall('resolveMapsLink', { link });
+  btn.disabled = false; btn.textContent = asli;
+  if(data && data.ok && data.found !== false && data.lat !== undefined){
+    setPinClient_(blok, data.lat, data.lng, 'dari link');
+  } else if(data){
+    blok.querySelector('.tmb-pininfo').textContent = '✅ Link tersimpan (jadi tombol Buka Maps), tapi titiknya belum kebaca dari link ini. Pakai 📍 Ambil lokasi saya kalau mau pin di Peta.';
+  }
+}
 function tambahPelangganOdp_(){
   const b = document.getElementById('m_tambahBox'); if(!b) return;
   b.insertAdjacentHTML('beforeend', `<div class="tmb-blok" style="border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface2);">
     <div class="rdm-row"><input class="rdm-label tmb-nama" placeholder="Nama client (cth: Ciwaduk.Hambali)"><button type="button" class="rdm-del" onclick="this.closest('.tmb-blok').remove()">✕</button></div>
+    <div style="margin-top:6px;"><input class="tmb-alamat" placeholder="Alamat client (opsional, tiap client beda)"></div>
+    <div style="margin-top:6px;"><input class="tmb-maps" inputmode="url" placeholder="Link Google Maps client (opsional)"></div>
+    <div style="margin-top:6px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-info" onclick="pinClientGps_(this)">📍 Ambil lokasi saya</button>
+        <button type="button" class="btn btn-outline" onclick="pinClientLink_(this)">🔗 Dari link Maps</button>
+      </div>
+      <div class="mini-note tmb-pininfo" style="margin:4px 0 0;">Pin di Peta (opsional). Tekan 📍 saat berada di rumah client ini, atau isi link Maps lalu tekan 🔗. Boleh dikosongkan: laporan tetap tersimpan, hanya tidak muncul sebagai pin di tab Peta.</div>
+    </div>
     <div class="rdm-box tmb-redaman" style="margin-top:6px;">${barisRedaman_()}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button type="button" class="btn btn-info" onclick="tambahRedamanKe_(this.closest('.tmb-blok').querySelector('.tmb-redaman'))">+ Titik redaman</button>
@@ -2379,7 +2432,7 @@ function namaTambahan_(utama){
   const out = [];
   document.querySelectorAll('#m_tambahBox .tmb-blok').forEach(r => {
     const n = r.querySelector('.tmb-nama').value.trim(), k = n.toLowerCase();
-    if(n && !seen.has(k)){ seen.add(k); out.push({ nama: n, redaman: redamanDariBox_(r.querySelector('.tmb-redaman')) }); }
+    if(n && !seen.has(k)){ seen.add(k); out.push({ nama: n, alamat: r.querySelector('.tmb-alamat').value.trim(), maps: r.querySelector('.tmb-maps').value.trim(), la: parseFloat(r.dataset.la) || null, ln: parseFloat(r.dataset.ln) || null, redaman: redamanDariBox_(r.querySelector('.tmb-redaman')) }); }
   });
   return out;
 }
@@ -2389,7 +2442,7 @@ function payloadPelangganTambahan_(p, o){
     teknisi: p.teknisi, stok: p.stok, redaman: o.redaman,
     modem: 0, jenisModem: '', splitter: 0, jenisSplitter: '', closure: 0, jenisClosure: '', boxOdp: 0, jenisBoxOdp: '',
     adaptor: 0, patchcore: 0, barrel: 0, jenisKabel: '', kabel: 0,
-    keterangan: `Keterangan: ikut terdampak, ${p.noOdp ? odpNama_(p.noOdp) : 'satu ODP'} (laporan awal ${p.client})\nHandling: ${handlingDariKet_(p.keterangan).join(', ')}`,
+    keterangan: `Keterangan: ikut terdampak, ${p.noOdp ? odpNama_(p.noOdp) : 'satu ODP'} (laporan awal ${p.client})${o.alamat ? ' — alamat: ' + o.alamat : ''}${o.maps ? ' — maps: ' + o.maps : ''}\nHandling: ${handlingDariKet_(p.keterangan).join(', ')}`,
     jamLaporan: p.jamLaporan, jamSelesai: '', files: [],
     noOdp: p.noOdp, tipeOdp: p.tipeOdp, jumlahTerdampak: p.jumlahTerdampak,
     susulan: p.susulan, tglKerjaManual: p.tglKerjaManual, jamMulaiManual: p.jamMulaiManual, jamSelesaiManual: p.jamSelesaiManual
@@ -2422,7 +2475,7 @@ function renderTiketLain_(){
   const cek = t => {
     const on = ganti ? sama.includes(t) : dipilih.has(t.id);
     const baris = (nilai[t.id] && nilai[t.id].length ? nilai[t.id] : [{ l: '', v: '' }]).map(x => barisRedaman_(x.l, x.v)).join('');
-    return `<div class="tl-item" data-id="${esc(t.id)}" style="grid-column:1/-1;"><label class="chk-teknisi"><input type="checkbox" value="${esc(t.id)}" ${on ? 'checked' : ''} onchange="toggleTlRedaman_(this)"> ${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.noOdp ? ' • ' + esc(t.noOdp) : ''}</label>
+    return `<div class="tl-item" data-id="${esc(t.id)}" style="grid-column:1/-1;"><label class="chk-teknisi"><input type="checkbox" value="${esc(t.id)}" ${on ? 'checked' : ''} onchange="toggleTlRedaman_(this)"> ${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.noOdp ? ' • ' + esc(t.noOdp) : ''}${t.alamat ? ' • 📍 ' + esc(t.alamat) : ''}</label>
       <div class="tl-rdm ${on ? '' : 'hide'}" style="margin:4px 0 8px 4px;"><div class="rdm-box">${baris}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button type="button" class="btn btn-info" onclick="tambahRedamanKe_(this.closest('.tl-rdm').querySelector('.rdm-box'))">+ Titik redaman</button>
@@ -2496,7 +2549,7 @@ function tiketCard_(t){
           ${(t.pelangganTerdampak || t.jumlahTerdampak) ? `<div class="meta">👥 Terdampak: ${t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : ''}${(t.jumlahTerdampak && t.pelangganTerdampak) ? ' — ' : ''}${esc(t.pelangganTerdampak || '')}</div>` : ''}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
           ${t.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
-          ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
+          ${t.teknisiHandling ? `<div class="meta" style="color:var(--good);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
           ${mikrotikTiketInfo_(t)}
           ${t.diinputOleh ? `<div class="meta">📝 Diinput oleh ${esc(t.diinputOleh)}</div>` : ''}
           <div class="meta">🕐 Dicatat sistem: ${fmtTs_(t.dibuatServer || t.timestamp)}${t.diambilServer ? ` • Diambil: ${fmtTs_(t.diambilServer)}` : ''}</div>
@@ -2585,7 +2638,7 @@ function tiketMikrotikCard(t){
         <div class="nm">${esc(t.namaPelanggan)}</div>
         <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}</div>
         ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
-        ${t.teknisiHandling ? `<div class="meta" style="color:var(--ok,#2ECC71);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
+        ${t.teknisiHandling ? `<div class="meta" style="color:var(--good);font-weight:600;">🙋 Ditangani oleh ${esc(t.teknisiHandling)}</div>` : ''}
         ${mikrotikTiketInfo_(t)}
         ${waBtn_(t.noHp, t.noHpCadangan)}
       </div>
@@ -2745,7 +2798,7 @@ function renderLaporan(){
       </div>
       <div class="meta" style="margin-top:8px;white-space:pre-line;">${esc(m.keterangan||'')}</div>
       ${(m.noOdp || m.tipeOdp || m.jumlahTerdampak) ? `<div class="meta">🔌 ODP: <b>${esc(m.noOdp || '-')}</b>${m.tipeOdp ? ' (pasif ' + esc(m.tipeOdp) + ')' : ''}${m.jumlahTerdampak ? ' • ' + m.jumlahTerdampak + ' pelanggan terdampak' : ''}</div>` : ''}
-      ${pelangganOdpList_(m).length ? `<div class="meta" style="white-space:pre-line;">👥 Pelanggan satu ODP:\n• ${esc(m.client)}: ${esc(redamanTampil_(m.redaman))}\n${pelangganOdpList_(m).map(x => '• ' + esc(x.n) + ': ' + esc(redamanTampil_(x.r))).join('\n')}</div>` : ''}
+      ${pelangganOdpList_(m).length ? `<div class="meta" style="white-space:pre-line;">👥 Pelanggan satu ODP:\n${barisPelangganOdp_(m.client, m.redaman, lokasiMaintenance_(m).alamat, lokasiMaintenance_(m).mapsLink)}\n${pelangganOdpList_(m).map(x => barisPelangganOdp_(x.n, x.r, x.a, x.m)).join('\n')}</div>` : ''}
       ${m.susulan ? (durasiManual_(m) ? `<div class="meta">⏱️ Durasi pengerjaan: <b>${esc(durasiManual_(m))}</b></div>` : '') : ((m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')}${(m.jamLaporanServer && m.jamLaporanServer !== m.jamLaporan) ? ` (server ${esc(m.jamLaporanServer)})` : ''} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : '')}
       ${blokTanggal_(m)}
       ${blokSusulan_(m)}
@@ -2786,7 +2839,7 @@ function esc(s){
   return (s===undefined||s===null) ? '' : String(s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 }
 
-const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F5B942','MikrotikSiap':'#4FA3E3','Selesai':'#21C77A' };
+const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F0A92E','MikrotikSiap':'#2F8FE8','Selesai':'#21B26B','Maintenance':'#7C5CC4' };
 
 // Posisi HP sekarang di peta, dengan lingkaran akurasi. Bisa ditekan ulang untuk refresh.
 let lokasiMarker = null, lokasiCircle = null;
@@ -2839,10 +2892,10 @@ function renderPeta(){
     const color = STATUS_COLOR[x.status] || '#93A9C4';
     const icon = L.divIcon({
       className:'', iconSize:[16,16],
-      html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0B3D66;${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484D55;':''}"></div>`
+      html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(18,48,107,.45);${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484DAA,0 1px 4px rgba(18,48,107,.45);':''}"></div>`
     });
     const marker = L.marker([parseFloat(x.lat), parseFloat(x.lng)], { icon }).addTo(mapObj);
-    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.riwayat ? `<br><span style="color:#cfe0f5;">+${x.riwayat} riwayat di lokasi ini</span>` : ''}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
+    marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.riwayat ? `<br><span style="color:#5B7699;">+${x.riwayat} riwayat di lokasi ini</span>` : ''}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
   mapObj.invalidateSize();
@@ -3199,6 +3252,8 @@ function titikPeta_(){
   const semua = [
     ...hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
       sub:x.alamatPasang||'', info:x.paket||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) })),
+    ...hidup_(STATE.maintenance).flatMap(m => pelangganOdpList_(m).filter(x => x.la && x.ln).map(x => ({ jenis:'Maintenance', judul:x.n, lat:Number(x.la), lng:Number(x.ln),
+      sub:x.a||'', info:'Ikut terdampak' + (m.noOdp ? ' • ' + m.noOdp : ''), status:'Maintenance', waktu:String(m.timestamp||''), maps: x.m || coordLink_(x.la, x.ln) }))),
     ...hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
       sub:x.alamat||'', info:x.kendala||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) }))
   ];
@@ -3504,8 +3559,8 @@ async function submitMaintenance(){
   if(!pisah && (extra.length || namaBaru.length)){
     // satu laporan: semua pelanggan satu ODP masuk ke laporan ini, tiket mereka ikut ditutup
     payload.pelangganOdp = JSON.stringify([
-      ...extra.map(e => { const t = STATE.tiket.find(x => x.id === e.id); return { n: t ? t.namaPelanggan : '', t: e.id, r: e.redaman }; }),
-      ...namaBaru.map(o => ({ n: o.nama, t: '', r: o.redaman }))
+      ...extra.map(e => { const t = STATE.tiket.find(x => x.id === e.id); return { n: t ? t.namaPelanggan : '', t: e.id, a: t ? (t.alamat || '') : '', m: t ? (t.mapsLink || '') : '', r: e.redaman }; }),
+      ...namaBaru.map(o => ({ n: o.nama, t: '', a: o.alamat || '', m: o.maps || '', ...(o.la && o.ln ? { la: o.la, ln: o.ln } : {}), r: o.redaman }))
     ]);
     payload.tiketIkut = extra.map(e => e.id);
   }
