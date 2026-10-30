@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>AIS.NET — Pemasangan &amp; Maintenance</title>
-<meta name="theme-color" content="#DCEEFC">
+<meta name="theme-color" content="#0C2D4F">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -18,12 +18,12 @@
 <style>
 :root{
   color-scheme:light;
-  --bg:#F2F8FE;
+  --bg:#DCE6F1;
   --surface:#FFFFFF;
-  --surface2:#EEF6FD;
-  --line:#CFE2F5;
+  --surface2:#EAF1F9;
+  --line:#B9CBDF;
   --text:#12306B;
-  --text-dim:#5B7699;
+  --text-dim:#566F8F;
   --accent:#1E88E5;
   --accent-dim:#BBDDF8;
   --good:#1B9A5F;
@@ -38,7 +38,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
-  background:linear-gradient(175deg,#FFFFFF 0%,#F2F8FE 45%,#E1EFFB 100%) fixed;
+  background:linear-gradient(175deg,#E4ECF5 0%,#D8E4F0 50%,#CBDAEA 100%) fixed;
   color:var(--text);
   font-family:'Inter',sans-serif;
   min-height:100vh;
@@ -57,10 +57,11 @@ h1,h2,h3,.disp{font-family:'Space Grotesk',sans-serif;}
 /* ---------- Top bar ---------- */
 .topbar{
   position:sticky;top:0;z-index:20;
-  background:linear-gradient(180deg,#DCEEFC 0%,#FFFFFF 100%);
+  background:linear-gradient(180deg,#154573 0%,#0C2D4F 100%);
+  --text:#EAF3FF;--text-dim:#A9C0DA;--line:rgba(255,255,255,.28);
   padding:14px 16px 10px;
   border-bottom:1px solid transparent;
-  box-shadow:0 1px 0 rgba(30,136,229,.35), 0 6px 18px rgba(30,100,180,.12);
+  box-shadow:0 1px 0 #2AA3F0, 0 6px 18px rgba(8,30,60,.28);
 }
 .brand{display:flex;align-items:center;gap:10px;}
 .brand .mark{
@@ -164,7 +165,7 @@ button{font-family:'Inter',sans-serif;}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
 .field textarea{resize:vertical;min-height:56px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.form-card{background:linear-gradient(160deg,#F7FBFF 0%,#E8F3FD 100%);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.form-card{background:linear-gradient(160deg,#FFFFFF 0%,#F0F5FB 100%);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
 .form-card h3{margin:0 0 14px;font-size:14.5px;}
 .mini-note{font-size:11.5px;color:var(--text-dim);margin:-6px 0 14px;}
 
@@ -198,7 +199,7 @@ button{font-family:'Inter',sans-serif;}
 /* ---------- Bottom nav ---------- */
 .navbar{
   position:fixed;bottom:0;left:0;right:0;z-index:30;
-  background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(30,100,180,.08);
+  background:#0C2D4F;border-top:1px solid #2A5A8A;box-shadow:0 -4px 16px rgba(8,30,60,.28);
   display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;
   padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));
   scrollbar-width:none;
@@ -312,6 +313,13 @@ button{font-family:'Inter',sans-serif;}
 .rdm-row .rdm-val{width:84px;}
 .rdm-row .rdm-del{background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;cursor:pointer;}
 .rdm-row .tmb-val{width:70px;}
+.navbar button{color:#A9C0DA;}
+.navbar button.active{color:#5CC3FF;}
+.navbar .nbadge{box-shadow:0 0 0 2px #0C2D4F;}
+.odp-pin{width:22px;height:22px;border-radius:5px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font:700 8px/1 sans-serif;box-shadow:0 1px 4px rgba(18,48,107,.45);}
+.odp-pin span{pointer-events:none;}
+.odp-merah{animation:odpPulse 1.4s infinite;}
+@keyframes odpPulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.65);}100%{box-shadow:0 0 0 14px rgba(229,72,77,0);}}
 </style>
 </head>
 <body>
@@ -453,7 +461,7 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="grid2">
           <div class="field"><label>No ODC</label><input id="f_odc"></div>
-          <div class="field"><label>No ODP</label><input id="f_odp"></div>
+          <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="f_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
         </div>
         <div class="field">
           <label>Status tempat tinggal</label>
@@ -530,7 +538,7 @@ button{font-family:'Inter',sans-serif;}
     <div id="tab-tiket" class="tabpane hide">
       <div class="form-card" id="tiketFormCard">
         <h3>🎫 Laporan Gangguan Masuk</h3>
-        <div class="field"><label>Nama Pelanggan / Mikrotik (boleh kosong kalau gangguan satu ODP, isi No ODP di bawah)</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
+        <div class="field"><label>Nama Pelanggan / Mikrotik (boleh kosong kalau gangguan satu ODP, isi Nama ODP di bawah)</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
         <div class="field"><label>No HP</label><input id="t_hp" type="tel"></div>
         <div class="field"><label>No HP cadangan (opsional)</label><input id="t_hp2" type="tel"></div>
         <div class="field"><label>Alamat</label><input id="t_alamat" placeholder="Alamat rumah/lokasi client"></div>
@@ -554,7 +562,7 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>ISP</label><select id="t_isp"></select></div>
         <details id="t_odpDetails" style="margin:6px 0 12px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP (opsional, biasanya diisi teknisi)</summary>
         <div class="mini-note" style="margin-top:-6px;">CS boleh mengosongkan semua kolom di sini. Tidak wajib.</div>
-        <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="t_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
+        <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="t_odp" onchange="isiTipeDariOdp_('t')" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
         <div class="grid2">
           <div class="field"><label>Tipe ODP (opsional)</label><select id="t_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
           <div class="field"><label>Jumlah pelanggan terdampak (opsional)</label><select id="t_jmlterdampak"></select></div>
@@ -606,6 +614,8 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>ISP</label><select id="rp_isp" onchange="ispBaru(this)"></select></div>
         <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="rp_teknisi"><div id="rp_teknisiBox" class="teknisi-box"></div></div>
         <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
+        <div class="field"><label>Nama ODP tempat pelanggan dipasang (opsional)</label><input id="rp_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off">
+          <div class="mini-note" style="margin:4px 0 0;">Terisi dari pendaftaran kalau sudah ada; ubah kalau kenyataannya beda. Dipakai untuk garis ODP ke pelanggan di peta dan hitungan kapasitas.</div></div>
         <datalist id="redamanOpsi"><option value="ODP Murni"><option value="ODP"><option value="Pelanggan / ONT"><option value="Sebelum perbaikan"><option value="Sesudah perbaikan"></datalist>
         <div class="field"><label>Redaman (dBm) — bisa lebih dari satu titik</label>
           <div id="rp_redamanBox" class="rdm-box"></div>
@@ -679,7 +689,7 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <details class="odp-opsi" style="margin-top:16px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP splitter (opsional)</summary>
         <div class="mini-note" style="margin-top:-6px;">Isi kalau teknisi menemukan ODP/splitter-nya yang bermasalah. Kalau tidak ada client, Nama Client boleh kosong dan laporan memakai nama ODP-nya (mis. ODP BujangGadung). Client lain ditambahkan di bawah kolom Nama Client.</div>
-        <div class="field"><label>Nama ODP</label><input id="m_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
+        <div class="field"><label>Nama ODP</label><input id="m_odp" onchange="isiTipeDariOdp_('m')" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
         <div class="grid2">
           <div class="field"><label>Tipe ODP</label><select id="m_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
           <div class="field"><label>Jumlah pelanggan terdampak</label><select id="m_jmlterdampak"></select></div>
@@ -851,15 +861,40 @@ Handling: </textarea></div>
         <button class="btn btn-info" onclick="lokasiSaya()" id="btnLokasiSaya" style="flex:1;">📍 Lokasi saya</button>
       </div>
       <div class="mini-note" id="lokasiSayaInfo" style="margin-bottom:8px;">Tekan tombol untuk melihat posisi HP sekarang di peta.</div>
+      <label class="chk-teknisi" style="margin-bottom:6px;"><input type="checkbox" id="chkGarisOdp" checked onchange="renderPeta()"> Tampilkan garis ODP ke pelanggan</label>
       <div class="map-legend">
         <span><i style="background:var(--bad);"></i>Baru</span>
         <span><i style="background:var(--warn);"></i>Dikonfirmasi</span>
         <span><i style="background:var(--info);"></i>Mikrotik Siap</span>
         <span><i style="background:var(--good);"></i>Selesai</span>
         <span><i style="background:#7C5CC4;"></i>Client ikut terdampak (Maintenance)</span>
+        <span><i style="background:#1E88E5;border-radius:2px;"></i>ODP</span>
+        <span><i style="background:#E5484D;border-radius:2px;"></i>ODP/garis merah = ada gangguan</span>
+        <span><i style="background:#1E88E5;border-radius:0;height:4px;width:16px;"></i>Garis biru = pemasangan</span>
+        <span><i style="background:#7C5CC4;border-radius:0;height:4px;width:16px;"></i>Garis ungu putus-putus = maintenance</span>
       </div>
       <div id="mapView"></div>
       <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="exportKML()">⬇️ Export KML (Google Earth / My Maps)</button>
+      <details id="odpDetails" style="margin-top:18px;">
+        <summary style="font-weight:700;cursor:pointer;">🔌 Kelola ODP (kapasitas &amp; titik di peta)</summary>
+        <div class="mini-note" style="margin-top:8px;">Daftarkan ODP supaya muncul di peta dengan sisa kapasitas dan garis ke pelanggannya. Pelanggan dicocokkan lewat <b>Nama ODP</b> yang diisi di pendaftaran, tiket, dan Maintenance. Kalau ada tiket gangguan yang belum selesai di ODP itu, pin dan garisnya berubah merah.</div>
+        <div id="odpForm" class="form-card hide" style="margin-top:10px;">
+          <h3 id="od_judul">➕ Tambah ODP</h3>
+          <input type="hidden" id="od_id"><input type="hidden" id="od_lat"><input type="hidden" id="od_lng">
+          <div class="field"><label>Nama ODP</label><input id="od_nama" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
+          <div class="field"><label>Tipe pasif</label><select id="od_tipe"><option value="">— Belum diketahui —</option><option value="1:2">1:2 (2 port)</option><option value="1:4">1:4 (4 port)</option><option value="1:8">1:8 (8 port)</option><option value="1:16">1:16 (16 port)</option></select></div>
+          <div class="field"><label>Alamat / patokan (opsional)</label><input id="od_alamat" placeholder="cth: depan warung Bu Eha"></div>
+          <div class="field"><label>Link Google Maps ODP (opsional)</label><input id="od_maps" inputmode="url" placeholder="https://maps.app.goo.gl/..."></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+            <button type="button" class="btn btn-info" id="od_gps" onclick="gpsOdp_()">📍 Ambil lokasi saya</button>
+            <button type="button" class="btn btn-outline" onclick="linkOdp_()">🔗 Dari link Maps</button>
+          </div>
+          <div class="mini-note" id="od_info" style="margin:0 0 8px;">Titik ODP opsional, tapi tanpa titik ODP tidak muncul di peta. Tekan 📍 saat berada di ODP, atau isi link Maps lalu 🔗.</div>
+          <div class="field"><label>Keterangan (opsional)</label><input id="od_ket"></div>
+          <div class="actions"><button class="btn btn-primary" onclick="simpanOdpForm()">Simpan ODP</button><button class="btn btn-outline hide" id="od_batal" onclick="resetFormOdp_()">Batal ubah</button></div>
+        </div>
+        <div id="odpList" style="margin-top:10px;"></div>
+      </details>
     </div>
 
     <!-- ---- TAB: KELOLA PENGGUNA ---- -->
@@ -985,7 +1020,7 @@ if(!CONFIG_OK){
     '⚠️ config.js belum terunggah atau belum diisi. Upload config.js ke folder yang sama dengan index.html, isi URL dan anon key Supabase, lalu muat ulang.</div>');
 }
 
-let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [] };
+let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [], odp: [] };
 let USER = null;
 const FILES = { maint: [], pasang: [], daftar: [], tiket: [] };
 const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar', tiket:'fileListTiket' };
@@ -1243,11 +1278,49 @@ ACT.ralatRealisasi = async (p) => {
   return { ok:true };
 };
 
+ACT.ubahIspTiket = async (p) => {
+  if(!USER || !['Admin','CS'].includes(USER.role)) return { ok:false, error:'Hanya Admin atau CS yang bisa mengubah ISP tiket' };
+  const isp = txt_(p.isp);
+  if(!isp) return { ok:false, error:'ISP belum dipilih' };
+  const r = await sb.from('tiket').update({ isp }).eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  await logAksi_('mengubah ISP tiket', p.id);
+  return { ok:true };
+};
+
+const ODP_ROLES_ = ['Admin','Teknisi','Admin Server','Office'];
+ACT.simpanOdp = async (p) => {
+  if(!USER || !ODP_ROLES_.includes(USER.role)) return { ok:false, error:'Peran ini tidak bisa mengelola ODP' };
+  const nama = txt_(p.nama).trim();
+  if(!nama) return { ok:false, error:'Nama ODP wajib diisi' };
+  const isi = { nama, tipe: ['1:2','1:4','1:8','1:16'].includes(p.tipe) ? p.tipe : '', lat: num_(p.lat), lng: num_(p.lng),
+    alamat: txt_(p.alamat), mapsLink: txt_(p.mapsLink), keterangan: txt_(p.keterangan) };
+  if(p.id){
+    const r = await sb.from('odp').update(isi).eq('id', p.id).select('id');
+    if(r.error) return fail_(r.error);
+    if(!(r.data || []).length) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  } else {
+    const r = await sb.from('odp').insert({ ...isi, dibuatOleh: USER.name });
+    if(r.error) return fail_(r.error);
+  }
+  await logAksi_(p.id ? 'mengubah ODP' : 'menambah ODP', nama);
+  return { ok:true };
+};
+ACT.hapusOdp = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus ODP' };
+  const r = await sb.from('odp').delete().eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak terhapus. Cek izin database' };
+  await logAksi_('menghapus ODP', p.id);
+  return { ok:true };
+};
+
 ACT.ralatDaftar = async (p) => {
   if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa meralat data' };
   const isi = p.tipe === 'tiket'
-    ? { namaPelanggan: txt_(p.nama), alamat: txt_(p.alamat), noHp: txt_(p.noHp) }
-    : { nama: txt_(p.nama), alamatPasang: txt_(p.alamat), noHp: txt_(p.noHp) };
+    ? { namaPelanggan: txt_(p.nama), alamat: txt_(p.alamat), noHp: txt_(p.noHp), noOdp: txt_(p.noOdp).trim() }
+    : { nama: txt_(p.nama), alamatPasang: txt_(p.alamat), noHp: txt_(p.noHp), noOdp: txt_(p.noOdp).trim() };
   const tabel = p.tipe === 'tiket' ? 'tiket' : 'pendaftaran';
   const r = await sb.from(tabel).update(isi).eq('id', p.id).select('id');
   if(r.error) return fail_(r.error);
@@ -1318,6 +1391,11 @@ ACT.getAllData = async () => {
     const ps = await sb.from('pesan').select('*').order('dibuat', { ascending:false }).limit(500);
     if(!ps.error) pesan = ps.data || [];
   }catch(e){}
+  let odp = [];
+  try{
+    const od = await sb.from('odp').select('*').order('nama');
+    if(!od.error) odp = od.data || [];
+  }catch(e){}
   // Daftar teknisi (nama saja) untuk centang; gagal dimuat = daftar kosong
   let teknisiList = [];
   try { const r = await sb.rpc('daftar_teknisi'); if(!r.error) teknisiList = (r.data || []).map(x => x.nama); } catch(e) {}
@@ -1328,6 +1406,7 @@ ACT.getAllData = async () => {
     tiket,
     piket,
     pesan,
+    odp,
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
     maintenance: [...m.data.reverse(), ...pas.data.reverse()],
     logs: l.data, master: mas.data
@@ -1465,6 +1544,10 @@ ACT.addMaintenance = async (p) => {
   if(error) return fail_(error);
   if(p.linkId)   await sb.from('pendaftaran').update({ status:'Selesai' }).eq('id', p.linkId);
   if(p.ticketId) await sb.from('tiket').update({ status:'Selesai' }).eq('id', p.ticketId);
+  if(p.ticketId && p.isp){   // hanya melengkapi tiket yang ISP-nya KOSONG; ISP tiket yang sudah ada tidak pernah ditimpa dari Maintenance
+    const tk = STATE.tiket.find(x => x.id === p.ticketId);
+    if(tk && !tk.isp) await sb.from('tiket').update({ isp: txt_(p.isp) }).eq('id', p.ticketId);
+  }
   if(Array.isArray(p.tiketIkut) && p.tiketIkut.length) await sb.from('tiket').update({ status:'Selesai' }).in('id', p.tiketIkut);   // tiket client lain di ODP yang sama ikut selesai
   await logAksi_(p.linkId ? 'mengirim Realisasi Pemasangan' : 'mengirim Realisasi Maintenance', p.client);
   return { ok:true, id };
@@ -1563,6 +1646,7 @@ async function loadAll(){
     STATE.master = data.master || [];
     STATE.piket = data.piket || [];
     STATE.pesan = data.pesan || [];
+    STATE.odp = data.odp || [];
     deteksiEvent_();
   }
   renderAll();
@@ -1600,6 +1684,7 @@ function renderAll(){
   renderMaintLinkOptions();
   renderLaporan();
   renderLog();
+  renderOdpList_();
   renderPeta();
   renderPaketOptions();
   renderKendalaOptions();
@@ -1672,10 +1757,15 @@ function renderDashTiketIsp_(tiket){
   const hit = {};
   tiket.forEach(t => { const k = t.isp || '(belum diisi)'; hit[k] = (hit[k] || 0) + 1; });
   const rows = Object.entries(hit).sort((a, b) => b[1] - a[1]);
+  const kosong = tiket.filter(t => !t.isp);
+  const daftarKosong = kosong.length
+    ? `<div class="mini-note" style="margin:10px 0 4px;font-weight:700;">⚠️ Tiket tanpa ISP (${kosong.length}):</div>` + kosong.map(t =>
+        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding:6px 0;"><span>${esc(t.namaPelanggan)} • ${esc(t.status)} • ${fmtTs_(t.dibuatServer || t.timestamp)}</span>${bisaUbahIsp_() ? `<button class="btn btn-outline" onclick="ubahIspTiket('${t.id}')">Isi ISP</button>` : ''}</div>`).join('')
+    : '';
   box.innerHTML = rows.length
     ? `<div class="dwrap"><table class="dtable"><thead><tr><th>ISP</th><th>Tiket</th></tr></thead><tbody>${
         rows.map(([n, c]) => `<tr><td style="text-align:left;">${esc(n)}</td><td>${c}</td></tr>`).join('')
-      }<tr class="tot"><td>Total tiket</td><td>${tiket.length}</td></tr></tbody></table></div>`
+      }<tr class="tot"><td>Total tiket</td><td>${tiket.length}</td></tr></tbody></table></div>${daftarKosong}`
     : `<div class="empty"><span class="ic">📡</span>Belum ada tiket pada periode ini</div>`;
 }
 // Template isi Keterangan Maintenance. Bagian setelah "Handling:" dihitung ke dashboard.
@@ -1842,6 +1932,18 @@ function renderDashKelola_(){
       }).join('')}</tbody></table></div>`;
 }
 // Ralat realisasi pemasangan/maintenance oleh Admin (client, ISP, teknisi, keterangan)
+function bisaUbahIsp_(){ return !!(USER && ['Admin','CS'].includes(USER.role)); }
+async function ubahIspTiket(id){
+  const t = STATE.tiket.find(x => x.id === id); if(!t) return;
+  const daftar = STATE.master.filter(x => x.tipe === 'ISP').map(x => x.nilai);
+  if(!daftar.length){ toast('Daftar ISP belum diisi Admin'); return; }
+  const isi = prompt('ISP untuk tiket ' + t.namaPelanggan + (t.isp ? ' (sekarang: ' + t.isp + ')' : ' (belum diisi)') + '\nPilihan: ' + daftar.join(', '), t.isp || '');
+  if(isi === null) return;
+  const pilih = daftar.find(n => n.toLowerCase() === isi.trim().toLowerCase());
+  if(!pilih){ toast('ISP harus salah satu dari daftar'); return; }
+  const data = await apiCall('ubahIspTiket', { id, isp: pilih });
+  if(data && data.ok){ toast('✅ ISP tiket diperbarui'); loadAll(); }
+}
 async function ralatRealisasi(id){
   const m = STATE.maintenance.find(x => x.id === id);
   if(!m) return;
@@ -1882,7 +1984,8 @@ async function ralatDaftar(tipe, id){
   const nama = prompt('Nama client:', tipe === 'tiket' ? x.namaPelanggan : x.nama); if(nama === null) return;
   const alamat = prompt('Alamat:', tipe === 'tiket' ? (x.alamat || '') : (x.alamatPasang || '')); if(alamat === null) return;
   const noHp = prompt('No HP:', x.noHp || ''); if(noHp === null) return;
-  const data = await apiCall('ralatDaftar', { tipe, id, nama, alamat, noHp });
+  const noOdp = prompt('Nama ODP (boleh kosong):', x.noOdp || ''); if(noOdp === null) return;
+  const data = await apiCall('ralatDaftar', { tipe, id, nama, alamat, noHp, noOdp });
   if(data){ toast('✅ Data diralat'); loadAll(); }
 }
 
@@ -2313,6 +2416,7 @@ function isiDariPendaftaran(){
   const id = document.getElementById('rp_link').value;
   const x = STATE.pendaftaran.find(p=>p.id===id);
   document.getElementById('rp_client').value = x ? x.nama : '';
+  document.getElementById('rp_odp').value = (x && x.noOdp) || '';
   if(x) tandaiPenangan_('rp', x.konfirmasiOleh);
   kotakMikrotik_('rp_link', 'rp_mikrotikInfo', x && x.mikrotikUser
     ? `🌐 Mikrotik: <b>${esc(x.mikrotikUser)}</b> / ${esc(x.mikrotikPass||'-')}` : (x ? '🌐 Mikrotik belum diisi Admin Server/Office' : ''));
@@ -2336,7 +2440,7 @@ function renderMaintLinkOptions(){
 
 // Satu pekerjaan menyelesaikan beberapa tiket (mis. 1 ODP): tiket lain milik teknisi yang sama bisa dicentang
 // Kunci ODP: huruf besar/kecil, spasi, titik, strip diabaikan ("ODP-01" = "odp 01")
-function odpKey_(v){ return String(v || '').toLowerCase().replace(/[\s\-_.]/g, ''); }
+function odpKey_(v){ return String(v || '').toLowerCase().replace(/[\s\-_.]/g, '').replace(/^odp/, ''); }
 // Jumlah pelanggan terdampak: pilihan 1..kapasitas ODP (1:8 -> 8, 1:16 -> 16; belum dipilih -> 16)
 // Daftar pelanggan ikut dalam SATU laporan (satu ODP): [{n: nama, t: id tiket, r: redaman}]
 function pelangganOdpList_(m){
@@ -2377,6 +2481,18 @@ function isiOpsiTerdampak_(){
 }
 // Pelanggan tambahan di Maintenance (tanpa tiket): tiap nama dibuatkan laporan sendiri
 // Pin client tambahan: dari GPS HP (saat di rumah client) atau dari link Google Maps
+// Kalau ada link Maps tapi titik belum ada, coba ambil otomatis (lokal dulu, lalu server). Gagal = dilewati tanpa pesan error.
+async function koordDariLink_(link){
+  link = String(link || '').trim();
+  if(!/^https?:\/\//i.test(link)) return null;
+  const lokal = coordsDariUrl_(link);
+  if(lokal) return { lat: lokal.lat, lng: lokal.lng };
+  try{
+    const r = await ACT.resolveMapsLink({ link });
+    if(r && r.ok !== false && r.found !== false && r.lat !== undefined && r.lng !== undefined) return { lat: Number(r.lat), lng: Number(r.lng) };
+  }catch(e){}
+  return null;
+}
 function setPinClient_(blok, la, ln, ket){
   blok.dataset.la = Number(la).toFixed(6); blok.dataset.ln = Number(ln).toFixed(6);
   blok.querySelector('.tmb-pininfo').textContent = `✅ Pin tersimpan (${Number(la).toFixed(5)}, ${Number(ln).toFixed(5)})${ket ? ' — ' + ket : ''}. Akan muncul di tab Peta setelah laporan dikirim.`;
@@ -2451,7 +2567,7 @@ function payloadPelangganTambahan_(p, o){
 function renderOdpOpsi_(){
   const dl = document.getElementById('odpOpsi'); if(!dl) return;
   const seen = {};
-  [...STATE.tiket, ...STATE.pendaftaran].forEach(x => {
+  [...(STATE.odp || []).map(o => ({ noOdp: o.nama })), ...STATE.tiket, ...STATE.pendaftaran].forEach(x => {
     const v = String(x.noOdp || '').trim(), k = odpKey_(v);
     if(k && !seen[k]) seen[k] = v;
   });
@@ -2484,7 +2600,7 @@ function renderTiketLain_(){
   };
   const judul = txt => `<div class="mini-note" style="grid-column:1/-1;margin:6px 0 0;font-weight:700;">${txt}</div>`;
   box.innerHTML = (sama.length ? judul('🔌 Satu ODP (' + esc(utama.noOdp) + ')') + sama.map(cek).join('') : '')
-    + (beda.length ? judul(sama.length ? 'Tiket lain (ODP berbeda / kosong)' : (kunci ? 'Tidak ada tiket lain di ODP ini. Tiket lain milik Anda:' : 'Tiket utama belum punya No ODP. Tiket lain milik Anda:')) + beda.map(cek).join('') : '');
+    + (beda.length ? judul(sama.length ? 'Tiket lain (ODP berbeda / kosong)' : (kunci ? 'Tidak ada tiket lain di ODP ini. Tiket lain milik Anda:' : 'Tiket utama belum punya Nama ODP. Tiket lain milik Anda:')) + beda.map(cek).join('') : '');
   if(hint) hint.innerHTML = baru.length ? `ℹ️ Ada ${baru.length} tiket <b>Baru</b> di ODP yang sama (${esc(baru.map(x => x.namaPelanggan).join(', '))}). Tekan 🔧 Tangani dulu di tab Tiket supaya bisa ikut diselesaikan.` : '';
   hint && hint.classList.toggle('hide', !baru.length);
   wrap.classList.toggle('hide', !lain.length && !baru.length);
@@ -2527,6 +2643,7 @@ function isiDariTiket(){
   if(t.noOdp) document.getElementById('m_odp').value = t.noOdp;
   const dt = document.querySelector('.odp-opsi'); if(dt && (t.noOdp || t.tipeOdp)) dt.open = true;
   if(t.tipeOdp){ document.getElementById('m_tipeodp').value = t.tipeOdp; isiOpsiTerdampak_(); }
+  isiTipeDariOdp_('m');
   if(t.jumlahTerdampak) document.getElementById('m_jmlterdampak').value = String(t.jumlahTerdampak);
   document.getElementById('m_ket').value = `Keterangan: ${t.kendala}${t.noOdp ? ' (' + odpNama_(t.noOdp) + (t.tipeOdp ? ' pasif ' + t.tipeOdp : '') + ')' : ''}${(t.jumlahTerdampak || t.pelangganTerdampak) ? ' — terdampak: ' + [t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : '', t.pelangganTerdampak || ''].filter(Boolean).join(', ') : ''}\nHandling: `;
 }
@@ -2544,7 +2661,7 @@ function tiketCard_(t){
           <div class="nm">${esc(t.namaPelanggan)}</div>
           <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.timestamp?` • 📅 ${new Date(t.timestamp).toLocaleDateString('id-ID')}`:''}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
           ${waBtn_(t.noHp, t.noHpCadangan)}
-          ${t.isp ? `<div class="meta">📡 ISP: <b>${esc(t.isp)}</b></div>` : ''}
+          ${t.isp ? `<div class="meta">📡 ISP: <b>${esc(t.isp)}</b></div>` : (STATE.master.some(x => x.tipe === 'ISP') ? `<div class="meta" style="color:var(--warn);font-weight:600;">⚠️ ISP belum diisi</div>` : '')}
           ${(t.noOdp || t.tipeOdp) ? `<div class="meta">🔌 ODP: <b>${esc(t.noOdp || '-')}</b>${t.tipeOdp ? ' (pasif ' + esc(t.tipeOdp) + ')' : ''}</div>` : ''}
           ${(t.pelangganTerdampak || t.jumlahTerdampak) ? `<div class="meta">👥 Terdampak: ${t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : ''}${(t.jumlahTerdampak && t.pelangganTerdampak) ? ' — ' : ''}${esc(t.pelangganTerdampak || '')}</div>` : ''}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
@@ -2560,6 +2677,7 @@ function tiketCard_(t){
       <div class="actions">
         ${mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng))}" target="_blank">🗺️ Buka Maps</a>` : ''}
         ${ruteUrl_(t.lat, t.lng) ? `<a class="btn btn-good" href="${esc(ruteUrl_(t.lat, t.lng))}" target="_blank">🧭 Rute</a>` : ''}
+        ${bisaUbahIsp_() ? `<button class="btn btn-outline" onclick="ubahIspTiket('${t.id}')">✏️ ${t.isp ? 'Ubah ISP' : 'Isi ISP'}</button>` : ''}
         ${canTangani ? `<button class="btn btn-good" onclick="tanganiTiket('${t.id}')">🔧 Tangani</button>` : ''}
         ${canMinta ? `<button class="btn btn-info" onclick="mintaMikrotikTiket('${t.id}')">🌐 Minta Mikrotik</button>` : ''}
         ${canMinta ? `<button class="btn btn-outline" onclick="mikrotikSendiri('tiket','${t.id}')">🌐 Mikrotik Buat Sendiri</button>` : ''}
@@ -2596,6 +2714,10 @@ async function submitTiket(){
   if(!payload.namaPelanggan) payload.namaPelanggan = odpNama_(payload.noOdp);   // tiket satu ODP: nama tiket = ODP-nya
   if(STATE.master.some(x => x.tipe === 'ISP') && !payload.isp){ toast('Pilih ISP-nya dulu'); return; }
   if(!payload.kendala){ toast('Isi kendalanya dulu'); return; }
+  if(payload.mapsLink && !(payload.lat && payload.lng)){
+    const k = await koordDariLink_(payload.mapsLink);
+    if(k){ payload.lat = String(k.lat); payload.lng = String(k.lng); }
+  }
   const data = await apiCall('addTiket', payload);
   if(data && data.ok){
     toast('✅ Laporan gangguan tercatat');
@@ -2871,6 +2993,154 @@ function lokasiSaya(){
   }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
 
+/* ---------------- ODP: peta, kapasitas, garis ke pelanggan ---------------- */
+let mapLines = [];
+function bisaKelolaOdp_(){ return !!(USER && ODP_ROLES_.includes(USER.role)); }
+function odpDariNama_(nama){ const k = odpKey_(nama); return k ? (STATE.odp || []).find(o => odpKey_(o.nama) === k) : null; }
+// Kalau Nama ODP di form cocok dengan ODP terdaftar, tipenya terisi otomatis
+function isiTipeDariOdp_(pre){
+  const el = document.getElementById(pre + '_odp'); if(!el) return;
+  const o = odpDariNama_(el.value);
+  if(!o || !o.tipe) return;
+  const sel = document.getElementById(pre + '_tipeodp');
+  if(sel && !sel.value){ sel.value = o.tipe; isiOpsiTerdampak_(); }
+}
+// Pelanggan yang tercatat di satu ODP (dari pendaftaran, tiket, dan laporan Maintenance), digabung per nama
+function pelangganDiOdp_(odp){
+  const k = odpKey_(odp.nama), peta = {};
+  const tambah = (nama, lat, lng, aktif, jenis) => {
+    nama = String(nama || '').trim(); if(!nama) return;
+    if(odpKey_(nama) === k) return;                 // tiket "ODP <nama>" = masalah di ODP, bukan pelanggan
+    const e = peta[nama.toLowerCase()] || (peta[nama.toLowerCase()] = { nama, lat: null, lng: null, aktif: false, pasang: false, maint: false });
+    if(lat && lng && !(e.lat && e.lng)){ e.lat = Number(lat); e.lng = Number(lng); }
+    if(aktif) e.aktif = true;
+    if(jenis) e[jenis] = true;
+  };
+  // ODP yang dicatat teknisi saat realisasi pemasangan menggantikan ODP dari pendaftaran
+  const pemOdp = {};
+  hidup_(STATE.maintenance).filter(m => m.pendaftaranId && m.noOdp).forEach(m => { pemOdp[m.pendaftaranId] = odpKey_(m.noOdp); });
+  hidup_(STATE.pendaftaran).filter(x => (x.id in pemOdp ? pemOdp[x.id] : odpKey_(x.noOdp)) === k).forEach(x => tambah(x.nama, x.lat, x.lng, false, 'pasang'));
+  hidup_(STATE.tiket).filter(x => odpKey_(x.noOdp) === k).forEach(x => tambah(x.namaPelanggan, x.lat, x.lng, x.status !== 'Selesai', 'maint'));
+  hidup_(STATE.maintenance).filter(m => !m.pendaftaranId && odpKey_(m.noOdp) === k).forEach(m => {
+    const tk = m.tiketId ? STATE.tiket.find(x => x.id === m.tiketId) : null;
+    tambah(m.client, tk && tk.lat, tk && tk.lng, false, 'maint');
+    pelangganOdpList_(m).forEach(x => tambah(x.n, x.la, x.ln, false, 'maint'));
+  });
+  return Object.values(peta);
+}
+function infoOdp_(odp){
+  const pel = pelangganDiOdp_(odp), k = odpKey_(odp.nama), kap = kapasitasOdp_(odp.tipe);
+  const odpMasalah = hidup_(STATE.tiket).some(x => x.status !== 'Selesai' && odpKey_(x.noOdp) === k && odpKey_(x.namaPelanggan) === k);
+  const aktif = pel.filter(p => p.aktif);
+  return { pel, kap, nPasang: pel.filter(p => p.pasang).length, nMaint: pel.filter(p => p.maint && !p.pasang).length, terpakai: pel.length, tersedia: kap ? Math.max(0, kap - pel.length) : null, odpMasalah, aktif, bermasalah: odpMasalah || aktif.length > 0 };
+}
+// Pin ODP + garis ke pelanggan di peta. Merah = ada gangguan yang belum selesai (tiket terbuka).
+function gambarOdp_(){
+  const garis = (document.getElementById('chkGarisOdp') || {}).checked !== false;
+  (STATE.odp || []).filter(o => o.lat && o.lng).forEach(o => {
+    const inf = infoOdp_(o);
+    const warna = inf.bermasalah ? '#E5484D' : '#1E88E5';
+    const icon = L.divIcon({ className:'', iconSize:[24,24], html:`<div class="odp-pin ${inf.bermasalah ? 'odp-merah' : ''}" style="background:${warna};"><span>ODP</span></div>` });
+    const marker = L.marker([Number(o.lat), Number(o.lng)], { icon, zIndexOffset: 500 }).addTo(mapObj);
+    const daftar = inf.pel.length ? inf.pel.map(p => (p.aktif ? '⚠️ ' : (p.pasang ? '🏠 ' : '🛠️ ')) + esc(p.nama)).join('<br>') : '<i>Belum ada pelanggan tercatat</i>';
+    marker.bindPopup(`<b>🔌 ${esc(o.nama)}</b><br>${o.tipe ? 'Pasif ' + esc(o.tipe) + ' • ' : ''}Terpakai ${inf.terpakai}${inf.kap ? '/' + inf.kap + ' • <b>Tersedia ' + inf.tersedia + '</b>' : ''}`
+      + `<br>🏠 Pemasangan ${inf.nPasang} • 🛠️ Maintenance ${inf.nMaint}<br><span style="color:#566F8F;font-size:11px;">(dihitung dari data yang tercatat di aplikasi)</span>`
+      + (inf.bermasalah ? `<br><b style="color:#E5484D;">⚠️ Ada gangguan${inf.odpMasalah ? ' di ODP' : ''}${inf.aktif.length ? ' — ' + inf.aktif.length + ' pelanggan' : ''}</b>` : '')
+      + `<br>${daftar}${o.alamat ? '<br>📍 ' + esc(o.alamat) : ''}<br><a href="${esc(ruteUrl_(o.lat, o.lng))}" target="_blank" style="color:#1E88E5;font-weight:700;">🧭 Rute ke ODP</a>`
+      + (bisaKelolaOdp_() ? ` • <a href="#" onclick="editOdp('${o.id}');return false;" style="color:#1E88E5;">✏️ Ubah</a>` : ''));
+    mapMarkers.push(marker);
+    if(garis) inf.pel.filter(p => p.lat && p.lng).forEach(p => {
+      const gaya = p.aktif ? { color: '#E5484D', weight: 3, dashArray: null } : (p.pasang ? { color: '#1E88E5', weight: 2, dashArray: null } : { color: '#7C5CC4', weight: 2, dashArray: '6 6' });   // merah = gangguan, biru = pemasangan, ungu putus-putus = maintenance
+      mapLines.push(L.polyline([[Number(o.lat), Number(o.lng)], [p.lat, p.lng]], { ...gaya, opacity: .85 }).addTo(mapObj));
+    });
+  });
+}
+// Daftar + form kelola ODP (di bawah peta)
+function renderOdpList_(){
+  const box = document.getElementById('odpList'); if(!box) return;
+  const form = document.getElementById('odpForm'); if(form) form.classList.toggle('hide', !bisaKelolaOdp_());
+  const list = [...(STATE.odp || [])].sort((a, b) => String(a.nama).localeCompare(String(b.nama)));
+  box.innerHTML = list.length ? list.map(o => {
+    const inf = infoOdp_(o);
+    return `<div class="meta" style="border-bottom:1px solid var(--line);padding:8px 0;">
+      <b style="color:var(--text);">🔌 ${esc(o.nama)}</b>${inf.bermasalah ? ' <span class="badge baru">⚠️ gangguan</span>' : ''}<br>
+      ${o.tipe ? 'Pasif ' + esc(o.tipe) + ' • ' : ''}Terpakai ${inf.terpakai}${inf.kap ? '/' + inf.kap + ' • Tersedia ' + inf.tersedia : ''}${' • 🏠 ' + inf.nPasang + ' • 🛠️ ' + inf.nMaint}${(o.lat && o.lng) ? '' : ' • ⚪ belum ada titik'}
+      <div class="actions" style="margin-top:6px;">
+        ${(o.lat && o.lng) ? `<button class="btn btn-outline" onclick="fokusOdp('${o.id}')">🗺️ Lihat di peta</button>` : ''}
+        ${bisaKelolaOdp_() ? `<button class="btn btn-outline" onclick="editOdp('${o.id}')">✏️ Ubah</button>` : ''}
+        ${(USER && USER.role === 'Admin') ? `<button class="btn btn-outline" onclick="hapusOdp('${o.id}')">🗑️</button>` : ''}
+      </div></div>`;
+  }).join('') : '<div class="empty"><span class="ic">🔌</span>Belum ada ODP terdaftar</div>';
+}
+function setOdpPin_(la, ln, ket){
+  document.getElementById('od_lat').value = Number(la).toFixed(6);
+  document.getElementById('od_lng').value = Number(ln).toFixed(6);
+  document.getElementById('od_info').textContent = `✅ Titik ODP tersimpan (${Number(la).toFixed(5)}, ${Number(ln).toFixed(5)})${ket ? ' — ' + ket : ''}`;
+}
+function gpsOdp_(){
+  if(!navigator.geolocation){ toast('HP/browser ini tidak mendukung GPS'); return; }
+  const btn = document.getElementById('od_gps'); const asli = btn.textContent;
+  btn.disabled = true; btn.textContent = '📍 Mencari posisi...';
+  navigator.geolocation.getCurrentPosition(pos => {
+    setOdpPin_(pos.coords.latitude, pos.coords.longitude, 'akurasi ±' + Math.round(pos.coords.accuracy) + ' m');
+    btn.disabled = false; btn.textContent = asli;
+  }, err => { toast('Gagal ambil lokasi: ' + err.message); btn.disabled = false; btn.textContent = asli; }, { enableHighAccuracy: true, timeout: 20000 });
+}
+async function linkOdp_(){
+  const link = document.getElementById('od_maps').value.trim();
+  if(!link){ toast('Isi link Google Maps ODP dulu'); return; }
+  const k = await koordDariLink_(link);
+  if(k) setOdpPin_(k.lat, k.lng, 'dari link');
+  else document.getElementById('od_info').textContent = '✅ Link tersimpan, tapi titiknya belum kebaca. Pakai 📍 Ambil lokasi saya (saat berada di ODP).';
+}
+function resetFormOdp_(){
+  ['od_id','od_nama','od_alamat','od_maps','od_ket','od_lat','od_lng'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('od_tipe').value = '';
+  document.getElementById('od_info').textContent = 'Titik ODP opsional, tapi tanpa titik ODP tidak muncul di peta. Tekan 📍 saat berada di ODP, atau isi link Maps lalu 🔗.';
+  document.getElementById('od_judul').textContent = '➕ Tambah ODP';
+  document.getElementById('od_batal').classList.add('hide');
+}
+function editOdp(id){
+  const o = (STATE.odp || []).find(x => x.id === id); if(!o) return;
+  const d = document.getElementById('odpDetails'); if(d) d.open = true;
+  document.getElementById('od_id').value = o.id;
+  document.getElementById('od_nama').value = o.nama || '';
+  document.getElementById('od_tipe').value = o.tipe || '';
+  document.getElementById('od_alamat').value = o.alamat || '';
+  document.getElementById('od_maps').value = o.mapsLink || '';
+  document.getElementById('od_ket').value = o.keterangan || '';
+  document.getElementById('od_lat').value = o.lat || '';
+  document.getElementById('od_lng').value = o.lng || '';
+  document.getElementById('od_info').textContent = (o.lat && o.lng) ? `✅ Titik ODP tersimpan (${Number(o.lat).toFixed(5)}, ${Number(o.lng).toFixed(5)})` : 'Belum ada titik.';
+  document.getElementById('od_judul').textContent = '✏️ Ubah ODP';
+  document.getElementById('od_batal').classList.remove('hide');
+  document.getElementById('odpForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+async function simpanOdpForm(){
+  const payload = { id: val('od_id'), nama: val('od_nama').trim(), tipe: val('od_tipe'), alamat: val('od_alamat'), mapsLink: val('od_maps'), keterangan: val('od_ket'), lat: val('od_lat'), lng: val('od_lng') };
+  if(!payload.nama){ toast('Isi Nama ODP dulu'); return; }
+  if(payload.mapsLink && !(payload.lat && payload.lng)){
+    const k = await koordDariLink_(payload.mapsLink);
+    if(k){ payload.lat = String(k.lat); payload.lng = String(k.lng); }
+  }
+  const ada = (STATE.odp || []).find(o => odpKey_(o.nama) === odpKey_(payload.nama) && o.id !== payload.id);
+  if(ada){ toast('ODP dengan nama itu sudah ada: ' + ada.nama); return; }
+  const data = await apiCall('simpanOdp', payload);
+  if(data && data.ok){ toast('✅ ODP tersimpan'); resetFormOdp_(); loadAll(); }
+}
+async function hapusOdp(id){
+  const o = (STATE.odp || []).find(x => x.id === id); if(!o) return;
+  if(!confirm('Hapus ODP ' + o.nama + '? Data tiket dan laporan tidak ikut terhapus.')) return;
+  const data = await apiCall('hapusOdp', { id });
+  if(data && data.ok){ toast('🗑️ ODP dihapus'); loadAll(); }
+}
+function fokusOdp(id){
+  const o = (STATE.odp || []).find(x => x.id === id);
+  if(!o || !mapObj){ toast('Buka tab peta dulu'); return; }
+  mapObj.setView([Number(o.lat), Number(o.lng)], 18);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function renderPeta(){
   const box = document.getElementById('mapView');
   if(!box || typeof L === 'undefined') return;
@@ -2887,6 +3157,8 @@ function renderPeta(){
   }
   mapMarkers.forEach(m=>mapObj.removeLayer(m));
   mapMarkers = [];
+  mapLines.forEach(l=>mapObj.removeLayer(l));
+  mapLines = [];
   const pts = titikPeta_();
   pts.forEach(x=>{
     const color = STATUS_COLOR[x.status] || '#93A9C4';
@@ -2898,8 +3170,9 @@ function renderPeta(){
     marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.riwayat ? `<br><span style="color:#5B7699;">+${x.riwayat} riwayat di lokasi ini</span>` : ''}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
+  gambarOdp_();
   mapObj.invalidateSize();
-  if(pts.length && mapNeedFit){
+  if((pts.length || mapMarkers.length) && mapNeedFit){
     const group = L.featureGroup(mapMarkers);
     mapObj.fitBounds(group.getBounds().pad(0.2));
     mapNeedFit = false;
@@ -3511,7 +3784,7 @@ async function submitRealisasiPemasangan(){
   if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
   const payload = {
     linkId, client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'), isTest: document.getElementById('rp_test').checked,
-    teknisi: val('rp_teknisi'), stok: val('rp_stok'), redaman: redamanPayload_('rp'),
+    teknisi: val('rp_teknisi'), stok: val('rp_stok'), noOdp: val('rp_odp'), redaman: redamanPayload_('rp'),
     ...matPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
     barrel: val('rp_barrel'), jenisKabel: val('rp_jeniskabel'), kabel: val('rp_jeniskabel') ? val('rp_kabel') : 0, keterangan: val('rp_ket'),
     files: filesPayload('pasang'), ...susulanPayload_('rp')
@@ -3521,7 +3794,7 @@ async function submitRealisasiPemasangan(){
   const data = await apiCall('addMaintenance', payload);
   if(data){
     toast('✅ Pemasangan Ais.net terkirim');
-    ['rp_teknisi','rp_stok','rp_ket'].forEach(id=>document.getElementById(id).value='');
+    ['rp_teknisi','rp_stok','rp_odp','rp_ket'].forEach(id=>document.getElementById(id).value='');
     renderTeknisiChecks(); resetRedaman_('rp');
     ['rp_modem','rp_splitter','rp_closure','rp_boxodp','rp_adaptor','rp_patchcore','rp_barrel','rp_kabel'].forEach(id=>document.getElementById(id).value='0');
     MAT.forEach(m=>document.getElementById('rp_j'+m.key).value='');
@@ -3556,6 +3829,9 @@ async function submitMaintenance(){
   const kapasitas = kapasitasOdp_(payload.tipeOdp);
   if(kapasitas && 1 + extra.length + namaBaru.length > kapasitas){ toast(`Jumlah pelanggan (${1 + extra.length + namaBaru.length}) melebihi kapasitas ODP ${payload.tipeOdp}`); return; }
   const pisah = !!(document.getElementById('m_pisah') || {}).checked;
+  for(const o of namaBaru){
+    if(o.maps && !(o.la && o.ln)){ const k = await koordDariLink_(o.maps); if(k){ o.la = k.lat; o.ln = k.lng; } }
+  }
   if(!pisah && (extra.length || namaBaru.length)){
     // satu laporan: semua pelanggan satu ODP masuk ke laporan ini, tiket mereka ikut ditutup
     payload.pelangganOdp = JSON.stringify([
@@ -3739,7 +4015,7 @@ function kolomKred_(m){
 }
 function exportPendaftaran(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','No ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Tgl Daftar Sebenarnya','Susulan','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Sumber Mikrotik','Tgl Didaftarkan di Server','Password WiFi','Mikrotik User','Mikrotik Password']];
+  const rows = [['ID','Nama','No HP','No HP Cadangan','Alamat KTP','Alamat Pasang','Link Maps','Paket','ISP','SSID','Tgl Pemasangan (rencana)','No ODC','Nama ODP','Status Tinggal','Status','Diinput oleh','Tgl Daftar (sistem)','Tgl Daftar Sebenarnya','Susulan','Diambil oleh','Tgl Diambil (sistem)','Mikrotik oleh','Tgl Mikrotik','Sumber Mikrotik','Tgl Didaftarkan di Server','Password WiFi','Mikrotik User','Mikrotik Password']];
   hidup_(STATE.pendaftaran).forEach(p => {
     rows.push([p.id, p.nama, {tel:p.noHp}, {tel:p.noHpCadangan}, p.alamatKtp, p.alamatPasang,
       {link: mapsUrl_(p.mapsLink, p.alamatPasang, p.lat, p.lng)}, p.paket, p.isp, p.ssid, p.tglPemasangan, p.noOdc, p.noOdp,
