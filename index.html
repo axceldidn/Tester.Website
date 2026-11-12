@@ -289,6 +289,7 @@ button{font-family:'Inter',sans-serif;}
 .peran-office{background:#1E8E5A;}
 .peran-cs{background:#D9780F;}
 .peran-marketing,.peran-sales{background:#5F7385;}
+.peran-pkl{background:#0E8FA3;}
 .chat-send{display:flex;gap:8px;margin-top:8px;}
 .chat-send input{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:11px;border-radius:10px;font-size:14px;}
 .thread{cursor:pointer;}
@@ -320,6 +321,9 @@ button{font-family:'Inter',sans-serif;}
 .odp-pin span{pointer-events:none;}
 .odp-merah{animation:odpPulse 1.4s infinite;}
 @keyframes odpPulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.65);}100%{box-shadow:0 0 0 14px rgba(229,72,77,0);}}
+.odc-pin{width:30px;height:30px;border-radius:8px;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font:700 9px/1 sans-serif;box-shadow:0 1px 5px rgba(18,48,107,.5);}
+.bb-label{background:#fff;border:1px solid #9FB3CC;border-radius:6px;color:#12306B;font:700 11px/1 sans-serif;padding:2px 5px;box-shadow:none;}
+.bb-label:before{display:none;}
 </style>
 </head>
 <body>
@@ -423,6 +427,11 @@ button{font-family:'Inter',sans-serif;}
       <div id="dashPenanganan"></div>
       <div class="sect-h"><h2>📡 Tiket per ISP</h2></div>
       <div id="dashTiketIsp"></div>
+      <div class="sect-h"><h2>📦 Material Terpakai per Teknisi</h2></div>
+      <div class="mini-note" style="margin:0 0 8px;">Hanya material yang terpakai. Pemilik stok diambil dari kolom "Stok dipakai dari"; kalau kosong, teknisi pertama di laporan.</div>
+      <div id="dashMaterial"></div>
+      <div class="sect-h"><h2>📦 Total Material Terpakai</h2></div>
+      <div id="dashMaterialTotal"></div>
       <div class="sect-h"><h2>Pemasangan Harian per ISP</h2></div>
       <div id="dashIspHarian"></div>
       <div class="sect-h"><h2>Market ISP (berdasarkan pemasangan)</h2></div>
@@ -461,7 +470,7 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="grid2">
           <div class="field"><label>No ODC</label><input id="f_odc"></div>
-          <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="f_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
+          <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="f_odp" onchange="cekNamaOdp_(this)" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
         </div>
         <div class="field">
           <label>Status tempat tinggal</label>
@@ -538,7 +547,7 @@ button{font-family:'Inter',sans-serif;}
     <div id="tab-tiket" class="tabpane hide">
       <div class="form-card" id="tiketFormCard">
         <h3>🎫 Laporan Gangguan Masuk</h3>
-        <div class="field"><label>Nama Pelanggan / Mikrotik (boleh kosong kalau gangguan satu ODP, isi Nama ODP di bawah)</label><input id="t_nama" placeholder="cth: Rawagondang.Sarip atau Sarip"></div>
+        <div class="field"><label>Nama Pelanggan / Mikrotik (wajib)</label><input id="t_nama" placeholder="cth: Cigodak.Aceng"></div>
         <div class="field"><label>No HP</label><input id="t_hp" type="tel"></div>
         <div class="field"><label>No HP cadangan (opsional)</label><input id="t_hp2" type="tel"></div>
         <div class="field"><label>Alamat</label><input id="t_alamat" placeholder="Alamat rumah/lokasi client"></div>
@@ -560,15 +569,17 @@ button{font-family:'Inter',sans-serif;}
           <input type="hidden" id="t_lat"><input type="hidden" id="t_lng">
         </div>
         <div class="field"><label>ISP</label><select id="t_isp"></select></div>
-        <details id="t_odpDetails" style="margin:6px 0 12px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP (opsional, biasanya diisi teknisi)</summary>
-        <div class="mini-note" style="margin-top:-6px;">CS boleh mengosongkan semua kolom di sini. Tidak wajib.</div>
-        <div class="field"><label>Nama ODP (ketik; pilih dari saran biar penulisannya sama)</label><input id="t_odp" onchange="isiTipeDariOdp_('t')" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
-        <div class="grid2">
-          <div class="field"><label>Tipe ODP (opsional)</label><select id="t_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
-          <div class="field"><label>Jumlah pelanggan terdampak (opsional)</label><select id="t_jmlterdampak"></select></div>
+        <div class="field"><label>Nama ODP pelanggan ini (opsional; dipakai untuk garis ODP ke pelanggan di peta)</label><input id="t_odp" onchange="isiTipeDariOdp_('t');cekNamaOdp_(this)" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"><datalist id="odpOpsi"></datalist></div>
+        <div style="border:1px dashed var(--line);border-radius:10px;padding:10px;margin:6px 0 14px;background:var(--surface2);">
+          <div style="font-weight:700;margin-bottom:4px;">🔌 ODP / Splitter terdampak (opsional)</div>
+          <div class="mini-note" style="margin:0 0 8px;">Isi kalau gangguan ini ternyata kena ke pelanggan lain di ODP/splitter yang sama. Kalau cuma pelanggan ini saja, kosongkan.</div>
+          <div class="field"><label>Nama ODP / splitter terdampak</label><input id="t_odp2" onchange="isiTipeDariOdp_('t');cekNamaOdp_(this)" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
+          <div class="grid2">
+            <div class="field"><label>Tipe ODP</label><select id="t_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
+            <div class="field"><label>Jumlah pelanggan terdampak</label><select id="t_jmlterdampak"></select></div>
+          </div>
+          <div class="field" style="margin-bottom:0;"><label>Pelanggan terdampak (pisahkan koma; alamat boleh di dalam kurung)</label><textarea id="t_terdampak" rows="2" placeholder="cth: Cigodak.Budi, Cigodak.Ani"></textarea></div>
         </div>
-        <div class="field"><label>Pelanggan terdampak (opsional; pisahkan dengan koma, alamat boleh di dalam kurung)</label><textarea id="t_terdampak" rows="2" placeholder="cth: Sarip (Gg Mawar 3), Budi (Gg Melati 5)"></textarea></div>
-        </details>
         <div class="field">
           <label>Kendala</label>
           <select id="t_kendala" onchange="toggleKendalaManual()"></select>
@@ -602,6 +613,12 @@ button{font-family:'Inter',sans-serif;}
       <div class="form-card">
         <h3>📶 Pemasangan Ais.net</h3>
         <div class="mini-note" style="margin-top:-6px;">Khusus buat nutup pendaftaran baru yang udah siap dipasang. Bukan buat laporan gangguan/perbaikan — itu di tab Maintenance.</div>
+        <div class="field" id="as_blok_pas">
+          <label>📦 Dari Database Asset (opsional): cari nama pemasangan</label>
+          <input id="as_cari_pas" list="as_dl_pas" placeholder="ketik nama client…" onchange="pilihAssetDariCari_('pas')" autocomplete="off">
+          <datalist id="as_dl_pas"></datalist>
+          <div id="as_banner_pas" class="mini-note hide" style="margin-top:6px;"></div>
+        </div>
         <div class="field">
           <label>Pendaftaran yang dipasang</label>
           <select id="rp_link" onchange="isiDariPendaftaran()"><option value="">— Pilih dari daftar siap pasang —</option></select>
@@ -613,8 +630,8 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <div class="field"><label>ISP</label><select id="rp_isp" onchange="ispBaru(this)"></select></div>
         <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="rp_teknisi"><div id="rp_teknisiBox" class="teknisi-box"></div></div>
-        <div class="field"><label>Stok dipakai dari</label><input id="rp_stok"></div>
-        <div class="field"><label>Nama ODP tempat pelanggan dipasang (opsional)</label><input id="rp_odp" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off">
+        <div class="field"><label>Stok dipakai dari</label><input id="rp_stok" list="stokOpsi" oninput="this.dataset.auto=''" placeholder="nama teknisi pemilik stok"></div>
+        <div class="field"><label>Nama ODP tempat pelanggan dipasang (opsional)</label><input id="rp_odp" onchange="cekNamaOdp_(this)" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off">
           <div class="mini-note" style="margin:4px 0 0;">Terisi dari pendaftaran kalau sudah ada; ubah kalau kenyataannya beda. Dipakai untuk garis ODP ke pelanggan di peta dan hitungan kapasitas.</div></div>
         <datalist id="redamanOpsi"><option value="ODP Murni"><option value="ODP"><option value="Pelanggan / ONT"><option value="Sebelum perbaikan"><option value="Sesudah perbaikan"></datalist>
         <div class="field"><label>Redaman (dBm) — bisa lebih dari satu titik</label>
@@ -645,6 +662,10 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Barrel</label><input id="rp_barrel" type="number" value="0"></div>
         <div class="field"><label>Jenis kabel (opsional)</label><select id="rp_jeniskabel" onchange="toggleMeter('rp')"><option value="">— Tidak pakai kabel —</option><option>1C DC</option><option>4C DC</option><option>4C Fig 8</option><option>12 Fig 8</option><option>24 Fig 8</option></select></div>
         <div class="field hide" id="rp_meterWrap"><label>Meter kabel</label><input id="rp_kabel" type="number" value="0"></div>
+        <div class="field"><label>Material lain (opsional, hanya yang terpakai)</label>
+          <div id="rp_matLainBox"></div>
+          <button type="button" class="btn btn-outline btn-block" onclick="tambahMatLain_('rp')">➕ Tambah material lain</button>
+        </div>
         <div class="field"><label>Keterangan (Ket)</label><textarea id="rp_ket" placeholder="cth: psb"></textarea></div>
         <div class="field">
           <label>Lampiran (opsional: foto, video, PDF, dll)</label>
@@ -677,6 +698,12 @@ button{font-family:'Inter',sans-serif;}
       <div class="form-card">
         <h3>#Realisasi Maintenance</h3>
         <div class="mini-note" style="margin-top:-6px;">Khusus buat gangguan/perbaikan. Buat nutup pendaftaran baru, pakai tab Pemasangan.</div>
+        <div class="field" id="as_blok_mnt">
+          <label>📦 Dari Database Asset (opsional): cari nama maintenance / backbone</label>
+          <input id="as_cari_mnt" list="as_dl_mnt" placeholder="ketik nama client…" onchange="pilihAssetDariCari_('mnt')" autocomplete="off">
+          <datalist id="as_dl_mnt"></datalist>
+          <div id="as_banner_mnt" class="mini-note hide" style="margin-top:6px;"></div>
+        </div>
         <div class="field">
           <label>Kaitkan ke tiket gangguan (opsional)</label>
           <select id="m_ticket" onchange="isiDariTiket()"><option value="">— Pilih dari tiket yang ditangani —</option></select>
@@ -689,11 +716,18 @@ button{font-family:'Inter',sans-serif;}
         </div>
         <details class="odp-opsi" style="margin-top:16px;"><summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🔌 Info ODP splitter (opsional)</summary>
         <div class="mini-note" style="margin-top:-6px;">Isi kalau teknisi menemukan ODP/splitter-nya yang bermasalah. Kalau tidak ada client, Nama Client boleh kosong dan laporan memakai nama ODP-nya (mis. ODP BujangGadung). Client lain ditambahkan di bawah kolom Nama Client.</div>
-        <div class="field"><label>Nama ODP</label><input id="m_odp" onchange="isiTipeDariOdp_('m')" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
+        <div class="field"><label>Nama ODP</label><input id="m_odp" onchange="isiTipeDariOdp_('m');cekNamaOdp_(this)" list="odpOpsi" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
         <div class="grid2">
           <div class="field"><label>Tipe ODP</label><select id="m_tipeodp" onchange="isiOpsiTerdampak_()"><option value="">— Pilih —</option><option value="1:2">Pasif 1:2 (2 port)</option><option value="1:4">Pasif 1:4 (4 port)</option><option value="1:8">Pasif 1:8 (8 port)</option><option value="1:16">Pasif 1:16 (16 port)</option></select></div>
           <div class="field"><label>Jumlah pelanggan terdampak</label><select id="m_jmlterdampak"></select></div>
         </div>
+        </details>
+        <details class="bb-opsi" style="margin-top:12px;">
+          <summary style="font-weight:700;cursor:pointer;margin-bottom:8px;">🧵 Pekerjaan backbone (opsional: tarik baru / perbaikan)</summary>
+          <div class="mini-note" style="margin-top:-2px;">Pilih jalur backbone yang dikerjakan. Laporan ini menjadi laporan pekerjaan backbone (material, redaman, foto, dan Handling tetap diisi seperti biasa) dan status jalur di peta ikut diperbarui. Nama Client boleh kosong.</div>
+          <div class="field"><label>Jalur backbone</label><select id="bm_jalur"></select></div>
+          <div class="field"><label>Jenis pekerjaan</label><select id="bm_jenis"><option value="Perbaikan">Perbaikan</option><option value="Tarik baru">Tarik baru</option></select></div>
+          <label class="chk-teknisi"><input type="checkbox" id="bm_selesai" checked> Jalur sudah normal setelah pekerjaan ini (hilangkan merah di peta)</label>
         </details>
         <div class="field"><label>Nama Client (utama)</label><input id="m_client"></div>
         <div class="field">
@@ -712,7 +746,7 @@ button{font-family:'Inter',sans-serif;}
           <select id="m_stts"><option>Done</option><option>Progress</option><option>Un-handling</option></select>
         </div>
         <div class="field"><label>Teknisi (centang yang ikut mengerjakan, maks 4)</label><input type="hidden" id="m_teknisi"><div id="m_teknisiBox" class="teknisi-box"></div></div>
-        <div class="field"><label>Stok dipakai dari</label><input id="m_stok"></div>
+        <div class="field"><label>Stok dipakai dari</label><input id="m_stok" list="stokOpsi" oninput="this.dataset.auto=''" placeholder="nama teknisi pemilik stok"><datalist id="stokOpsi"></datalist></div>
         <div class="field"><label>Redaman (dBm) — bisa lebih dari satu titik</label>
           <div id="m_redamanBox" class="rdm-box"></div>
           <button type="button" class="btn btn-info" onclick="tambahRedaman_('m')">+ Tambah titik redaman</button>
@@ -746,6 +780,10 @@ button{font-family:'Inter',sans-serif;}
         <div class="field"><label>Barrel</label><input id="m_barrel" type="number" value="0"></div>
         <div class="field"><label>Jenis kabel (opsional)</label><select id="m_jeniskabel" onchange="toggleMeter('m')"><option value="">— Tidak pakai kabel —</option><option>1C DC</option><option>4C DC</option><option>4C Fig 8</option><option>12 Fig 8</option><option>24 Fig 8</option></select></div>
         <div class="field hide" id="m_meterWrap"><label>Meter kabel</label><input id="m_kabel" type="number" value="0"></div>
+        <div class="field"><label>Material lain (opsional, hanya yang terpakai)</label>
+          <div id="m_matLainBox"></div>
+          <button type="button" class="btn btn-outline btn-block" onclick="tambahMatLain_('m')">➕ Tambah material lain</button>
+        </div>
         <div class="field"><label>Keterangan &amp; Handling (isi setelah titik dua; handling lebih dari satu pisahkan koma atau baris baru)</label><textarea id="m_ket" rows="5">Keterangan: 
 Handling: </textarea></div>
         <div class="field">
@@ -862,6 +900,7 @@ Handling: </textarea></div>
       </div>
       <div class="mini-note" id="lokasiSayaInfo" style="margin-bottom:8px;">Tekan tombol untuk melihat posisi HP sekarang di peta.</div>
       <label class="chk-teknisi" style="margin-bottom:6px;"><input type="checkbox" id="chkGarisOdp" checked onchange="renderPeta()"> Tampilkan garis ODP ke pelanggan</label>
+      <label class="chk-teknisi" style="margin-bottom:6px;"><input type="checkbox" id="chkBackbone" checked onchange="renderPeta()"> Tampilkan jalur backbone</label>
       <div class="map-legend">
         <span><i style="background:var(--bad);"></i>Baru</span>
         <span><i style="background:var(--warn);"></i>Dikonfirmasi</span>
@@ -869,6 +908,9 @@ Handling: </textarea></div>
         <span><i style="background:var(--good);"></i>Selesai</span>
         <span><i style="background:#7C5CC4;"></i>Client ikut terdampak (Maintenance)</span>
         <span><i style="background:#1E88E5;border-radius:2px;"></i>ODP</span>
+        <span><i style="background:#0F9D9A;border-radius:3px;"></i>ODC</span>
+        <span><i style="background:#1565C0;border-radius:0;height:6px;width:18px;"></i>Backbone (label = jumlah core, makin tebal makin banyak)</span>
+        <span><i style="background:#E5484D;border-radius:0;height:5px;width:18px;"></i>Backbone perbaikan/gangguan</span>
         <span><i style="background:#E5484D;border-radius:2px;"></i>ODP/garis merah = ada gangguan</span>
         <span><i style="background:#1E88E5;border-radius:0;height:4px;width:16px;"></i>Garis biru = pemasangan</span>
         <span><i style="background:#7C5CC4;border-radius:0;height:4px;width:16px;"></i>Garis ungu putus-putus = maintenance</span>
@@ -876,13 +918,14 @@ Handling: </textarea></div>
       <div id="mapView"></div>
       <button class="btn btn-outline btn-block" style="margin-top:14px;" onclick="exportKML()">⬇️ Export KML (Google Earth / My Maps)</button>
       <details id="odpDetails" style="margin-top:18px;">
-        <summary style="font-weight:700;cursor:pointer;">🔌 Kelola ODP (kapasitas &amp; titik di peta)</summary>
+        <summary style="font-weight:700;cursor:pointer;">🔌 Kelola ODP / ODC &amp; Jalur Backbone</summary>
         <div class="mini-note" style="margin-top:8px;">Daftarkan ODP supaya muncul di peta dengan sisa kapasitas dan garis ke pelanggannya. Pelanggan dicocokkan lewat <b>Nama ODP</b> yang diisi di pendaftaran, tiket, dan Maintenance. Kalau ada tiket gangguan yang belum selesai di ODP itu, pin dan garisnya berubah merah.</div>
         <div id="odpForm" class="form-card hide" style="margin-top:10px;">
           <h3 id="od_judul">➕ Tambah ODP</h3>
           <input type="hidden" id="od_id"><input type="hidden" id="od_lat"><input type="hidden" id="od_lng">
-          <div class="field"><label>Nama ODP</label><input id="od_nama" placeholder="cth: ODP BujangGadung" autocomplete="off"></div>
-          <div class="field"><label>Tipe pasif</label><select id="od_tipe"><option value="">— Belum diketahui —</option><option value="1:2">1:2 (2 port)</option><option value="1:4">1:4 (4 port)</option><option value="1:8">1:8 (8 port)</option><option value="1:16">1:16 (16 port)</option></select></div>
+          <div class="field"><label>Jenis titik</label><select id="od_jenis" onchange="aturFormJenis_()"><option value="ODP">ODP</option><option value="ODC">ODC</option></select></div>
+          <div class="field"><label>Nama ODP / ODC</label><input id="od_nama" placeholder="cth: ODP BujangGadung atau ODC Cikuya" autocomplete="off"></div>
+          <div class="field" id="od_wrapTipe"><label>Tipe pasif</label><select id="od_tipe"><option value="">— Belum diketahui —</option><option value="1:2">1:2 (2 port)</option><option value="1:4">1:4 (4 port)</option><option value="1:8">1:8 (8 port)</option><option value="1:16">1:16 (16 port)</option></select></div>
           <div class="field"><label>Alamat / patokan (opsional)</label><input id="od_alamat" placeholder="cth: depan warung Bu Eha"></div>
           <div class="field"><label>Link Google Maps ODP (opsional)</label><input id="od_maps" inputmode="url" placeholder="https://maps.app.goo.gl/..."></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
@@ -894,7 +937,66 @@ Handling: </textarea></div>
           <div class="actions"><button class="btn btn-primary" onclick="simpanOdpForm()">Simpan ODP</button><button class="btn btn-outline hide" id="od_batal" onclick="resetFormOdp_()">Batal ubah</button></div>
         </div>
         <div id="odpList" style="margin-top:10px;"></div>
+        <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px;">
+          <div style="font-weight:700;">🧵 Jalur Backbone (ODC ↔ ODP)</div>
+          <div class="mini-note" style="margin:4px 0 8px;">Catat jalur kabel antar titik beserta <b>jumlah core</b>. Di peta jalurnya digambar sebagai garis dengan label jumlah core; makin banyak core makin tebal. Garis merah putus-putus = sedang perbaikan atau gangguan. Daftarkan dulu ODC/ODP-nya (dengan titik) di atas.</div>
+          <div id="bbForm" class="form-card hide">
+            <h3 id="bb_judul">➕ Tambah Jalur</h3>
+            <input type="hidden" id="bb_id">
+            <div class="grid2">
+              <div class="field"><label>Dari</label><select id="bb_dari"></select></div>
+              <div class="field"><label>Ke</label><select id="bb_ke"></select></div>
+            </div>
+            <div class="grid2">
+              <div class="field"><label>Jumlah core</label><select id="bb_core"><option value="">— Pilih —</option><option>2</option><option>4</option><option>6</option><option>8</option><option>12</option><option>24</option><option>36</option><option>48</option><option>96</option><option>144</option></select></div>
+              <div class="field"><label>Panjang (meter, opsional)</label><input id="bb_panjang" type="number" min="0"></div>
+            </div>
+            <div class="grid2">
+              <div class="field"><label>Status</label><select id="bb_status"><option value="Normal">Normal</option><option value="Dalam perbaikan">Dalam perbaikan</option><option value="Gangguan">Gangguan</option></select></div>
+              <div class="field" id="bb_wrapKerja"><label>Pekerjaan awal</label><select id="bb_kerja"><option value="">Sudah ada (data lama)</option><option value="Tarik baru">Tarik baru</option></select></div>
+            </div>
+            <div class="field"><label>Keterangan (opsional)</label><input id="bb_ket"></div>
+            <div class="actions"><button class="btn btn-primary" onclick="simpanBackbone()">Simpan jalur</button><button class="btn btn-outline hide" id="bb_batal" onclick="resetFormBb_()">Batal ubah</button></div>
+          </div>
+          <div id="bbList" style="margin-top:10px;"></div>
+        </div>
       </details>
+    </div>
+
+    <!-- ---- TAB: DATABASE ASSET ---- -->
+    <div id="tab-asset" class="tabpane hide">
+      <div class="sect-h"><h2>🗃️ Database Asset</h2></div>
+      <div class="mini-note">Daftar pekerjaan dari Excel Admin (sheet Pemasangan dan Maintenance; pekerjaan backbone dari sheet Maintenance juga masuk sini). Cari nama, lihat statusnya, lalu selesaikan di Pemasangan atau Maintenance. Yang sudah selesai pun bisa dicari dan dikirim sebagai laporan.</div>
+      <div id="assetImportBox" class="form-card hide" style="margin-top:10px;">
+        <h3>⬆️ Import Excel (Admin)</h3>
+        <div class="mini-note">Pilih file .xlsx berisi sheet "Database Pemasangan" dan/atau "Database Maintenance". Data diperiksa dulu sebelum disimpan. Sel dengan banyak client dipecah jadi satu asset per client; teknisi sampai 8 orang; tanda (P) masuk jadwal piket.</div>
+        <input type="file" id="as_file" accept=".xlsx,.xls" onchange="bacaExcelAsset_(this)">
+        <div id="as_preview" style="margin-top:10px;"></div>
+        <div class="actions"><button class="btn btn-primary hide" id="as_simpan" onclick="simpanImportAsset_()">Simpan ke Database Asset</button></div>
+      </div>
+      <div class="field" style="margin-top:12px;"><input id="as_q" type="search" placeholder="🔎 Cari nama / alamat / Mikrotik / HP" oninput="assetFilter.q=this.value;assetFilter.batas=40;renderAsset_()"></div>
+      <div id="as_chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+      <div class="field"><select id="as_jenis" onchange="assetFilter.jenis=this.value;assetFilter.batas=40;renderAsset_()"><option value="">Semua jenis</option><option value="Pemasangan">Pemasangan</option><option value="Maintenance">Maintenance</option><option value="Backbone">Backbone</option></select></div>
+      <div id="as_pinBox" class="hide" style="margin-bottom:8px;">
+        <button type="button" class="btn btn-outline btn-block" id="as_pinBtn" onclick="ambilTitikAsset_()">📍 Ambil titik Peta dari link Maps</button>
+        <div class="mini-note" id="as_pinInfo" style="margin:6px 0 0;"></div>
+      </div>
+      <details id="as_hapusBox" class="form-card hide" style="margin-bottom:10px;">
+        <summary style="cursor:pointer;font-weight:700;">🗑️ Hapus Banyak Asset (Admin)</summary>
+        <div class="mini-note" style="margin:8px 0;">Centang status asset yang mau dihapus. Menghapus tidak bisa dibatalkan.</div>
+        <div class="teknisi-box" id="as_hapusStatus">
+          <label class="chk-teknisi"><input type="checkbox" value="Unhandling" onchange="hitungHapusAsset_()"> Unhandling</label>
+          <label class="chk-teknisi"><input type="checkbox" value="Proses" onchange="hitungHapusAsset_()"> Proses</label>
+          <label class="chk-teknisi"><input type="checkbox" value="Selesai" onchange="hitungHapusAsset_()"> Selesai (Done)</label>
+          <label class="chk-teknisi"><input type="checkbox" id="as_hapusSemua" onchange="pilihSemuaHapus_(this)"> Semua status</label>
+        </div>
+        <label class="chk-teknisi" style="margin-top:8px;"><input type="checkbox" id="as_hapusLaporan" onchange="hitungHapusAsset_()"> Termasuk asset yang sudah jadi laporan</label>
+        <div class="mini-note" id="as_hapusInfo" style="margin:8px 0;"></div>
+        <button type="button" class="btn btn-block" id="as_hapusBtn" style="background:var(--bad);color:#fff;" onclick="hapusAssetMassal_()">🗑️ Hapus asset terpilih</button>
+      </details>
+      <div id="as_ringkas" class="mini-note"></div>
+      <div id="assetList"></div>
+      <button class="btn btn-outline btn-block hide" id="as_lagi" onclick="assetFilter.batas+=40;renderAsset_()">Tampilkan lebih banyak</button>
     </div>
 
     <!-- ---- TAB: KELOLA PENGGUNA ---- -->
@@ -910,6 +1012,7 @@ Handling: </textarea></div>
             <option>Marketing</option>
             <option>Sales</option>
             <option>Teknisi</option>
+            <option>PKL</option>
             <option>Admin Server</option>
             <option>Office</option>
           </select>
@@ -969,6 +1072,15 @@ Handling: </textarea></div>
         <div id="master_boxodp" style="margin-top:12px;"></div>
       </div>
       <div class="form-card">
+        <h3>📦 Kelola Daftar Material Lain</h3>
+        <div class="mini-note" style="margin:0 0 8px;">Perangkat atau material tambahan yang bisa dipilih di form Pemasangan dan Maintenance (mis. ONT, media converter, patch panel). Bisa ditambah kapan saja dan langsung ikut di laporan stok per teknisi.</div>
+        <div style="display:flex;gap:8px;">
+          <input id="mx_nilai" placeholder="cth: ONT Huawei" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
+          <button class="btn btn-primary" onclick="submitMasterItem('Material','mx_nilai')">Tambah</button>
+        </div>
+        <div id="master_material" style="margin-top:12px;"></div>
+      </div>
+      <div class="form-card">
         <h3>🌐 Kelola Daftar ISP</h3>
         <div style="display:flex;gap:8px;">
           <input id="mi_nilai" placeholder="cth: AIS.Net" style="flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:10px 11px;border-radius:8px;font-size:13px;">
@@ -991,6 +1103,7 @@ Handling: </textarea></div>
   <button data-tab="maint"><span class="ic">🛠️</span>Maintenance</button>
   <button data-tab="laporan"><span class="ic">📊</span>Laporan</button>
   <button data-tab="peta"><span class="ic">🗺️</span>Peta</button>
+  <button data-tab="asset"><span class="ic">🗃️</span>Asset</button>
   <button data-tab="piket"><span class="ic">🗓️</span>Piket</button>
   <button data-tab="log"><span class="ic">📜</span>Log</button>
   <button data-tab="users"><span class="ic">👤</span>Pengguna</button>
@@ -1020,7 +1133,7 @@ if(!CONFIG_OK){
     '⚠️ config.js belum terunggah atau belum diisi. Upload config.js ke folder yang sama dengan index.html, isi URL dan anon key Supabase, lalu muat ulang.</div>');
 }
 
-let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [], odp: [] };
+let STATE = { pendaftaran: [], maintenance: [], tiket: [], logs: [], users: [], master: [], odp: [], backbone: [], asset: [] };
 let USER = null;
 const FILES = { maint: [], pasang: [], daftar: [], tiket: [] };
 const FILE_BOX = { maint:'fileListMaint', pasang:'fileListPasang', daftar:'fileListDaftar', tiket:'fileListTiket' };
@@ -1034,10 +1147,10 @@ const ROLE_TABS = {
   "CS": ["beranda","daftar","tiket","pesan","laporan","peta"],
   "Marketing": ["beranda","daftar","tiket","pesan","laporan","peta"],
   "Sales": ["beranda","daftar","tiket","pesan","laporan","peta"],
-  "Teknisi": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","piket"],
-  "Admin Server": ["beranda","daftar","tiket","proses","pesan","laporan","peta","piket"],
-  "Office": ["beranda","daftar","tiket","proses","pesan","laporan","peta","piket"],
-  "Admin": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","piket","log","users"]
+  "Teknisi": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","asset","piket"],
+  "Admin Server": ["beranda","daftar","tiket","proses","pesan","laporan","peta","asset","piket"],
+  "Office": ["beranda","daftar","tiket","proses","pesan","laporan","peta","asset","piket"],
+  "Admin": ["beranda","daftar","tiket","proses","pesan","pasang","maint","laporan","peta","asset","piket","log","users"]
 };
 
 /* ---------------- Login ---------------- */
@@ -1099,12 +1212,20 @@ async function logout(){
   localStorage.removeItem('aisnet_user');
   location.reload();
 }
+async function muatJabatan_(){
+  try{
+    const { data: u } = await sb.auth.getUser(); if(!u || !u.user) return;
+    const r = await sb.from('profiles').select('jabatan').eq('id', u.user.id).maybeSingle();
+    if(!r.error && r.data && r.data.jabatan){ USER.jabatan = r.data.jabatan; document.getElementById('whoRole').textContent = r.data.jabatan; }
+  }catch(e){}
+}
 function enterApp(){
   document.getElementById('loginScreen').classList.add('hide');
   document.getElementById('app').classList.remove('hide');
   document.getElementById('navbar').classList.remove('hide');
   document.getElementById('whoName').textContent = USER.name;
   document.getElementById('whoRole').textContent = USER.role;
+  muatJabatan_();
   applyRoleAccess();
   loadAll();
   initRealtime_();
@@ -1154,6 +1275,7 @@ document.querySelectorAll('#navbar button').forEach(btn=>{
     document.getElementById('tab-'+btn.dataset.tab).classList.remove('hide');
     if(btn.dataset.tab==='peta'){ mapNeedFit = true; setTimeout(()=>{ renderPeta(); }, 50); }
     if(btn.dataset.tab==='users') loadUsers();
+    if(btn.dataset.tab==='asset') renderAsset_();
   };
 });
 
@@ -1294,7 +1416,7 @@ ACT.simpanOdp = async (p) => {
   if(!USER || !ODP_ROLES_.includes(USER.role)) return { ok:false, error:'Peran ini tidak bisa mengelola ODP' };
   const nama = txt_(p.nama).trim();
   if(!nama) return { ok:false, error:'Nama ODP wajib diisi' };
-  const isi = { nama, tipe: ['1:2','1:4','1:8','1:16'].includes(p.tipe) ? p.tipe : '', lat: num_(p.lat), lng: num_(p.lng),
+  const isi = { nama, jenis: p.jenis === 'ODC' ? 'ODC' : 'ODP', tipe: (p.jenis !== 'ODC' && ['1:2','1:4','1:8','1:16'].includes(p.tipe)) ? p.tipe : '', lat: num_(p.lat), lng: num_(p.lng),
     alamat: txt_(p.alamat), mapsLink: txt_(p.mapsLink), keterangan: txt_(p.keterangan) };
   if(p.id){
     const r = await sb.from('odp').update(isi).eq('id', p.id).select('id');
@@ -1305,6 +1427,87 @@ ACT.simpanOdp = async (p) => {
     if(r.error) return fail_(r.error);
   }
   await logAksi_(p.id ? 'mengubah ODP' : 'menambah ODP', nama);
+  return { ok:true };
+};
+ACT.simpanBackbone = async (p) => {
+  if(!USER || !ODP_ROLES_.includes(USER.role)) return { ok:false, error:'Peran ini tidak bisa mengelola backbone' };
+  if(!p.dari || !p.ke || p.dari === p.ke) return { ok:false, error:'Pilih dua titik yang berbeda (Dari dan Ke)' };
+  const core = parseInt(p.core, 10);
+  if(!(core > 0)) return { ok:false, error:'Pilih jumlah core' };
+  const isi = { dari: p.dari, ke: p.ke, core, panjang: num_(p.panjang), keterangan: txt_(p.keterangan),
+    status: ['Normal','Dalam perbaikan','Gangguan'].includes(p.status) ? p.status : 'Normal' };
+  if(p.id){
+    const r = await sb.from('backbone').update(isi).eq('id', p.id).select('id');
+    if(r.error) return fail_(r.error);
+    if(!(r.data || []).length) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  } else {
+    const kerja = p.kerja ? p.kerja + ' • ' + USER.name : '';
+    const r = await sb.from('backbone').insert({ ...isi, kerjaTerakhir: kerja, kerjaTgl: kerja ? new Date().toISOString() : null, dibuatOleh: USER.name });
+    if(r.error) return fail_(r.error);
+  }
+  await logAksi_(p.id ? 'mengubah jalur backbone' : 'menambah jalur backbone', String(core) + ' core');
+  return { ok:true };
+};
+ACT.kerjaBackbone = async (p) => {
+  if(!USER || !ODP_ROLES_.includes(USER.role)) return { ok:false, error:'Peran ini tidak bisa mencatat pekerjaan backbone' };
+  const peta = { perbaikan_mulai: ['Dalam perbaikan', 'Perbaikan dimulai'], perbaikan_selesai: ['Normal', 'Perbaikan selesai'], tarik_baru: ['Normal', 'Tarik baru selesai'] };
+  const a = peta[p.aksi]; if(!a) return { ok:false, error:'Aksi tidak dikenal' };
+  const r = await sb.from('backbone').update({ status: a[0], kerjaTerakhir: a[1] + ' • ' + USER.name, kerjaTgl: new Date().toISOString() }).eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak berubah. Cek izin database' };
+  await logAksi_('backbone: ' + a[1], p.id);
+  return { ok:true };
+};
+ACT.hapusBackbone = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus jalur backbone' };
+  const r = await sb.from('backbone').delete().eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak terhapus. Cek izin database' };
+  await logAksi_('menghapus jalur backbone', p.id);
+  return { ok:true };
+};
+ACT.importAsset = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa import Database Asset' };
+  const rows = p.rows || [];
+  if(!rows.length) return { ok:false, error:'Tidak ada data untuk disimpan' };
+  let baru = 0, ubah = 0, lewati = 0;
+  const bentuk = r => ({ jenis: r.jenis, nama: txt_(r.nama), area: txt_(r.area), ...(r.kelompok ? { kelompok: txt_(r.kelompok) } : {}), alamat: txt_(r.alamat), noHp: txt_(r.noHp), noHp2: txt_(r.noHp2),
+    tanggal: /^\d{4}-\d{2}-\d{2}$/.test(r.tanggal || '') ? r.tanggal : null, jamLaporan: txt_(r.jamLaporan), jamDitangani: txt_(r.jamDitangani), jamSelesai: txt_(r.jamSelesai),
+    sumber: txt_(r.sumber), kendala: txt_(r.kendala), diagnosa: txt_(r.diagnosa), handling: txt_(r.handling), paket: txt_(r.paket), isp: txt_(r.isp),
+    mapsLink: txt_(r.mapsLink), ...(r.lat != null && r.lng != null && isFinite(Number(r.lat)) && isFinite(Number(r.lng)) ? { lat: Number(r.lat), lng: Number(r.lng) } : {}), mikrotik: txt_(r.mikrotik), redaman: txt_(r.redaman), ssid: txt_(r.ssid), passWifi: txt_(r.passWifi), pay: txt_(r.pay),
+    material: txt_(r.material), teknisi: Array.isArray(r.teknisi) ? r.teknisi : [], status: ['Selesai','Proses','Unhandling'].includes(r.status) ? r.status : 'Unhandling', statusAsli: txt_(r.statusAsli) });
+  for(let i = 0; i < rows.length; i += 150){
+    const bagian = rows.slice(i, i + 150);
+    const ada = await sb.from('asset').select('id,kunci,laporanId').in('kunci', bagian.map(r => r.kunci));
+    if(ada.error) return fail_(ada.error);
+    const peta = {}; (ada.data || []).forEach(x => { peta[x.kunci] = x; });
+    const tambah = [];
+    for(const r of bagian){
+      const e = peta[r.kunci];
+      if(!e) tambah.push({ id: newId_('AST'), ...bentuk(r), kunci: r.kunci, batch: txt_(p.batch), diimporOleh: USER.name });
+      else if(e.laporanId) lewati++;
+      else { const u = await sb.from('asset').update({ ...bentuk(r), batch: txt_(p.batch) }).eq('id', e.id); if(u.error) return fail_(u.error); ubah++; }
+    }
+    if(tambah.length){ const ins = await sb.from('asset').insert(tambah); if(ins.error) return fail_(ins.error); baru += tambah.length; }
+  }
+  // teknisi bertanda (P) masuk jadwal piket pada tanggalnya (digabung dengan jadwal yang sudah ada)
+  const perTgl = {};
+  (p.piket || []).forEach(x => { (perTgl[x.tanggal] = perTgl[x.tanggal] || new Set()).add(x.nama); });
+  let piket = 0;
+  for(const [tgl, set] of Object.entries(perTgl)){
+    const sudah = (STATE.piket || []).filter(x => String(x.tanggal).slice(0, 10) === tgl).map(x => x.nama);
+    const r = await sb.rpc('set_piket', { p_tanggal: tgl, p_nama: [...new Set([...sudah, ...set])] });
+    if(!r.error) piket++;
+  }
+  await logAksi_('import database asset', `${baru} baru, ${ubah} diperbarui, ${lewati} dilewati`);
+  return { ok:true, baru, ubah, lewati, piket };
+};
+ACT.hapusAsset = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus asset' };
+  const r = await sb.from('asset').delete().eq('id', p.id).select('id');
+  if(r.error) return fail_(r.error);
+  if(!(r.data || []).length) return { ok:false, error:'Data tidak terhapus. Cek izin database' };
+  await logAksi_('menghapus asset', p.id);
   return { ok:true };
 };
 ACT.hapusOdp = async (p) => {
@@ -1396,6 +1599,16 @@ ACT.getAllData = async () => {
     const od = await sb.from('odp').select('*').order('nama');
     if(!od.error) odp = od.data || [];
   }catch(e){}
+  let asset = [];
+  try{
+    const as = await sb.from('asset').select('*').order('tanggal', { ascending: false }).limit(5000);
+    if(!as.error) asset = as.data || [];
+  }catch(e){}
+  let backbone = [];
+  try{
+    const bb = await sb.from('backbone').select('*').order('dibuat', { ascending: false });
+    if(!bb.error) backbone = bb.data || [];
+  }catch(e){}
   // Daftar teknisi (nama saja) untuk centang; gagal dimuat = daftar kosong
   let teknisiList = [];
   try { const r = await sb.rpc('daftar_teknisi'); if(!r.error) teknisiList = (r.data || []).map(x => x.nama); } catch(e) {}
@@ -1407,6 +1620,8 @@ ACT.getAllData = async () => {
     piket,
     pesan,
     odp,
+    backbone,
+    asset,
     // gabung supaya semua tampilan yang membedakan lewat pendaftaranId tetap jalan
     maintenance: [...m.data.reverse(), ...pas.data.reverse()],
     logs: l.data, master: mas.data
@@ -1462,6 +1677,7 @@ ACT.addTiket = async (p) => {
     mapsLink: txt_(p.mapsLink), kendala: txt_(p.kendala), jamLaporan: txt_(p.jamLaporan),
     ...(p.isp ? { isp: txt_(p.isp) } : {}),
     ...(p.noOdp ? { noOdp: txt_(p.noOdp).trim() } : {}),
+    ...(p.odpTerdampak ? { odpTerdampak: txt_(p.odpTerdampak).trim() } : {}),
     ...(p.pelangganTerdampak ? { pelangganTerdampak: txt_(p.pelangganTerdampak).trim() } : {}),
     ...(p.tipeOdp ? { tipeOdp: txt_(p.tipeOdp) } : {}),
     ...(int_(p.jumlahTerdampak) > 0 ? { jumlahTerdampak: int_(p.jumlahTerdampak) } : {}),
@@ -1531,10 +1747,13 @@ ACT.addMaintenance = async (p) => {
     boxOdp: int_(p.boxOdp), jenisBoxOdp: txt_(p.jenisBoxOdp),
     adaptor: int_(p.adaptor), patchcore: int_(p.patchcore),
     barrel: int_(p.barrel), jenisKabel: txt_(p.jenisKabel), kabel: int_(p.kabel),
+    ...(p.materialLain ? { materialLain: txt_(p.materialLain) } : {}),
     ...(p.noOdp ? { noOdp: txt_(p.noOdp).trim() } : {}),
     ...(p.tipeOdp ? { tipeOdp: txt_(p.tipeOdp) } : {}),
     ...(int_(p.jumlahTerdampak) > 0 ? { jumlahTerdampak: int_(p.jumlahTerdampak) } : {}),
     ...(p.pelangganOdp ? { pelangganOdp: String(p.pelangganOdp).slice(0, 8000) } : {}),
+    ...(p.backboneId ? { backboneId: String(p.backboneId), jenisBackbone: txt_(p.jenisBackbone) } : {}),
+    ...(p.assetId ? { assetId: String(p.assetId) } : {}),
     keterangan: txt_(p.keterangan), fotoUrl, isTest: !!p.isTest, diinputOleh: USER.name,
     jamLaporan: txt_(p.jamLaporan), jamSelesai: txt_(p.jamSelesai),
     durasi: durasi_(p.jamLaporan, p.jamSelesai),
@@ -1548,7 +1767,21 @@ ACT.addMaintenance = async (p) => {
     const tk = STATE.tiket.find(x => x.id === p.ticketId);
     if(tk && !tk.isp) await sb.from('tiket').update({ isp: txt_(p.isp) }).eq('id', p.ticketId);
   }
-  if(Array.isArray(p.tiketIkut) && p.tiketIkut.length) await sb.from('tiket').update({ status:'Selesai' }).in('id', p.tiketIkut);   // tiket client lain di ODP yang sama ikut selesai
+  if(Array.isArray(p.tiketIkut) && p.tiketIkut.length){   // tiket client lain di ODP yang sama ikut selesai
+    // yang masih Baru diambil atas nama teknisi ini (hanya kalau belum diambil siapa pun)
+    await sb.from('tiket').update({ status:'Selesai', teknisiHandling: USER.name, tglDitangani: nowStr_() }).in('id', p.tiketIkut).eq('status','Baru');
+    // yang sudah diambil teknisi ini ikut ditutup; milik teknisi lain tidak disentuh (kecuali Admin)
+    let q = sb.from('tiket').update({ status:'Selesai' }).in('id', p.tiketIkut).eq('status','Ditangani');
+    if(USER.role !== 'Admin') q = q.eq('teknisiHandling', USER.name);
+    await q;
+  }
+  if(p.backboneId){   // laporan pekerjaan backbone: perbarui status jalur (merah di peta sampai dinyatakan normal)
+    const selesai = p.backboneSelesai !== false && p.backboneSelesai !== 'false';
+    await sb.from('backbone').update({ status: selesai ? 'Normal' : 'Dalam perbaikan', kerjaTerakhir: (p.jenisBackbone || 'Perbaikan') + (selesai ? ' selesai' : ' berjalan') + ' • ' + USER.name, kerjaTgl: new Date().toISOString() }).eq('id', p.backboneId);
+  }
+  if(p.assetId){   // asset yang diselesaikan: tandai selesai + simpan laporan asalnya
+    await sb.from('asset').update({ status:'Selesai', laporanId: id, laporanJenis: p.linkId ? 'Pemasangan' : (p.backboneId ? 'Backbone' : 'Maintenance'), laporanTgl: new Date().toISOString() }).eq('id', p.assetId);
+  }
   await logAksi_(p.linkId ? 'mengirim Realisasi Pemasangan' : 'mengirim Realisasi Maintenance', p.client);
   return { ok:true, id };
 };
@@ -1565,7 +1798,7 @@ ACT.resolveMapsLink = async (p) => {
 };
 
 ACT.addMasterItem = async (p) => {
-  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP','ISP'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
+  if(['Paket','Kendala','Modem','Splitter','Closure','Box ODP','ISP','Material'].indexOf(p.tipe) === -1) return { ok:false, error:'Tipe daftar tidak valid' };
   const nilai = txt_(p.nilai).trim();
   if(!nilai) return { ok:false, error:'Isi nilainya dulu' };
   const { error } = await sb.from('master_data').insert({ tipe: p.tipe, nilai });
@@ -1578,8 +1811,35 @@ ACT.deleteMasterItem = async (p) => {
 };
 
 ACT.listUsers = async () => {
-  const { data, error } = await sb.from('profiles').select('nama,role,status').neq('nama','admin').order('nama');
-  return error ? fail_(error) : { ok:true, users: data };
+  let r = await sb.from('profiles').select('nama,role,status,jabatan').neq('nama','admin').order('nama');
+  if(r.error) r = await sb.from('profiles').select('nama,role,status').neq('nama','admin').order('nama');   // kolom jabatan belum ada
+  return r.error ? fail_(r.error) : { ok:true, users: r.data };
+};
+const pesanRpc_ = (msg) => /could not find the function|schema cache/i.test(msg || '') ? 'Jalankan akun-role.sql di Supabase dulu' : msg;
+ACT.setRoleAkun = async (p) => {
+  const { error } = await sb.rpc('set_role_akun', { p_nama: p.nama, p_role: p.role, p_jabatan: p.jabatan || null });
+  if(error) return { ok:false, error: pesanRpc_(error.message) };
+  await logAksi_('mengubah role akun', `${p.nama} → ${p.jabatan || p.role}`);
+  return { ok:true };
+};
+ACT.hapusAkun = async (p) => {
+  const { error } = await sb.rpc('hapus_akun', { p_nama: p.nama });
+  if(error) return { ok:false, error: pesanRpc_(error.message) };
+  await logAksi_('menghapus akun', p.nama);
+  return { ok:true };
+};
+ACT.hapusAssetMassal = async (p) => {
+  if(!USER || USER.role !== 'Admin') return { ok:false, error:'Hanya Admin yang bisa menghapus asset' };
+  const ids = p.ids || []; let terhapus = 0, gagal = 0;
+  for(let i = 0; i < ids.length; i += 80){
+    const potong = ids.slice(i, i + 80);
+    const r = await sb.from('asset').delete().in('id', potong).select('id');
+    if(r.error) gagal += potong.length; else { terhapus += (r.data || []).length; gagal += potong.length - (r.data || []).length; }
+    if(p.progres) p.progres(Math.min(i + 80, ids.length), ids.length);
+  }
+  await logAksi_('menghapus asset massal', `${terhapus} dihapus, ${gagal} gagal`);
+  if(!terhapus && gagal) return { ok:false, error:'Tidak ada asset yang terhapus. Cek izin database' };
+  return { ok:true, terhapus, gagal };
 };
 
 // Tambah & ubah akun butuh service role, jadi lewat Edge Function (lihat supabase/functions/admin-users)
@@ -1647,6 +1907,8 @@ async function loadAll(){
     STATE.piket = data.piket || [];
     STATE.pesan = data.pesan || [];
     STATE.odp = data.odp || [];
+    STATE.backbone = data.backbone || [];
+    STATE.asset = data.asset || [];
     deteksiEvent_();
   }
   renderAll();
@@ -1676,6 +1938,7 @@ function renderAll(){
   renderPiket();
   renderPesan();
   renderKerja_();
+  renderStokOpsi_();
   ensureRedaman_();
   renderOdpOpsi_();
   isiOpsiTerdampak_();
@@ -1685,6 +1948,8 @@ function renderAll(){
   renderLaporan();
   renderLog();
   renderOdpList_();
+  renderBackboneList_();
+  renderAsset_();
   renderPeta();
   renderPaketOptions();
   renderKendalaOptions();
@@ -2209,6 +2474,7 @@ function hitungAktivitas_(){
   renderDashTeknisi_(maint);
   renderDashPiket_(maint);
   renderDashPenanganan_(maint);
+  renderDashMaterial_(maint);
   renderDashTiketIsp_(hidup_(STATE.tiket).filter(dalam));
   renderDashIspHarian_(maint);
   renderDashMarket_(maint, per, now);
@@ -2401,6 +2667,81 @@ function pilihUntukLaporan_(tipe, id){
   sel.scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
+// ---- Material lain (daftar bisa bertambah: Admin kelola di Pengguna) ----
+function tambahMatLain_(p){
+  const daftar = (STATE.master || []).filter(x => x.tipe === 'Material').map(x => x.nilai);
+  if(!daftar.length){ toast('Belum ada daftar material lain. Minta Admin menambahkannya di Pengguna → Kelola Daftar Material Lain.'); return; }
+  const row = document.createElement('div');
+  row.className = 'mlr'; row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
+  row.innerHTML = `<select class="ml-nama" style="flex:2;min-width:0;">${daftar.map(n => `<option>${esc(n)}</option>`).join('')}</select>
+    <input class="ml-jml" type="number" min="1" value="1" style="flex:1;min-width:0;">
+    <button type="button" class="btn btn-outline" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById(p + '_matLainBox').appendChild(row);
+}
+function matLainPayload_(p){
+  const box = document.getElementById(p + '_matLainBox'); if(!box) return '';
+  const o = [...box.querySelectorAll('.mlr')].map(r => ({ nama: r.querySelector('.ml-nama').value, jumlah: Math.max(0, parseInt(r.querySelector('.ml-jml').value, 10) || 0) })).filter(x => x.nama && x.jumlah > 0);
+  return o.length ? JSON.stringify(o) : '';
+}
+function resetMatLain_(p){ const box = document.getElementById(p + '_matLainBox'); if(box) box.innerHTML = ''; }
+function daftarMatLain_(m){ try{ const a = JSON.parse(m.materialLain || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function teksMatLain_(m){ return daftarMatLain_(m).map(x => `${x.nama} ×${x.jumlah}`).join(', '); }
+
+// ---- Stok dipakai dari: saran nama teknisi & terisi otomatis dari teknisi pertama ----
+function renderStokOpsi_(){
+  const dl = document.getElementById('stokOpsi'); if(!dl) return;
+  dl.innerHTML = [...(STATE.teknisiList || []), 'Stok Kantor'].map(n => `<option value="${esc(n)}">`).join('');
+}
+function isiStokOtomatis_(pre){
+  const st = document.getElementById(pre + '_stok'); if(!st) return;
+  if(st.value && st.dataset.auto !== '1') return;                 // sudah diketik manual
+  const pertama = (document.getElementById(pre + '_teknisi').value || '').split(',').map(x => x.trim()).filter(Boolean)[0] || '';
+  st.value = pertama; st.dataset.auto = pertama ? '1' : '';
+}
+
+// ---- Material terpakai per teknisi (hanya yang terpakai; jenis & perangkat baru ikut otomatis) ----
+function pemilikStok_(m){
+  const stok = String(m.stok || '').trim();
+  if(stok && !/^[-\s]+$/.test(stok)) return (typeof cocokAkun_ === 'function' && cocokAkun_(stok)) || stok;
+  const t = String(m.teknisi || '').split(',').map(x => x.trim()).filter(Boolean)[0];
+  return t || '(tanpa nama)';
+}
+function itemMaterial_(m){
+  const out = [];
+  MAT.forEach(mt => { const j = m[mt.jenis], q = Number(m[mt.col]) || 0; if(j && q > 0) out.push({ item: `${mt.master}: ${j}`, jumlah: q, satuan: 'unit' }); });
+  [['adaptor','Adaptor'],['patchcore','Patchcore'],['barrel','Barrel']].forEach(([k, n]) => { const q = Number(m[k]) || 0; if(q > 0) out.push({ item: n, jumlah: q, satuan: 'unit' }); });
+  if(m.jenisKabel && Number(m.kabel) > 0) out.push({ item: `Kabel: ${m.jenisKabel}`, jumlah: Number(m.kabel), satuan: 'm' });
+  daftarMatLain_(m).forEach(x => { if(x.nama && Number(x.jumlah) > 0) out.push({ item: x.nama, jumlah: Number(x.jumlah), satuan: 'unit' }); });
+  return out;
+}
+function rekapMaterial_(maint){
+  const per = {}, total = {};
+  maint.forEach(m => {
+    const own = pemilikStok_(m);
+    itemMaterial_(m).forEach(x => {
+      const k = x.item + '|' + x.satuan;
+      per[own] = per[own] || {}; per[own][k] = per[own][k] || { item:x.item, satuan:x.satuan, jumlah:0 }; per[own][k].jumlah += x.jumlah;
+      total[k] = total[k] || { item:x.item, satuan:x.satuan, jumlah:0 }; total[k].jumlah += x.jumlah;
+    });
+  });
+  const rows = [];
+  Object.keys(per).sort((a, b) => a.localeCompare(b)).forEach(o => Object.values(per[o]).sort((a, b) => a.item.localeCompare(b.item)).forEach(x => rows.push({ teknisi:o, item:x.item, jumlah:x.jumlah, satuan:x.satuan })));
+  return { rows, total: Object.values(total).sort((a, b) => a.item.localeCompare(b.item)) };
+}
+function renderDashMaterial_(maint){
+  const a = document.getElementById('dashMaterial'), b = document.getElementById('dashMaterialTotal'); if(!a || !b) return;
+  const r = rekapMaterial_(maint);
+  a.innerHTML = r.rows.length
+    ? `<div class="dwrap"><table class="dtable"><thead><tr><th>Teknisi</th><th>Material</th><th>Jumlah</th><th>Satuan</th></tr></thead><tbody>${
+        r.rows.map(x => `<tr><td style="text-align:left;">${esc(x.teknisi)}</td><td style="text-align:left;">${esc(x.item)}</td><td>${x.jumlah}</td><td>${esc(x.satuan)}</td></tr>`).join('')
+      }</tbody></table></div>`
+    : `<div class="empty"><span class="ic">📦</span>Belum ada material terpakai pada periode ini</div>`;
+  b.innerHTML = r.total.length
+    ? `<div class="dwrap"><table class="dtable"><thead><tr><th>Material</th><th>Jumlah</th><th>Satuan</th></tr></thead><tbody>${
+        r.total.map(x => `<tr><td style="text-align:left;">${esc(x.item)}</td><td>${x.jumlah}</td><td>${esc(x.satuan)}</td></tr>`).join('')
+      }</tbody></table></div>` : '';
+}
+
 function kotakMikrotik_(idSelect, idBox, html){
   let box = document.getElementById(idBox);
   if(!box){
@@ -2440,6 +2781,22 @@ function renderMaintLinkOptions(){
 
 // Satu pekerjaan menyelesaikan beberapa tiket (mis. 1 ODP): tiket lain milik teknisi yang sama bisa dicentang
 // Kunci ODP: huruf besar/kecil, spasi, titik, strip diabaikan ("ODP-01" = "odp 01")
+function jarakEdit_(a, b){
+  const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for(let j = 1; j <= n; j++) d[0][j] = j;
+  for(let i = 1; i <= m; i++) for(let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[m][n];
+}
+// Nama ODP yang diketik belum terdaftar tapi mirip ODP lain -> ingatkan (salah ketik / ODP tetangga)
+function cekNamaOdp_(el){
+  const v = String(el.value || '').trim(), odp = odpSaja_();
+  if(!v || !odp.length) return;
+  const k = odpKey_(v);
+  if(odp.some(o => odpKey_(o.nama) === k)) return;
+  const mirip = odp.filter(o => jarakEdit_(odpKey_(o.nama), k) <= 2).map(o => o.nama);
+  if(mirip.length) toast('ODP "' + v + '" belum terdaftar. Mirip: ' + mirip.slice(0, 3).join(', ') + '. Pilih dari saran kalau maksudnya itu.');
+}
+function odpTiket_(t){ return (t && (t.odpTerdampak || t.noOdp)) || ''; }
 function odpKey_(v){ return String(v || '').toLowerCase().replace(/[\s\-_.]/g, '').replace(/^odp/, ''); }
 // Jumlah pelanggan terdampak: pilihan 1..kapasitas ODP (1:8 -> 8, 1:16 -> 16; belum dipilih -> 16)
 // Daftar pelanggan ikut dalam SATU laporan (satu ODP): [{n: nama, t: id tiket, r: redaman}]
@@ -2493,6 +2850,12 @@ async function koordDariLink_(link){
   }catch(e){}
   return null;
 }
+// Client tambahan yang sudah punya titik di data pendaftaran/pemasangan/tiket tidak perlu di-pin lagi
+function cekTitikClient_(inp){
+  const blok = inp.closest('.tmb-blok');
+  const kd = koordPelangganNama_(inp.value);
+  if(kd && !blok.dataset.la) blok.querySelector('.tmb-pininfo').textContent = '✅ Pelanggan ini sudah punya titik di peta (dari data pendaftaran/tiket). Tidak perlu pin lagi; garis dari ODP akan memakai titik itu.';
+}
 function setPinClient_(blok, la, ln, ket){
   blok.dataset.la = Number(la).toFixed(6); blok.dataset.ln = Number(ln).toFixed(6);
   blok.querySelector('.tmb-pininfo').textContent = `✅ Pin tersimpan (${Number(la).toFixed(5)}, ${Number(ln).toFixed(5)})${ket ? ' — ' + ket : ''}. Akan muncul di tab Peta setelah laporan dikirim.`;
@@ -2526,7 +2889,7 @@ async function pinClientLink_(btn){
 function tambahPelangganOdp_(){
   const b = document.getElementById('m_tambahBox'); if(!b) return;
   b.insertAdjacentHTML('beforeend', `<div class="tmb-blok" style="border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--surface2);">
-    <div class="rdm-row"><input class="rdm-label tmb-nama" placeholder="Nama client (cth: Ciwaduk.Hambali)"><button type="button" class="rdm-del" onclick="this.closest('.tmb-blok').remove()">✕</button></div>
+    <div class="rdm-row"><input class="rdm-label tmb-nama" placeholder="Nama client (cth: Ciwaduk.Hambali)" onchange="cekTitikClient_(this)"><button type="button" class="rdm-del" onclick="this.closest('.tmb-blok').remove()">✕</button></div>
     <div style="margin-top:6px;"><input class="tmb-alamat" placeholder="Alamat client (opsional, tiap client beda)"></div>
     <div style="margin-top:6px;"><input class="tmb-maps" inputmode="url" placeholder="Link Google Maps client (opsional)"></div>
     <div style="margin-top:6px;">
@@ -2567,7 +2930,7 @@ function payloadPelangganTambahan_(p, o){
 function renderOdpOpsi_(){
   const dl = document.getElementById('odpOpsi'); if(!dl) return;
   const seen = {};
-  [...(STATE.odp || []).map(o => ({ noOdp: o.nama })), ...STATE.tiket, ...STATE.pendaftaran].forEach(x => {
+  [...odpSaja_().map(o => ({ noOdp: o.nama })), ...STATE.tiket, ...STATE.pendaftaran].forEach(x => {
     const v = String(x.noOdp || '').trim(), k = odpKey_(v);
     if(k && !seen[k]) seen[k] = v;
   });
@@ -2583,15 +2946,15 @@ function renderTiketLain_(){
   const dipilih = new Set([...box.querySelectorAll('input:checked')].map(c => c.value));
   const nilai = {};
   box.querySelectorAll('.tl-item').forEach(r => { nilai[r.dataset.id] = [...r.querySelectorAll('.rdm-row')].map(x => ({ l: x.querySelector('.rdm-label').value, v: x.querySelector('.rdm-val').value })); });
-  const kunci = odpKey_(utama.noOdp);
-  const lain = STATE.tiket.filter(x => x.status === 'Ditangani' && x.id !== utama.id && x.teknisiHandling === utama.teknisiHandling);
-  const sama = kunci ? lain.filter(x => odpKey_(x.noOdp) === kunci) : [];
+  const kunci = odpKey_(odpTiket_(utama));
+  const lain = STATE.tiket.filter(x => x.id !== utama.id && ((x.status === 'Ditangani' && x.teknisiHandling === utama.teknisiHandling) || (x.status === 'Baru' && kunci && odpKey_(odpTiket_(x)) === kunci)));
+  const sama = kunci ? lain.filter(x => odpKey_(odpTiket_(x)) === kunci) : [];
   const beda = lain.filter(x => !sama.includes(x));
-  const baru = kunci ? STATE.tiket.filter(x => x.status === 'Baru' && odpKey_(x.noOdp) === kunci) : [];
+  const baru = [];
   const cek = t => {
     const on = ganti ? sama.includes(t) : dipilih.has(t.id);
     const baris = (nilai[t.id] && nilai[t.id].length ? nilai[t.id] : [{ l: '', v: '' }]).map(x => barisRedaman_(x.l, x.v)).join('');
-    return `<div class="tl-item" data-id="${esc(t.id)}" style="grid-column:1/-1;"><label class="chk-teknisi"><input type="checkbox" value="${esc(t.id)}" ${on ? 'checked' : ''} onchange="toggleTlRedaman_(this)"> ${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.noOdp ? ' • ' + esc(t.noOdp) : ''}${t.alamat ? ' • 📍 ' + esc(t.alamat) : ''}</label>
+    return `<div class="tl-item" data-id="${esc(t.id)}" style="grid-column:1/-1;"><label class="chk-teknisi"><input type="checkbox" value="${esc(t.id)}" ${on ? 'checked' : ''} onchange="toggleTlRedaman_(this)"> ${esc(t.namaPelanggan)} — ${esc(t.kendala)}${t.noOdp ? ' • ' + esc(t.noOdp) : ''}${t.alamat ? ' • 📍 ' + esc(t.alamat) : ''}${t.status === 'Baru' ? ' • 🆕 belum diambil' : ''}</label>
       <div class="tl-rdm ${on ? '' : 'hide'}" style="margin:4px 0 8px 4px;"><div class="rdm-box">${baris}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button type="button" class="btn btn-info" onclick="tambahRedamanKe_(this.closest('.tl-rdm').querySelector('.rdm-box'))">+ Titik redaman</button>
@@ -2601,8 +2964,8 @@ function renderTiketLain_(){
   const judul = txt => `<div class="mini-note" style="grid-column:1/-1;margin:6px 0 0;font-weight:700;">${txt}</div>`;
   box.innerHTML = (sama.length ? judul('🔌 Satu ODP (' + esc(utama.noOdp) + ')') + sama.map(cek).join('') : '')
     + (beda.length ? judul(sama.length ? 'Tiket lain (ODP berbeda / kosong)' : (kunci ? 'Tidak ada tiket lain di ODP ini. Tiket lain milik Anda:' : 'Tiket utama belum punya Nama ODP. Tiket lain milik Anda:')) + beda.map(cek).join('') : '');
-  if(hint) hint.innerHTML = baru.length ? `ℹ️ Ada ${baru.length} tiket <b>Baru</b> di ODP yang sama (${esc(baru.map(x => x.namaPelanggan).join(', '))}). Tekan 🔧 Tangani dulu di tab Tiket supaya bisa ikut diselesaikan.` : '';
-  hint && hint.classList.toggle('hide', !baru.length);
+  if(hint) hint.innerHTML = sama.some(x => x.status === 'Baru') ? 'ℹ️ Tiket berlabel 🆕 belum diambil siapa pun; otomatis diambil atas nama Anda saat laporan dikirim. Tiket yang sudah diambil teknisi lain tidak ikut.' : '';
+  hint && hint.classList.toggle('hide', !sama.some(x => x.status === 'Baru'));
   wrap.classList.toggle('hide', !lain.length && !baru.length);
 }
 function toggleTlRedaman_(cb){ cb.closest('.tl-item').querySelector('.tl-rdm').classList.toggle('hide', !cb.checked); }
@@ -2640,12 +3003,12 @@ function isiDariTiket(){
   // jam laporan terisi dari tiket, tapi teknisi boleh mengubahnya; jam dari server tetap disimpan terpisah
   jl.value = t.jamLaporan || (t.dibuatServer || t.timestamp ? jamWib_(t.dibuatServer || t.timestamp) : '');
   jl.readOnly = false;
-  if(t.noOdp) document.getElementById('m_odp').value = t.noOdp;
-  const dt = document.querySelector('.odp-opsi'); if(dt && (t.noOdp || t.tipeOdp)) dt.open = true;
+  if(odpTiket_(t)) document.getElementById('m_odp').value = odpTiket_(t);
+  const dt = document.querySelector('.odp-opsi'); if(dt && (odpTiket_(t) || t.tipeOdp)) dt.open = true;
   if(t.tipeOdp){ document.getElementById('m_tipeodp').value = t.tipeOdp; isiOpsiTerdampak_(); }
   isiTipeDariOdp_('m');
   if(t.jumlahTerdampak) document.getElementById('m_jmlterdampak').value = String(t.jumlahTerdampak);
-  document.getElementById('m_ket').value = `Keterangan: ${t.kendala}${t.noOdp ? ' (' + odpNama_(t.noOdp) + (t.tipeOdp ? ' pasif ' + t.tipeOdp : '') + ')' : ''}${(t.jumlahTerdampak || t.pelangganTerdampak) ? ' — terdampak: ' + [t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : '', t.pelangganTerdampak || ''].filter(Boolean).join(', ') : ''}\nHandling: `;
+  document.getElementById('m_ket').value = `Keterangan: ${t.kendala}${odpTiket_(t) ? ' (' + odpNama_(odpTiket_(t)) + (t.tipeOdp ? ' pasif ' + t.tipeOdp : '') + ')' : ''}${(t.jumlahTerdampak || t.pelangganTerdampak) ? ' — terdampak: ' + [t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : '', t.pelangganTerdampak || ''].filter(Boolean).join(', ') : ''}\nHandling: `;
 }
 
 /* ---------------- Tiket Masuk (Laporan Gangguan) ---------------- */
@@ -2662,7 +3025,8 @@ function tiketCard_(t){
           <div class="meta">${esc(t.kendala)} • ${esc(t.noHp||'-')}${t.timestamp?` • 📅 ${new Date(t.timestamp).toLocaleDateString('id-ID')}`:''}${t.jamLaporan?` • Lapor ${esc(t.jamLaporan)}`:''}</div>
           ${waBtn_(t.noHp, t.noHpCadangan)}
           ${t.isp ? `<div class="meta">📡 ISP: <b>${esc(t.isp)}</b></div>` : (STATE.master.some(x => x.tipe === 'ISP') ? `<div class="meta" style="color:var(--warn);font-weight:600;">⚠️ ISP belum diisi</div>` : '')}
-          ${(t.noOdp || t.tipeOdp) ? `<div class="meta">🔌 ODP: <b>${esc(t.noOdp || '-')}</b>${t.tipeOdp ? ' (pasif ' + esc(t.tipeOdp) + ')' : ''}</div>` : ''}
+          ${t.noOdp ? `<div class="meta">🔌 ODP: <b>${esc(t.noOdp)}</b>${(t.tipeOdp && !t.odpTerdampak) ? ' (pasif ' + esc(t.tipeOdp) + ')' : ''}</div>` : ''}
+          ${t.odpTerdampak ? `<div class="meta" style="color:var(--warn);font-weight:600;">⚠️ ODP/splitter terdampak: <b>${esc(t.odpTerdampak)}</b>${t.tipeOdp ? ' (pasif ' + esc(t.tipeOdp) + ')' : ''}</div>` : ''}
           ${(t.pelangganTerdampak || t.jumlahTerdampak) ? `<div class="meta">👥 Terdampak: ${t.jumlahTerdampak ? t.jumlahTerdampak + ' pelanggan' : ''}${(t.jumlahTerdampak && t.pelangganTerdampak) ? ' — ' : ''}${esc(t.pelangganTerdampak || '')}</div>` : ''}
           ${t.alamat ? `<div class="meta">📍 ${esc(t.alamat)}</div>` : ''}
           ${t.isTest ? `<div class="meta" style="color:var(--warn);font-weight:700;">🧪 DATA TEST (tidak masuk dashboard & export)</div>` : ''}
@@ -2708,10 +3072,9 @@ async function submitTiket(){
     namaPelanggan: val('t_nama'), noHp: val('t_hp'), noHpCadangan: val('t_hp2'), alamat: val('t_alamat'),
     mapsLink: val('t_mapslink') || ((val('t_lat') && val('t_lng')) ? coordLink_(val('t_lat'), val('t_lng')) : ''),
     lat: val('t_lat'), lng: val('t_lng'), files: filesPayload('tiket'), isTest: document.getElementById('t_test').checked, kendala: getKendalaValue(),
-    jamLaporan: val('t_jamlaporan'), tglLaporan: val('t_tgl'), isp: val('t_isp'), noOdp: val('t_odp'), pelangganTerdampak: val('t_terdampak'), tipeOdp: val('t_tipeodp'), jumlahTerdampak: val('t_jmlterdampak')
+    jamLaporan: val('t_jamlaporan'), tglLaporan: val('t_tgl'), isp: val('t_isp'), noOdp: val('t_odp'), odpTerdampak: val('t_odp2'), pelangganTerdampak: val('t_terdampak'), tipeOdp: val('t_tipeodp'), jumlahTerdampak: val('t_jmlterdampak')
   };
-  if(!payload.namaPelanggan && !payload.noOdp){ toast('Isi nama pelanggan atau Nama ODP dulu'); const d = document.getElementById('t_odpDetails'); if(d) d.open = true; return; }
-  if(!payload.namaPelanggan) payload.namaPelanggan = odpNama_(payload.noOdp);   // tiket satu ODP: nama tiket = ODP-nya
+  if(!payload.namaPelanggan){ toast('Isi nama pelanggan dulu'); return; }
   if(STATE.master.some(x => x.tipe === 'ISP') && !payload.isp){ toast('Pilih ISP-nya dulu'); return; }
   if(!payload.kendala){ toast('Isi kendalanya dulu'); return; }
   if(payload.mapsLink && !(payload.lat && payload.lng)){
@@ -2721,7 +3084,7 @@ async function submitTiket(){
   const data = await apiCall('addTiket', payload);
   if(data && data.ok){
     toast('✅ Laporan gangguan tercatat');
-    ['t_nama','t_hp','t_hp2','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual','t_odp','t_terdampak'].forEach(id=>document.getElementById(id).value='');
+    ['t_nama','t_hp','t_hp2','t_alamat','t_mapslink','t_jamlaporan','t_kendala_manual','t_odp','t_odp2','t_terdampak'].forEach(id=>document.getElementById(id).value='');
     toggleKendalaManual(); document.getElementById('t_isp').value = ''; document.getElementById('t_tipeodp').value = ''; document.getElementById('t_jmlterdampak').value = ''; isiOpsiTerdampak_();
     document.getElementById('t_mapslink').dataset.auto = ''; resetPicker_('tiket');
     document.getElementById('t_lokasiInfo').textContent = '⚪ Lokasi belum diisi.';
@@ -2817,11 +3180,14 @@ function lokasiMaintenance_(m){
   if(m.pendaftaranId){
     const x = STATE.pendaftaran.find(p=>p.id===m.pendaftaranId);
     if(x) return { alamat: x.alamatPasang||'', mapsLink: x.mapsLink||'', lat: x.lat, lng: x.lng };
+    const ast = (STATE.asset || []).find(a => a.id === m.pendaftaranId);
+    if(ast) return { alamat: ast.alamat||'', mapsLink: ast.mapsLink||'', lat: ast.lat||null, lng: ast.lng||null };
   }
   if(m.tiketId){
     const t = STATE.tiket.find(t=>t.id===m.tiketId);
     if(t) return { alamat: t.alamat||'', mapsLink: t.mapsLink||'', lat: t.lat, lng: t.lng };
   }
+  if(m.assetId){ const ast = (STATE.asset || []).find(a => a.id === m.assetId); if(ast) return { alamat: ast.alamat||'', mapsLink: ast.mapsLink||'', lat: ast.lat||null, lng: ast.lng||null }; }
   return { alamat:'', mapsLink:'', lat: null, lng: null };
 }
 
@@ -2890,7 +3256,7 @@ function durasiManual_(m){
 }
 function blokTanggal_(m){
   const d = tanggalAsal_(m);
-  const diubah = m.selesaiServer && m.timestamp && Math.abs(new Date(m.timestamp) - new Date(m.selesaiServer)) > 60000;
+  const diubah = !m.susulan && m.selesaiServer && m.timestamp && Math.abs(new Date(m.timestamp) - new Date(m.selesaiServer)) > 60000;
   // Pendaftaran (pemasangan): tampilkan tanggal daftar. Tiket (maintenance): jam lapor sudah di atas, jadi tanggal lapor tidak diulang.
   const awal = m.pendaftaranId ? `📅 Daftar: <b>${fmtTs_(d.lapor)}</b> • ` : '';
   const sistem = m.susulan ? `🕐 Dicatat sistem: <b>${fmtTs_(d.selesai)}</b>` : `✅ Dikerjakan: <b>${fmtTs_(d.selesai)}</b>`;
@@ -2920,10 +3286,12 @@ function renderLaporan(){
       </div>
       <div class="meta" style="margin-top:8px;white-space:pre-line;">${esc(m.keterangan||'')}</div>
       ${(m.noOdp || m.tipeOdp || m.jumlahTerdampak) ? `<div class="meta">🔌 ODP: <b>${esc(m.noOdp || '-')}</b>${m.tipeOdp ? ' (pasif ' + esc(m.tipeOdp) + ')' : ''}${m.jumlahTerdampak ? ' • ' + m.jumlahTerdampak + ' pelanggan terdampak' : ''}</div>` : ''}
+      ${m.backboneId ? `<div class="meta">🧵 <b>${esc(labelBackbone_(m.backboneId, m.jenisBackbone))}</b></div>` : ''}
       ${pelangganOdpList_(m).length ? `<div class="meta" style="white-space:pre-line;">👥 Pelanggan satu ODP:\n${barisPelangganOdp_(m.client, m.redaman, lokasiMaintenance_(m).alamat, lokasiMaintenance_(m).mapsLink)}\n${pelangganOdpList_(m).map(x => barisPelangganOdp_(x.n, x.r, x.a, x.m)).join('\n')}</div>` : ''}
       ${m.susulan ? (durasiManual_(m) ? `<div class="meta">⏱️ Durasi pengerjaan: <b>${esc(durasiManual_(m))}</b></div>` : '') : ((m.jamLaporan||m.jamSelesai) ? `<div class="meta">🕐 Lapor ${esc(m.jamLaporan||'-')}${(m.jamLaporanServer && m.jamLaporanServer !== m.jamLaporan) ? ` (server ${esc(m.jamLaporanServer)})` : ''} → Selesai ${esc(m.jamSelesai||'-')}${m.durasi?` • ⏱️ ${esc(m.durasi)}`:''}</div>` : '')}
       ${blokTanggal_(m)}
       ${blokSusulan_(m)}
+      ${m.materialLain ? `<div class="meta">📦 Material lain: <b>${esc(teksMatLain_(m))}</b></div>` : ''}
       ${lok.alamat ? `<div class="meta">📍 ${esc(lok.alamat)}</div>` : ''}
       ${mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng) ? `<a class="btn btn-info" href="${esc(mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng))}" target="_blank" style="margin-top:6px;display:inline-block;">🗺️ Buka Maps</a>` : ''}
       ${lampiranLinks_(m.fotoUrl)}
@@ -2961,7 +3329,7 @@ function esc(s){
   return (s===undefined||s===null) ? '' : String(s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 }
 
-const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F0A92E','MikrotikSiap':'#2F8FE8','Selesai':'#21B26B','Maintenance':'#7C5CC4' };
+const STATUS_COLOR = { 'Baru':'#E5484D','Dikonfirmasi':'#F0A92E','MikrotikSiap':'#2F8FE8','Selesai':'#21B26B','Maintenance':'#7C5CC4','Proses':'#F0A92E','Unhandling':'#E5484D' };
 
 // Posisi HP sekarang di peta, dengan lingkaran akurasi. Bisa ditekan ulang untuk refresh.
 let lokasiMarker = null, lokasiCircle = null;
@@ -2996,16 +3364,27 @@ function lokasiSaya(){
 /* ---------------- ODP: peta, kapasitas, garis ke pelanggan ---------------- */
 let mapLines = [];
 function bisaKelolaOdp_(){ return !!(USER && ODP_ROLES_.includes(USER.role)); }
-function odpDariNama_(nama){ const k = odpKey_(nama); return k ? (STATE.odp || []).find(o => odpKey_(o.nama) === k) : null; }
+function odpSaja_(){ return (STATE.odp || []).filter(o => o.jenis !== 'ODC'); }
+function odpDariNama_(nama){ const k = odpKey_(nama); return k ? odpSaja_().find(o => odpKey_(o.nama) === k) : null; }
 // Kalau Nama ODP di form cocok dengan ODP terdaftar, tipenya terisi otomatis
 function isiTipeDariOdp_(pre){
-  const el = document.getElementById(pre + '_odp'); if(!el) return;
+  let el = document.getElementById(pre + '_odp'); if(!el) return;
+  if(pre === 't'){ const e2 = document.getElementById('t_odp2'); if(e2 && e2.value.trim()) el = e2; }
   const o = odpDariNama_(el.value);
   if(!o || !o.tipe) return;
   const sel = document.getElementById(pre + '_tipeodp');
   if(sel && !sel.value){ sel.value = o.tipe; isiOpsiTerdampak_(); }
 }
 // Pelanggan yang tercatat di satu ODP (dari pendaftaran, tiket, dan laporan Maintenance), digabung per nama
+// "Cigodak.Budi (Gg Mawar 3), Ani" -> ['Cigodak.Budi', 'Ani']
+function namaTerdampak_(txt){ return String(txt || '').split(/[,;\n]/).map(x => x.replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim()).filter(Boolean); }
+// Titik pelanggan dicari dari pendaftaran/tiket yang namanya sama (supaya garis ODP bisa ditarik tanpa input ulang)
+function koordPelangganNama_(nama){
+  const k = String(nama || '').trim().toLowerCase(); if(!k) return null;
+  const c = [...STATE.pendaftaran.map(x => ({ n: x.nama, lat: x.lat, lng: x.lng })), ...STATE.tiket.map(x => ({ n: x.namaPelanggan, lat: x.lat, lng: x.lng }))]
+    .find(x => String(x.n || '').trim().toLowerCase() === k && x.lat && x.lng);
+  return c ? { lat: c.lat, lng: c.lng } : null;
+}
 function pelangganDiOdp_(odp){
   const k = odpKey_(odp.nama), peta = {};
   const tambah = (nama, lat, lng, aktif, jenis) => {
@@ -3013,6 +3392,7 @@ function pelangganDiOdp_(odp){
     if(odpKey_(nama) === k) return;                 // tiket "ODP <nama>" = masalah di ODP, bukan pelanggan
     const e = peta[nama.toLowerCase()] || (peta[nama.toLowerCase()] = { nama, lat: null, lng: null, aktif: false, pasang: false, maint: false });
     if(lat && lng && !(e.lat && e.lng)){ e.lat = Number(lat); e.lng = Number(lng); }
+    if(!(e.lat && e.lng)){ const kd = koordPelangganNama_(nama); if(kd){ e.lat = Number(kd.lat); e.lng = Number(kd.lng); } }   // sudah punya titik di data lain: pakai itu
     if(aktif) e.aktif = true;
     if(jenis) e[jenis] = true;
   };
@@ -3020,7 +3400,11 @@ function pelangganDiOdp_(odp){
   const pemOdp = {};
   hidup_(STATE.maintenance).filter(m => m.pendaftaranId && m.noOdp).forEach(m => { pemOdp[m.pendaftaranId] = odpKey_(m.noOdp); });
   hidup_(STATE.pendaftaran).filter(x => (x.id in pemOdp ? pemOdp[x.id] : odpKey_(x.noOdp)) === k).forEach(x => tambah(x.nama, x.lat, x.lng, false, 'pasang'));
-  hidup_(STATE.tiket).filter(x => odpKey_(x.noOdp) === k).forEach(x => tambah(x.namaPelanggan, x.lat, x.lng, x.status !== 'Selesai', 'maint'));
+  hidup_(STATE.tiket).forEach(x => {
+    const aktif = x.status !== 'Selesai', kO = odpKey_(x.noOdp), kT = odpKey_(x.odpTerdampak);
+    if(kO === k || (!kO && kT === k)) tambah(x.namaPelanggan, x.lat, x.lng, aktif, 'maint');
+    if(kT === k) namaTerdampak_(x.pelangganTerdampak).forEach(n => { const kd = koordPelangganNama_(n); tambah(n, kd && kd.lat, kd && kd.lng, aktif, 'maint'); });
+  });
   hidup_(STATE.maintenance).filter(m => !m.pendaftaranId && odpKey_(m.noOdp) === k).forEach(m => {
     const tk = m.tiketId ? STATE.tiket.find(x => x.id === m.tiketId) : null;
     tambah(m.client, tk && tk.lat, tk && tk.lng, false, 'maint');
@@ -3030,7 +3414,7 @@ function pelangganDiOdp_(odp){
 }
 function infoOdp_(odp){
   const pel = pelangganDiOdp_(odp), k = odpKey_(odp.nama), kap = kapasitasOdp_(odp.tipe);
-  const odpMasalah = hidup_(STATE.tiket).some(x => x.status !== 'Selesai' && odpKey_(x.noOdp) === k && odpKey_(x.namaPelanggan) === k);
+  const odpMasalah = hidup_(STATE.tiket).some(x => x.status !== 'Selesai' && ((odpKey_(x.noOdp) === k && odpKey_(x.namaPelanggan) === k) || odpKey_(x.odpTerdampak) === k));
   const aktif = pel.filter(p => p.aktif);
   return { pel, kap, nPasang: pel.filter(p => p.pasang).length, nMaint: pel.filter(p => p.maint && !p.pasang).length, terpakai: pel.length, tersedia: kap ? Math.max(0, kap - pel.length) : null, odpMasalah, aktif, bermasalah: odpMasalah || aktif.length > 0 };
 }
@@ -3038,6 +3422,7 @@ function infoOdp_(odp){
 function gambarOdp_(){
   const garis = (document.getElementById('chkGarisOdp') || {}).checked !== false;
   (STATE.odp || []).filter(o => o.lat && o.lng).forEach(o => {
+    if(o.jenis === 'ODC'){ gambarOdc_(o); return; }
     const inf = infoOdp_(o);
     const warna = inf.bermasalah ? '#E5484D' : '#1E88E5';
     const icon = L.divIcon({ className:'', iconSize:[24,24], html:`<div class="odp-pin ${inf.bermasalah ? 'odp-merah' : ''}" style="background:${warna};"><span>ODP</span></div>` });
@@ -3061,6 +3446,17 @@ function renderOdpList_(){
   const form = document.getElementById('odpForm'); if(form) form.classList.toggle('hide', !bisaKelolaOdp_());
   const list = [...(STATE.odp || [])].sort((a, b) => String(a.nama).localeCompare(String(b.nama)));
   box.innerHTML = list.length ? list.map(o => {
+    if(o.jenis === 'ODC'){
+      const rt = jalurDiNode_(o.id), rusak = rt.some(r => r.status && r.status !== 'Normal');
+      return `<div class="meta" style="border-bottom:1px solid var(--line);padding:8px 0;">
+        <b style="color:var(--text);">🏢 ${esc(o.nama)}</b> <span class="badge">ODC</span>${rusak ? ' <span class="badge baru">⚠️ backbone bermasalah</span>' : ''}<br>
+        ${rt.length} jalur backbone${(o.lat && o.lng) ? '' : ' • ⚪ belum ada titik'}
+        <div class="actions" style="margin-top:6px;">
+          ${(o.lat && o.lng) ? `<button class="btn btn-outline" onclick="fokusOdp('${o.id}')">🗺️ Lihat di peta</button>` : ''}
+          ${bisaKelolaOdp_() ? `<button class="btn btn-outline" onclick="editOdp('${o.id}')">✏️ Ubah</button>` : ''}
+          ${(USER && USER.role === 'Admin') ? `<button class="btn btn-outline" onclick="hapusOdp('${o.id}')">🗑️</button>` : ''}
+        </div></div>`;
+    }
     const inf = infoOdp_(o);
     return `<div class="meta" style="border-bottom:1px solid var(--line);padding:8px 0;">
       <b style="color:var(--text);">🔌 ${esc(o.nama)}</b>${inf.bermasalah ? ' <span class="badge baru">⚠️ gangguan</span>' : ''}<br>
@@ -3096,6 +3492,7 @@ async function linkOdp_(){
 function resetFormOdp_(){
   ['od_id','od_nama','od_alamat','od_maps','od_ket','od_lat','od_lng'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('od_tipe').value = '';
+  document.getElementById('od_jenis').value = 'ODP'; aturFormJenis_();
   document.getElementById('od_info').textContent = 'Titik ODP opsional, tapi tanpa titik ODP tidak muncul di peta. Tekan 📍 saat berada di ODP, atau isi link Maps lalu 🔗.';
   document.getElementById('od_judul').textContent = '➕ Tambah ODP';
   document.getElementById('od_batal').classList.add('hide');
@@ -3106,6 +3503,7 @@ function editOdp(id){
   document.getElementById('od_id').value = o.id;
   document.getElementById('od_nama').value = o.nama || '';
   document.getElementById('od_tipe').value = o.tipe || '';
+  document.getElementById('od_jenis').value = o.jenis === 'ODC' ? 'ODC' : 'ODP'; aturFormJenis_();
   document.getElementById('od_alamat').value = o.alamat || '';
   document.getElementById('od_maps').value = o.mapsLink || '';
   document.getElementById('od_ket').value = o.keterangan || '';
@@ -3117,7 +3515,7 @@ function editOdp(id){
   document.getElementById('odpForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 async function simpanOdpForm(){
-  const payload = { id: val('od_id'), nama: val('od_nama').trim(), tipe: val('od_tipe'), alamat: val('od_alamat'), mapsLink: val('od_maps'), keterangan: val('od_ket'), lat: val('od_lat'), lng: val('od_lng') };
+  const payload = { id: val('od_id'), nama: val('od_nama').trim(), jenis: val('od_jenis'), tipe: val('od_tipe'), alamat: val('od_alamat'), mapsLink: val('od_maps'), keterangan: val('od_ket'), lat: val('od_lat'), lng: val('od_lng') };
   if(!payload.nama){ toast('Isi Nama ODP dulu'); return; }
   if(payload.mapsLink && !(payload.lat && payload.lng)){
     const k = await koordDariLink_(payload.mapsLink);
@@ -3141,7 +3539,618 @@ function fokusOdp(id){
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/* ---------------- ODC & jalur backbone ---------------- */
+function aturFormJenis_(){
+  const odc = document.getElementById('od_jenis').value === 'ODC';
+  document.getElementById('od_wrapTipe').classList.toggle('hide', odc);
+}
+function nodeNama_(id){ const o = (STATE.odp || []).find(x => x.id === id); return o ? o.nama : '(titik dihapus)'; }
+function jalurDiNode_(id){ return (STATE.backbone || []).filter(b => b.dari === id || b.ke === id); }
+// Tebal dan warna garis menurut jumlah core
+function gayaCore_(core){
+  if(core <= 4) return { color: '#7FB5E8', weight: 3 };
+  if(core <= 12) return { color: '#2F8FE8', weight: 4 };
+  if(core <= 24) return { color: '#1565C0', weight: 5 };
+  if(core <= 48) return { color: '#0D3B8C', weight: 6 };
+  return { color: '#4A2E9E', weight: 7 };
+}
+function gambarOdc_(o){
+  const rt = jalurDiNode_(o.id), rusak = rt.some(r => r.status && r.status !== 'Normal');
+  const icon = L.divIcon({ className:'', iconSize:[30,30], html:`<div class="odc-pin ${rusak ? 'odp-merah' : ''}" style="background:${rusak ? '#E5484D' : '#0F9D9A'};"><span>ODC</span></div>` });
+  const marker = L.marker([Number(o.lat), Number(o.lng)], { icon, zIndexOffset: 800 }).addTo(mapObj);
+  const daftar = rt.length ? rt.map(b => '🧵 ' + esc(nodeNama_(b.dari === o.id ? b.ke : b.dari)) + ' • ' + esc(b.core) + ' core' + (b.status !== 'Normal' ? ' ⚠️' : '')).join('<br>') : '<i>Belum ada jalur backbone</i>';
+  marker.bindPopup(`<b>🏢 ${esc(o.nama)}</b> (ODC)<br>${daftar}${o.alamat ? '<br>📍 ' + esc(o.alamat) : ''}<br><a href="${esc(ruteUrl_(o.lat, o.lng))}" target="_blank" style="color:#1E88E5;font-weight:700;">🧭 Rute ke ODC</a>`
+    + (bisaKelolaOdp_() ? ` • <a href="#" onclick="editOdp('${o.id}');return false;" style="color:#1E88E5;">✏️ Ubah</a>` : ''));
+  mapMarkers.push(marker);
+}
+function gambarBackbone_(){
+  if((document.getElementById('chkBackbone') || {}).checked === false) return;
+  const node = {}; (STATE.odp || []).forEach(o => { node[o.id] = o; });
+  (STATE.backbone || []).forEach(b => {
+    const a = node[b.dari], z = node[b.ke];
+    if(!a || !z || !a.lat || !a.lng || !z.lat || !z.lng) return;
+    const core = Number(b.core) || 0, g = gayaCore_(core), rusak = b.status && b.status !== 'Normal';
+    const line = L.polyline([[Number(a.lat), Number(a.lng)], [Number(z.lat), Number(z.lng)]], { color: rusak ? '#E5484D' : g.color, weight: g.weight, opacity: .9, dashArray: rusak ? '10 6' : null }).addTo(mapObj);
+    line.bindTooltip(core + 'C', { permanent: true, direction: 'center', className: 'bb-label' });
+    line.bindPopup(`<b>🧵 ${esc(a.nama)} ↔ ${esc(z.nama)}</b><br>${core} core${b.panjang ? ' • ' + esc(b.panjang) + ' m' : ''}<br>Status: <b${rusak ? ' style="color:#E5484D;"' : ''}>${esc(b.status || 'Normal')}</b>${b.kerjaTerakhir ? '<br>' + esc(b.kerjaTerakhir) : ''}${b.keterangan ? '<br>' + esc(b.keterangan) : ''}`);
+    mapLines.push(line);
+  });
+}
+function isiPilihanNode_(){
+  const opsi = '<option value="">— Pilih titik —</option>' + [...(STATE.odp || [])].sort((x, y) => String(x.nama).localeCompare(String(y.nama)))
+    .map(o => `<option value="${esc(o.id)}">${o.jenis === 'ODC' ? '🏢' : '🔌'} ${esc(o.nama)}${(o.lat && o.lng) ? '' : ' (belum ada titik)'}</option>`).join('');
+  ['bb_dari', 'bb_ke'].forEach(id => { const el = document.getElementById(id); if(!el) return; const cur = el.value; el.innerHTML = opsi; if(cur) el.value = cur; });
+}
+function labelBackbone_(id, jenis){
+  const b = (STATE.backbone || []).find(x => x.id === id);
+  if(!id) return '';
+  return (jenis ? jenis + ': ' : '') + (b ? nodeNama_(b.dari) + ' ↔ ' + nodeNama_(b.ke) + ' (' + b.core + ' core)' : '(jalur dihapus)');
+}
+function isiPilihanJalurM_(){
+  const el = document.getElementById('bm_jalur'); if(!el) return;
+  const cur = el.value;
+  el.innerHTML = '<option value="">— Bukan pekerjaan backbone —</option>' + (STATE.backbone || []).map(b => `<option value="${esc(b.id)}">${esc(nodeNama_(b.dari))} ↔ ${esc(nodeNama_(b.ke))} • ${esc(b.core)} core${b.status !== 'Normal' ? ' ⚠️' : ''}</option>`).join('');
+  if(cur) el.value = cur;
+}
+function renderBackboneList_(){
+  isiPilihanJalurM_();
+  const box = document.getElementById('bbList'); if(!box) return;
+  const form = document.getElementById('bbForm'); if(form) form.classList.toggle('hide', !bisaKelolaOdp_());
+  isiPilihanNode_();
+  const list = STATE.backbone || [];
+  box.innerHTML = list.length ? list.map(b => {
+    const rusak = b.status && b.status !== 'Normal';
+    return `<div class="meta" style="border-bottom:1px solid var(--line);padding:8px 0;">
+      <b style="color:var(--text);">🧵 ${esc(nodeNama_(b.dari))} ↔ ${esc(nodeNama_(b.ke))}</b>${rusak ? ` <span class="badge baru">⚠️ ${esc(b.status)}</span>` : ''}<br>
+      ${esc(b.core)} core${b.panjang ? ' • ' + esc(b.panjang) + ' m' : ''}${b.kerjaTerakhir ? '<br>Terakhir: ' + esc(b.kerjaTerakhir) + (b.kerjaTgl ? ' (' + esc(fmtTs_(b.kerjaTgl)) + ')' : '') : ''}${b.keterangan ? '<br>' + esc(b.keterangan) : ''}
+      <div class="actions" style="margin-top:6px;">
+        ${bisaKelolaOdp_() ? (rusak ? `<button class="btn btn-good" onclick="kerjaBackbone('${b.id}','perbaikan_selesai')">✅ Perbaikan selesai</button>` : `<button class="btn btn-outline" onclick="kerjaBackbone('${b.id}','perbaikan_mulai')">🛠️ Perbaikan mulai</button>`) : ''}
+        ${bisaKelolaOdp_() ? `<button class="btn btn-outline" onclick="editBackbone('${b.id}')">✏️ Ubah</button>` : ''}
+        ${(USER && USER.role === 'Admin') ? `<button class="btn btn-outline" onclick="hapusBackbone('${b.id}')">🗑️</button>` : ''}
+      </div></div>`;
+  }).join('') : '<div class="empty"><span class="ic">🧵</span>Belum ada jalur backbone</div>';
+}
+function resetFormBb_(){
+  ['bb_id','bb_panjang','bb_ket'].forEach(id => document.getElementById(id).value = '');
+  ['bb_dari','bb_ke','bb_core','bb_kerja'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('bb_status').value = 'Normal';
+  document.getElementById('bb_judul').textContent = '➕ Tambah Jalur';
+  document.getElementById('bb_wrapKerja').classList.remove('hide');
+  document.getElementById('bb_batal').classList.add('hide');
+}
+function editBackbone(id){
+  const b = (STATE.backbone || []).find(x => x.id === id); if(!b) return;
+  const d = document.getElementById('odpDetails'); if(d) d.open = true;
+  isiPilihanNode_();
+  document.getElementById('bb_id').value = b.id;
+  document.getElementById('bb_dari').value = b.dari || '';
+  document.getElementById('bb_ke').value = b.ke || '';
+  document.getElementById('bb_core').value = String(b.core || '');
+  document.getElementById('bb_panjang').value = b.panjang || '';
+  document.getElementById('bb_status').value = b.status || 'Normal';
+  document.getElementById('bb_ket').value = b.keterangan || '';
+  document.getElementById('bb_judul').textContent = '✏️ Ubah Jalur';
+  document.getElementById('bb_wrapKerja').classList.add('hide');
+  document.getElementById('bb_batal').classList.remove('hide');
+  document.getElementById('bbForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+async function simpanBackbone(){
+  const payload = { id: val('bb_id'), dari: val('bb_dari'), ke: val('bb_ke'), core: val('bb_core'), panjang: val('bb_panjang'), status: val('bb_status'), kerja: val('bb_kerja'), keterangan: val('bb_ket') };
+  if(!payload.dari || !payload.ke){ toast('Pilih titik Dari dan Ke dulu'); return; }
+  if(payload.dari === payload.ke){ toast('Dari dan Ke harus berbeda'); return; }
+  if(!payload.core){ toast('Pilih jumlah core'); return; }
+  const data = await apiCall('simpanBackbone', payload);
+  if(data && data.ok){ toast('✅ Jalur backbone tersimpan'); resetFormBb_(); loadAll(); }
+}
+async function kerjaBackbone(id, aksi){
+  const data = await apiCall('kerjaBackbone', { id, aksi });
+  if(data && data.ok){ toast(aksi === 'perbaikan_mulai' ? '🛠️ Perbaikan dicatat, jalur jadi merah di peta' : '✅ Perbaikan selesai, jalur kembali normal'); loadAll(); }
+}
+async function hapusBackbone(id){
+  if(!confirm('Hapus jalur backbone ini?')) return;
+  const data = await apiCall('hapusBackbone', { id });
+  if(data && data.ok){ toast('🗑️ Jalur dihapus'); loadAll(); }
+}
+
+/* ---------------- DATABASE ASSET (import Excel Admin -> selesaikan di Pemasangan / Maintenance) ---------------- */
+const ASSET_ROLES_ = ['Admin','Teknisi','Admin Server','Office'];
+let ASSET_AKTIF = null;                    // asset yang sedang dikerjakan di form Pemasangan/Maintenance
+let ASSET_IMPOR = null;                    // hasil baca Excel yang menunggu disimpan
+let assetFilter = { status: 'belum', jenis: '', q: '', batas: 40 };
+const assetLabel_ = { pas: {}, mnt: {} };
+
+const normAs_ = x => String(x || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const tglIndo_ = t => /^\d{4}-\d{2}-\d{2}/.test(String(t || '')) ? String(t).slice(0, 10).split('-').reverse().join('/') : String(t || '');
+const jamAs_ = t => { const m = String(t || '').match(/^(\d{1,2}):(\d{2})/); return m ? String(m[1]).padStart(2, '0') + ':' + m[2] : ''; };
+
+function ensureXlsx_(){
+  return new Promise((ok, gagal) => {
+    if(window.XLSX) return ok();
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    sc.onload = () => ok();
+    sc.onerror = () => gagal(new Error('Gagal memuat pembaca Excel. Cek koneksi internet lalu coba lagi.'));
+    document.head.appendChild(sc);
+  });
+}
+// ---- membaca sel ----
+function selTeks_(ws, r, c){
+  const cel = ws[XLSX.utils.encode_cell({ r, c })];
+  if(!cel || cel.v === undefined || cel.v === null) return '';
+  if(cel.t === 'n'){
+    const z = String(cel.z || '');
+    const n = Number(cel.v), bulat = Math.floor(n), frak = n - bulat;
+    const jam = () => { const mnt = Math.round(frak * 1440); return String(Math.floor(mnt / 60) % 24).padStart(2, '0') + ':' + String(mnt % 60).padStart(2, '0'); };
+    const tgl = () => new Date(Math.round((bulat - 25569) * 86400000)).toISOString().slice(0, 10);
+    const adaTgl = /[dy]/i.test(z.replace(/\[[^\]]*\]/g, '')), adaJam = /[hs]|(?:^|[^a-z])m(?![a-z])/i.test(z.replace(/\[[^\]]*\]/g, '')) && /h/i.test(z);
+    if(adaTgl) return tgl() + (frak > 0.00001 ? ' ' + jam() : '');
+    if(adaJam || (n < 1 && n > 0)) return jam();
+    return String(cel.v);
+  }
+  return String(cel.v).trim();
+}
+function selMaps_(ws, r, c){
+  if(c === undefined) return '';
+  const cel = ws[XLSX.utils.encode_cell({ r, c })];
+  if(!cel) return '';
+  const v = String(cel.v || '').trim();
+  if(/^https?:\/\//i.test(v)) return v;
+  if(cel.l && cel.l.Target && /^https?:\/\//i.test(cel.l.Target)) return cel.l.Target;
+  return '';
+}
+function petaHeader_(ws, rng){
+  let hr = -1;
+  for(let r = rng.s.r; r <= Math.min(rng.e.r, rng.s.r + 5) && hr < 0; r++){
+    for(let c = rng.s.c; c <= rng.e.c; c++){ if(/nama\s*client/i.test(selTeks_(ws, r, c))){ hr = r; break; } }
+  }
+  if(hr < 0) return null;
+  const h = { tech: [] };
+  let akhir = hr;
+  for(let r = hr; r <= hr + 1; r++){
+    for(let c = rng.s.c; c <= rng.e.c; c++){
+      const t = selTeks_(ws, r, c).toLowerCase().replace(/\s+/g, ' ').trim();
+      if(!t) continue;
+      if(/^tech\s*\d+$/.test(t)){ h.tech.push(c); if(r > hr) akhir = hr + 1; continue; }
+      if(r > hr) continue;
+      const set = (k, re) => { if(re.test(t) && h[k] === undefined) h[k] = c; };
+      set('nama', /^nama client/); set('alamat', /^alamat/); set('hp', /^no hp( register)?$/); set('hp2', /^(hp lain|no hp lain)/);
+      set('speed', /^paket$/); set('tgl', /^tgl (pasang|maintenance)/); set('market', /^market/); set('isp', /^isp/);
+      set('maps', /(?:koordina?t|coordina?t|link ?maps?|titik)/); set('mik', /^mik/); set('paket', /^(jenis paket|detail paket)/);
+      set('red', /^red/); set('stts', /^stts/); set('ssid', /^ssid/); set('pass', /^pass/); set('material', /^material/);
+      set('pay', /^pay/); set('jamSelesai', /^jam selesai/);
+      set('jamLaporan', /^jam laporan/); set('sumber', /^laporan dari/); set('kendala', /^kendala/); set('diagnosa', /^diagnosa/);
+      set('jamDitangani', /^jam ditangani/); set('handling', /^handling$/);
+    }
+  }
+  h.mulai = akhir + 1;
+  return h;
+}
+function pecahKlien_(teks){
+  const t = String(teks || '').replace(/\r/g, '');
+  const bagian = t.split(/\n|\s{2,}/).map(x => x.trim()).filter(Boolean);
+  if(bagian.length <= 1) return { area: '', nama: [t.replace(/^-+\s*/, '').trim()].filter(Boolean) };
+  const dash = bagian.map(x => /^-/.test(x));
+  let area = '', daftar = bagian;
+  if(!dash[0] && dash.slice(1).every(Boolean)){ area = bagian[0]; daftar = bagian.slice(1); }
+  return { area, nama: daftar.map(x => x.replace(/^-+\s*/, '').trim()).filter(Boolean) };
+}
+function statusAsset_(t){
+  t = String(t || '').toLowerCase();
+  if(/done|selesai/.test(t)) return 'Selesai';
+  if(/progress|proses/.test(t)) return 'Proses';
+  return 'Unhandling';
+}
+function parseSheetAsset_(ws, jenisSheet){
+  const pesan = [];
+  if(!ws || !ws['!ref']) return { rows: [], pesan: ['Sheet kosong'] };
+  const rng = XLSX.utils.decode_range(ws['!ref']);
+  const h = petaHeader_(ws, rng);
+  if(!h || h.nama === undefined) return { rows: [], pesan: ['Sheet ' + jenisSheet + ': kolom "Nama Client" tidak ditemukan'] };
+  const g = (r, k) => h[k] === undefined ? '' : selTeks_(ws, r, h[k]);
+  const rows = [];
+  for(let r = h.mulai; r <= rng.e.r; r++){
+    const namaMentah = g(r, 'nama');
+    if(!String(namaMentah).trim()) continue;
+    const tglMentah = g(r, 'tgl');
+    const tanggal = /^\d{4}-\d{2}-\d{2}/.test(tglMentah) ? tglMentah.slice(0, 10) : '';
+    const teknisi = h.tech.map(c => selTeks_(ws, r, c)).filter(Boolean).slice(0, 8).map(x => ({ nama: x.replace(/\(\s*p\s*\)/ig, '').trim(), piket: /\(\s*p\s*\)/i.test(x) })).filter(x => x.nama);
+    const handling = g(r, 'handling'), diagnosa = g(r, 'diagnosa'), kendala = g(r, 'kendala');
+    const speed = [g(r, 'speed'), h.speed !== undefined ? selTeks_(ws, r, h.speed + 1) : ''].filter(Boolean).join(' ');
+    const dasar = {
+      alamat: g(r, 'alamat'), noHp: g(r, 'hp'), noHp2: g(r, 'hp2'), tanggal,
+      jamLaporan: jamAs_(g(r, 'jamLaporan')), jamDitangani: g(r, 'jamDitangani'), jamSelesai: jamAs_(g(r, 'jamSelesai')),
+      sumber: g(r, 'sumber') || g(r, 'market'), kendala, diagnosa, handling,
+      paket: g(r, 'paket') || speed, isp: g(r, 'isp'), mapsLink: selMaps_(ws, r, h.maps), mikrotik: g(r, 'mik'),
+      redaman: g(r, 'red'), ssid: g(r, 'ssid'), passWifi: g(r, 'pass'), pay: g(r, 'pay'), material: g(r, 'material'),
+      teknisi, statusAsli: g(r, 'stts'), status: statusAsset_(g(r, 'stts'))
+    };
+    let jenis = jenisSheet, nama = [String(namaMentah).trim()], area = '', pecah = false;
+    if(jenisSheet === 'Maintenance'){
+      const p = pecahKlien_(namaMentah);
+      nama = p.nama; area = p.area; pecah = p.nama.length > 1;
+      if(/backbone/i.test(handling + ' ' + diagnosa + ' ' + kendala)) jenis = 'Backbone';
+    }
+    nama.forEach((n, i) => rows.push({ ...dasar, jenis, nama: n, area, _pecah: pecah,
+      ...(pecah ? { kelompok: nama.join(' | '), material: i === 0 ? dasar.material : '' } : {}) }));   // satu pekerjaan, satu material: dicatat di nama pertama
+  }
+  const dipakai = {};
+  rows.forEach(x => {
+    let k = x.jenis + '|' + x.tanggal + '|' + normAs_(x.nama);
+    if(dipakai[k]){ dipakai[k]++; k += '#' + dipakai[k]; } else dipakai[k] = 1;
+    x.kunci = k;
+  });
+  return { rows, pesan };
+}
+async function bacaExcelAsset_(input){
+  const f = input.files && input.files[0]; if(!f) return;
+  const pv = document.getElementById('as_preview');
+  document.getElementById('as_simpan').classList.add('hide');
+  pv.textContent = '⏳ Membaca file...';
+  try{
+    await ensureXlsx_();
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const semua = [], pesan = [];
+    wb.SheetNames.forEach(nm => {
+      const jenisSheet = /masang|pasang/i.test(nm) ? 'Pemasangan' : (/maint/i.test(nm) ? 'Maintenance' : '');
+      if(!jenisSheet){ pesan.push('Sheet "' + nm + '" dilewati (nama sheet tidak dikenali)'); return; }
+      const r = parseSheetAsset_(wb.Sheets[nm], jenisSheet);
+      semua.push(...r.rows); pesan.push(...r.pesan);
+    });
+    ASSET_IMPOR = { rows: semua, nama: f.name };
+    tampilPreviewAsset_(pesan);
+  }catch(e){ ASSET_IMPOR = null; pv.textContent = '❌ ' + (e.message || e); }
+}
+function cocokAkun_(nama){
+  const list = STATE.teknisiList || [], k = normAs_(nama);
+  if(!k) return '';
+  const persis = list.find(n => normAs_(n) === k);
+  if(persis) return persis;
+  const mirip = list.filter(n => { const a = normAs_(n); return a.startsWith(k) || k.startsWith(a); });
+  return mirip.length === 1 ? mirip[0] : '';
+}
+function tampilPreviewAsset_(pesan){
+  const pv = document.getElementById('as_preview'), rows = (ASSET_IMPOR && ASSET_IMPOR.rows) || [];
+  if(!rows.length){ pv.innerHTML = '❌ Tidak ada baris data yang terbaca.' + (pesan.length ? '<br>' + pesan.map(esc).join('<br>') : ''); return; }
+  const ada = new Set((STATE.asset || []).map(a => a.kunci));
+  const hit = {}, tglSet = [];
+  rows.forEach(x => { const k = x.jenis + ' • ' + x.status; hit[k] = (hit[k] || 0) + 1; if(x.tanggal) tglSet.push(x.tanggal); });
+  const baru = rows.filter(x => !ada.has(x.kunci)).length;
+  const pecah = rows.filter(x => x._pecah).length;
+  const tdkCocok = [...new Set(rows.flatMap(x => x.teknisi.map(t => t.nama)).filter(n => !cocokAkun_(n)))];
+  tglSet.sort();
+  pv.innerHTML = `<div class="meta"><b>${esc(ASSET_IMPOR.nama)}</b>: ${rows.length} baris (${baru} baru, ${rows.length - baru} sudah ada)${tglSet.length ? ' • tanggal ' + tglIndo_(tglSet[0]) + ' – ' + tglIndo_(tglSet[tglSet.length - 1]) : ''}</div>`
+    + Object.entries(hit).sort().map(([k, v]) => `<div class="meta">• ${esc(k)}: <b>${v}</b></div>`).join('')
+    + (pecah ? `<div class="meta">🔀 ${pecah} baris berasal dari sel dengan banyak client (dipecah satu client satu asset; material hanya dicatat pada nama pertama)</div>` : '')
+    + (tdkCocok.length ? `<div class="meta" style="color:var(--warn);">⚠️ Nama teknisi belum cocok dengan akun: ${esc(tdkCocok.join(', '))} (tetap tersimpan sebagai teks; tidak masuk jadwal piket)</div>` : '')
+    + pesan.map(m => `<div class="meta" style="color:var(--warn);">⚠️ ${esc(m)}</div>`).join('')
+    + `<div class="mini-note" style="margin-top:6px;">Asset yang sudah pernah dikirim sebagai laporan tidak akan ditimpa. Teknisi bertanda (P) dimasukkan ke jadwal piket pada tanggalnya.</div>`;
+  document.getElementById('as_simpan').classList.remove('hide');
+}
+// Mengubah link Google Maps menjadi koordinat (pin di tab Peta). Link yang sama hanya diproses sekali.
+async function bacaTitikLinks_(links, progres){
+  const hasil = {}, antre = [...new Set(links.filter(Boolean))], total = antre.length;
+  let selesai = 0;
+  const kerja = async () => {
+    while(antre.length){
+      const l = antre.shift();
+      try{ hasil[l] = await koordDariLink_(l); }catch(e){ hasil[l] = null; }
+      selesai++; if(progres) progres(selesai, total);
+    }
+  };
+  await Promise.all([kerja(), kerja(), kerja(), kerja()]);
+  return hasil;
+}
+async function isiKoordAsset_(rows, progres){
+  const perlu = rows.filter(r => r.mapsLink && !(r.lat && r.lng));
+  if(!perlu.length) return 0;
+  const hasil = await bacaTitikLinks_(perlu.map(r => r.mapsLink), progres);
+  let dapat = 0;
+  perlu.forEach(r => { const k = hasil[r.mapsLink]; if(k && isFinite(k.lat) && isFinite(k.lng)){ r.lat = k.lat; r.lng = k.lng; dapat++; } });
+  return dapat;
+}
+let ASSET_PIN_JALAN = false;
+async function ambilTitikAsset_(){
+  const target = (STATE.asset || []).filter(a => a.mapsLink && !(a.lat && a.lng));
+  if(!target.length){ toast('Semua asset yang punya link sudah bertitik'); return; }
+  const btn = document.getElementById('as_pinBtn'), info = document.getElementById('as_pinInfo');
+  ASSET_PIN_JALAN = true; btn.disabled = true;
+  const hasil = await bacaTitikLinks_(target.map(a => a.mapsLink), (i, n) => { info.textContent = '📍 Membaca titik ' + i + '/' + n + '...'; });
+  let ok = 0, gagal = 0;
+  for(const a of target){
+    const k = hasil[a.mapsLink];
+    if(!k){ gagal++; continue; }
+    const { error } = await sb.from('asset').update({ lat: k.lat, lng: k.lng }).eq('id', a.id);
+    if(error) gagal++; else ok++;
+  }
+  ASSET_PIN_JALAN = false; btn.disabled = false;
+  await logAksi_('mengambil titik Peta asset', `${ok} berhasil, ${gagal} belum terbaca`);
+  toast(`📍 ${ok} asset jadi pin di Peta${gagal ? `, ${gagal} belum terbaca (tetap ada tombol Buka Maps)` : ''}`);
+  loadAll();
+}
+function asetUntukHapus_(){
+  const st = [...document.querySelectorAll('#as_hapusStatus input[value]')].filter(c => c.checked).map(c => c.value);
+  const lap = document.getElementById('as_hapusLaporan').checked;
+  const kena = (STATE.asset || []).filter(a => st.includes(a.status));
+  return { st, terhapus: kena.filter(a => lap || !a.laporanId), dilewati: kena.filter(a => !lap && a.laporanId).length };
+}
+function pilihSemuaHapus_(cb){
+  document.querySelectorAll('#as_hapusStatus input[value]').forEach(c => { c.checked = cb.checked; });
+  hitungHapusAsset_();
+}
+function hitungHapusAsset_(){
+  const box = document.getElementById('as_hapusInfo'), btn = document.getElementById('as_hapusBtn');
+  if(!box || !btn || ASSET_HAPUS_JALAN) return;
+  const r = asetUntukHapus_();
+  if(!r.st.length){ box.textContent = 'Belum ada status yang dicentang.'; btn.disabled = true; return; }
+  box.textContent = `${r.terhapus.length} asset akan dihapus` + (r.dilewati ? ` (${r.dilewati} dilewati karena sudah jadi laporan)` : '') + ` dari total ${(STATE.asset || []).length}.`;
+  btn.disabled = !r.terhapus.length;
+}
+let ASSET_HAPUS_JALAN = false;
+async function hapusAssetMassal_(){
+  const r = asetUntukHapus_();
+  if(!r.terhapus.length){ toast('Tidak ada asset yang cocok'); return; }
+  if(!confirm(`Hapus ${r.terhapus.length} asset (${r.st.join(', ')})?\nTidak bisa dibatalkan.`)) return;
+  const ketik = prompt(`Ketik HAPUS untuk menghapus ${r.terhapus.length} asset:`);
+  if(ketik === null) return;
+  if(ketik.trim().toUpperCase() !== 'HAPUS'){ toast('Dibatalkan: kata HAPUS tidak diketik'); return; }
+  const btn = document.getElementById('as_hapusBtn'), info = document.getElementById('as_hapusInfo');
+  ASSET_HAPUS_JALAN = true; btn.disabled = true;
+  const data = await apiCall('hapusAssetMassal', { ids: r.terhapus.map(a => a.id), progres: (i, n) => { info.textContent = `Menghapus ${i}/${n}...`; } });
+  ASSET_HAPUS_JALAN = false;
+  if(data && data.ok) toast(`🗑️ ${data.terhapus} asset dihapus${data.gagal ? `, ${data.gagal} gagal` : ''}`);
+  await loadAll(); hitungHapusAsset_();
+}
+async function simpanImportAsset_(){
+  if(!ASSET_IMPOR || !ASSET_IMPOR.rows.length){ toast('Pilih file Excel dulu'); return; }
+  const btn = document.getElementById('as_simpan'); btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  const rows = ASSET_IMPOR.rows.map(x => { const { _pecah, ...r } = x; return r; });
+  const dapatPin = await isiKoordAsset_(rows, (i, n) => { btn.textContent = '📍 Membaca titik Peta ' + i + '/' + n + '...'; });
+  btn.textContent = '⏳ Menyimpan...';
+  const piket = [];
+  ASSET_IMPOR.rows.forEach(x => x.teknisi.filter(t => t.piket && x.tanggal).forEach(t => { const a = cocokAkun_(t.nama); if(a) piket.push({ tanggal: x.tanggal, nama: a }); }));
+  const data = await apiCall('importAsset', { rows, piket, batch: ASSET_IMPOR.nama });
+  btn.disabled = false; btn.textContent = 'Simpan ke Database Asset';
+  if(data && data.ok){
+    toast(`✅ ${data.baru} baru, ${data.ubah} diperbarui, ${data.lewati} dilewati${data.piket ? ', piket ' + data.piket + ' hari' : ''}${dapatPin ? ', ' + dapatPin + ' titik masuk Peta' : ''}`);
+    ASSET_IMPOR = null; document.getElementById('as_file').value = ''; document.getElementById('as_preview').innerHTML = ''; btn.classList.add('hide');
+    loadAll();
+  }
+}
+// ---- daftar & pencarian ----
+function parseMaterial_(t){
+  t = String(t || '');
+  const angka = re => { const m = t.match(re); return m ? m[1].replace(',', '.') : ''; };
+  const stok = t.match(/stok\s*:\s*(.+?)(?=\s{2,}|\s+(?:box|splitter|kabel|modem|adaptor|patchcore|barrel)\b|$)/i);
+  const modemTipe = t.match(/modem\s*:\s*[0-9-]*\s*\(([^)]+)\)/i);          // mis. "Modem : - (5G)"
+  const kabelTipe = t.match(/\b(1|4|12|24)\s*c\b/i);                         // mis. "Kabel: 30 m 1c"
+  const split = t.match(/splitter\s*([0-9]+\s*\/\s*[0-9]+)\s*:\s*(\d+)/i);
+  return { kabel: angka(/kabel\s*:\s*(\d+(?:[.,]\d+)?)\s*m/i), modem: angka(/modem\s*:\s*(\d+)/i), adaptor: angka(/adaptor\s*:\s*(\d+)/i),
+    patchcore: angka(/patch\s*core\s*:\s*(\d+)/i), barrel: angka(/barrel\s*:\s*(\d+)/i), stok: stok ? stok[1].trim() : '',
+    modemTipe: modemTipe ? modemTipe[1].trim() : '', kabelTipe: kabelTipe ? kabelTipe[1] + 'c' : '',
+    splitterRasio: split ? split[1].replace(/\s+/g, '') : '', splitterQty: split ? split[2] : '', boxodp: angka(/box\s*odp\s*:\s*(\d+)/i) };
+}
+function badgeAsset_(st){ return `<span class="badge ${st === 'Selesai' ? 'selesai' : (st === 'Proses' ? 'dikonfirmasi' : 'baru')}">${esc(st)}</span>`; }
+function tabUntukAsset_(a){ return a.jenis === 'Pemasangan' ? 'pasang' : 'maint'; }
+function bisaKirimAsset_(a){ return !!(USER && (ROLE_TABS[USER.role] || []).includes(tabUntukAsset_(a))); }
+function renderAsset_(){
+  const box = document.getElementById('assetList'); if(!box) return;
+  const imp = document.getElementById('assetImportBox'); if(imp) imp.classList.toggle('hide', !(USER && USER.role === 'Admin'));
+  const f = assetFilter, q = f.q.trim().toLowerCase();
+  const dasar = (STATE.asset || []).filter(a => (!f.jenis || a.jenis === f.jenis)
+    && (!q || [a.nama, a.alamat, a.mikrotik, a.area, a.noHp].some(v => String(v || '').toLowerCase().includes(q))));
+  const hitung = s => dasar.filter(a => s === 'semua' ? true : (s === 'belum' ? a.status !== 'Selesai' : a.status.toLowerCase() === s)).length;
+  const chip = [['belum', 'Belum selesai'], ['proses', 'Proses'], ['unhandling', 'Unhandling'], ['selesai', 'Selesai'], ['semua', 'Semua']];
+  document.getElementById('as_chips').innerHTML = chip.map(([k, t]) => `<button class="btn btn-outline ${f.status === k ? 'sel' : ''}" onclick="assetFilter.status='${k}';assetFilter.batas=40;renderAsset_()">${t} (${hitung(k)})</button>`).join('');
+  const urut = { Unhandling: 0, Proses: 1, Selesai: 2 };
+  const daftar = dasar.filter(a => f.status === 'semua' ? true : (f.status === 'belum' ? a.status !== 'Selesai' : a.status.toLowerCase() === f.status))
+    .sort((x, y) => (urut[x.status] - urut[y.status]) || String(y.tanggal || '').localeCompare(String(x.tanggal || '')) || String(x.nama).localeCompare(String(y.nama)));
+  const bertitik = (STATE.asset || []).filter(a => a.lat && a.lng).length;
+  const belumPin = (STATE.asset || []).filter(a => a.mapsLink && !(a.lat && a.lng)).length;
+  document.getElementById('as_ringkas').textContent = `${daftar.length} asset ditampilkan dari ${(STATE.asset || []).length} total • ${bertitik} sudah jadi pin di Peta • ${cocokAssetWeb_().size} mirip data di web`;
+  const hapusBox = document.getElementById('as_hapusBox');
+  if(hapusBox){ hapusBox.classList.toggle('hide', !(USER && USER.role === 'Admin')); hitungHapusAsset_(); }
+  const pinBox = document.getElementById('as_pinBox');
+  if(pinBox){
+    pinBox.classList.toggle('hide', !(belumPin > 0 && USER && ['Admin','Admin Server','Office'].includes(USER.role)));
+    if(!ASSET_PIN_JALAN) document.getElementById('as_pinInfo').textContent = `${belumPin} asset punya link Maps tapi belum jadi pin di tab Peta.`;
+  }
+  box.innerHTML = daftar.length ? daftar.slice(0, f.batas).map(a => {
+    const tek = (a.teknisi || []).map(t => esc(t.nama) + (t.piket ? ' <b>(P)</b>' : '')).join(', ');
+    const maps = mapsBtn_(a.mapsLink);
+    return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="color:var(--text);">${esc(a.nama)}</b>${badgeAsset_(a.status)}</div>
+      <div class="meta">${esc(a.jenis)}${a.tanggal ? ' • ' + tglIndo_(a.tanggal) : ''}${a.isp ? ' • ' + esc(a.isp) : ''}${a.paket ? ' • ' + esc(a.paket) : ''}</div>
+      ${a.area ? `<div class="meta">📌 ${esc(a.area)}</div>` : ''}
+      ${a.alamat ? `<div class="meta">📍 ${esc(a.alamat)}</div>` : ''}
+      ${a.mikrotik ? `<div class="meta">🔑 ${esc(a.mikrotik)}</div>` : ''}
+      ${(a.ssid || a.passWifi) ? `<div class="meta">📶 WiFi: <b>${esc(a.ssid || '-')}</b> / ${esc(a.passWifi || '-')}</div>` : ''}
+      ${(() => { const mm = cocokAssetWeb_().get(a.id); return mm ? `<div class="meta" style="color:var(--warn);font-weight:600;">🔗 Mirip ${esc(ketMirip_(mm))}, kecocokan ${mm.skor}%${mm.tipe === 'laporan' ? ' — kemungkinan sudah dilaporkan' : ' — selesaikan lewat itu agar tidak ganda'}</div>` : ''; })()}
+      ${a.kelompok ? `<div class="meta">👥 ${esc(ketKelompok_(a))}</div>` : ''}
+      ${(a.kendala || a.diagnosa) ? `<div class="meta">⚠️ ${esc([a.kendala, a.diagnosa].filter(Boolean).join(' — '))}</div>` : ''}
+      ${a.handling ? `<div class="meta">🛠️ ${esc(a.handling)}</div>` : ''}
+      ${tek ? `<div class="meta">👷 ${tek}</div>` : ''}
+      ${a.laporanId ? `<div class="meta" style="color:var(--good);font-weight:600;">✅ Sudah dikirim sebagai laporan ${esc(a.laporanJenis || '')}</div>` : ''}
+      <div class="actions" style="margin-top:6px;">
+        ${maps}
+        ${(!a.laporanId && bisaKirimAsset_(a)) ? `<button class="btn btn-primary" onclick="kirimAsset('${a.id}')">➡️ Selesaikan di ${a.jenis === 'Pemasangan' ? 'Pemasangan' : 'Maintenance'}</button>` : ''}
+        ${(USER && USER.role === 'Admin') ? `<button class="btn btn-outline" onclick="hapusAsset('${a.id}')">🗑️</button>` : ''}
+      </div></div>`;
+  }).join('') : '<div class="empty"><span class="ic">🗃️</span>Tidak ada asset yang cocok</div>';
+  document.getElementById('as_lagi').classList.toggle('hide', daftar.length <= f.batas);
+  isiPilihanAsset_();
+}
+async function hapusAsset(id){
+  const a = (STATE.asset || []).find(x => x.id === id); if(!a) return;
+  if(!confirm('Hapus asset ' + a.nama + '?')) return;
+  const data = await apiCall('hapusAsset', { id });
+  if(data && data.ok){ toast('🗑️ Asset dihapus'); loadAll(); }
+}
+// ---- pilih asset di form Pemasangan / Maintenance ----
+// ---- Kecocokan asset Excel dengan data yang sudah ada di web (laporan, pendaftaran, tiket) ----
+// Nama Mikrotik di Excel sering berbentuk "Area.Nama" atau sebaliknya, jadi nama dan alamat digabung lalu dicocokkan per kata.
+const STOP_ALAMAT_ = new Set(['jl','jln','jalan','gg','gang','no','nomor','rt','rw','kp','kampung','desa','kel','kelurahan','kec','kecamatan','kab','kabupaten','kota','blok','perum','perumahan','komplek','komp','dsn','dusun','ling','lingkungan','cilegon','serang','banten','depan','dekat','samping','belakang','sebelah','dan','yang','pak','bpk','ibu','haji']);
+function tokenKata_(...teks){
+  return new Set(teks.join(' ').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter(w => w && !STOP_ALAMAT_.has(w) && (w.length > 2 || /^\d+$/.test(w))));
+}
+function irisanKata_(A, B){ let n = 0; A.forEach(w => { if(B.has(w)) n++; }); return n; }
+let COCOK_MEMO_ = { kunci: '', peta: new Map() };
+function cocokAssetWeb_(){
+  const A = STATE.asset || [], M = STATE.maintenance || [], P = STATE.pendaftaran || [], T = STATE.tiket || [];
+  const kunci = [A.length, A.filter(a => a.laporanId).length, M.length, P.length, T.length].join('|');
+  if(COCOK_MEMO_.kunci === kunci) return COCOK_MEMO_.peta;
+  const idAsset = new Set(A.map(a => a.id)), kandidat = [];
+  M.forEach(m => {
+    if(m.isTest || m.assetId || idAsset.has(m.pendaftaranId)) return;            // laporan hasil asset tidak dihitung
+    const lok = lokasiMaintenance_(m);
+    kandidat.push({ tipe:'laporan', id:m.id, kind: m.pendaftaranId ? 'P' : 'M', nama:m.client || '', status:'Selesai',
+      tgl: m.tglKerjaManual || tglWib_(m.timestamp), kataNama: tokenKata_(m.client), kata: tokenKata_(m.client, lok.alamat), kataAlamat: tokenKata_(lok.alamat) });
+  });
+  P.forEach(p => { if(p.isTest || p.status === 'Selesai') return;
+    kandidat.push({ tipe:'pendaftaran', id:p.id, kind:'P', nama:p.nama || '', status:p.status, tgl:tglWib_(p.timestamp), kataNama: tokenKata_(p.nama), kata: tokenKata_(p.nama, p.alamatPasang), kataAlamat: tokenKata_(p.alamatPasang) }); });
+  T.forEach(t => { if(t.isTest || t.status === 'Selesai') return;
+    kandidat.push({ tipe:'tiket', id:t.id, kind:'M', nama:t.namaPelanggan || '', status:t.status, tgl:tglWib_(t.timestamp), kataNama: tokenKata_(t.namaPelanggan), kata: tokenKata_(t.namaPelanggan, t.alamat), kataAlamat: tokenKata_(t.alamat) }); });
+  const pasangan = [];
+  A.forEach(a => {
+    if(a.laporanId) return;
+    const kind = a.jenis === 'Pemasangan' ? 'P' : 'M';
+    const kataNama = tokenKata_(a.nama), kata = tokenKata_(a.nama, a.area, a.alamat), kataAlamat = tokenKata_(a.area, a.alamat);
+    kandidat.forEach(c => {
+      if(c.kind !== kind) return;
+      if(a.tanggal && c.tgl && Math.abs(new Date(a.tanggal) - new Date(c.tgl)) / 86400000 > 10) return;   // tanggal harus berdekatan
+      const n = irisanKata_(kata, c.kata);
+      const skor = n ? n / Math.min(kata.size, c.kata.size) : 0;
+      const namaSama = irisanKata_(kataNama, c.kataNama) >= 1;
+      const nA = irisanKata_(kataAlamat, c.kataAlamat);
+      const skorA = nA ? nA / Math.min(kataAlamat.size, c.kataAlamat.size) : 0;
+      const cocokNama = namaSama && n >= 2 && skor >= 0.6;          // nama (atau area.nama) dan alamat sama-sama beririsan
+      const cocokAlamat = nA >= 3 && skorA >= 0.8;                  // alamat hampir identik walau nama berbeda
+      if(cocokNama || cocokAlamat) pasangan.push({ a:a.id, c, skor: Math.max(cocokNama ? skor : 0, cocokAlamat ? skorA : 0) });
+    });
+  });
+  pasangan.sort((x, y) => y.skor - x.skor);                                       // yang paling mirip dipasangkan lebih dulu
+  const pakaiA = new Set(), pakaiC = new Set(), peta = new Map();
+  pasangan.forEach(p => {
+    const kc = p.c.tipe + ':' + p.c.id;
+    if(pakaiA.has(p.a) || pakaiC.has(kc)) return;                                 // 1 asset hanya untuk 1 data, dan sebaliknya
+    pakaiA.add(p.a); pakaiC.add(kc);
+    peta.set(p.a, { tipe:p.c.tipe, id:p.c.id, nama:p.c.nama, status:p.c.status, skor:Math.round(p.skor * 100) });
+  });
+  COCOK_MEMO_ = { kunci, peta };
+  return peta;
+}
+function anggotaKelompok_(a){ return a.kelompok ? String(a.kelompok).split(' | ').filter(Boolean) : []; }
+function pemilikMaterial_(a){
+  const sama = (STATE.asset || []).filter(x => x.kelompok === a.kelompok && x.tanggal === a.tanggal && x.jenis === a.jenis);
+  const p = sama.find(x => x.material && String(x.material).trim());
+  return p ? p.nama : anggotaKelompok_(a)[0];
+}
+function ketKelompok_(a){
+  const m = anggotaKelompok_(a); if(m.length < 2) return '';
+  const pemilik = pemilikMaterial_(a);
+  return a.nama === pemilik
+    ? `Material dipakai bersama untuk: ${m.filter(n => n !== a.nama).join(', ')}`
+    : `Satu pekerjaan dengan ${pemilik}; material dicatat di laporan ${pemilik}`;
+}
+function ketMirip_(m){
+  return m.tipe === 'laporan' ? `laporan yang sudah ada atas nama "${m.nama}"` : `${m.tipe} "${m.nama}" (${m.status})`;
+}
+function isiPilihanAsset_(){
+  [['pas', a => a.jenis === 'Pemasangan'], ['mnt', a => a.jenis !== 'Pemasangan']].forEach(([pre, cocok]) => {
+    const dl = document.getElementById('as_dl_' + pre); if(!dl) return;
+    const urut = { Unhandling: 0, Proses: 1, Selesai: 2 };
+    const adm = USER && USER.role === 'Admin', MC = cocokAssetWeb_();
+    const list = (STATE.asset || []).filter(a => cocok(a) && !a.laporanId && (adm || a.status !== 'Selesai') && !(MC.get(a.id) && MC.get(a.id).tipe === 'laporan'))
+      .sort((x, y) => (urut[x.status] - urut[y.status]) || String(y.tanggal || '').localeCompare(String(x.tanggal || ''))).slice(0, 400);
+    assetLabel_[pre] = {};
+    dl.innerHTML = list.map(a => {
+      let t = `${a.nama} · ${a.tanggal ? tglIndo_(a.tanggal).slice(0, 5) : '-'} · ${a.status}${MC.get(a.id) ? ' ⚠ mirip ' + MC.get(a.id).tipe : ''}`;
+      while(assetLabel_[pre][t]) t += '·';
+      assetLabel_[pre][t] = a.id;
+      return `<option value="${esc(t)}">`;
+    }).join('');
+  });
+}
+function pilihAssetDariCari_(pre){
+  const inp = document.getElementById('as_cari_' + pre);
+  const id = assetLabel_[pre][inp.value];
+  if(id) kirimAsset(id);
+}
+function bukaTab_(nama){ const b = document.querySelector(`#navbar button[data-tab="${nama}"]`); if(b) b.click(); }
+function batalAsset_(){
+  ASSET_AKTIF = null;
+  ['pas', 'mnt'].forEach(pre => {
+    const b = document.getElementById('as_banner_' + pre); if(b){ b.classList.add('hide'); b.innerHTML = ''; }
+    const i = document.getElementById('as_cari_' + pre); if(i) i.value = '';
+  });
+}
+function kirimAsset(id){
+  const a = (STATE.asset || []).find(x => x.id === id); if(!a) return;
+  if(a.laporanId){ toast('Asset ini sudah dikirim sebagai laporan'); return; }
+  if(a.status === 'Selesai' && USER && USER.role !== 'Admin'){ toast('Asset yang sudah Selesai di Excel dilaporkan oleh Admin sebagai susulan'); return; }
+  if(!bisaKirimAsset_(a)){ toast('Peran Anda tidak punya tab ' + (a.jenis === 'Pemasangan' ? 'Pemasangan' : 'Maintenance')); return; }
+  const mirip = cocokAssetWeb_().get(a.id);
+  if(mirip && !confirm('Asset ini mirip dengan ' + ketMirip_(mirip) + ' (kecocokan ' + mirip.skor + '%).\n' + (mirip.tipe === 'laporan' ? 'Kemungkinan sudah dilaporkan, kirim lagi akan ganda.' : 'Sebaiknya diselesaikan lewat data itu agar tidak ganda.') + '\n\nTetap kirim dari asset ini?')) return;
+  const pre = a.jenis === 'Pemasangan' ? 'pas' : 'mnt', fp = a.jenis === 'Pemasangan' ? 'rp' : 'm';
+  bukaTab_(tabUntukAsset_(a));
+  batalAsset_();
+  ASSET_AKTIF = { id: a.id, jenis: a.jenis, nama: a.nama };
+  const set = (idEl, v) => { const el = document.getElementById(idEl); if(el) el.value = v; };
+  set(fp + '_client', a.nama);
+  const ispEl = document.getElementById(fp + '_isp');
+  if(ispEl && a.isp){ const op = [...ispEl.options].find(o => o.value.toLowerCase() === String(a.isp).toLowerCase()); if(op) ispEl.value = op.value; }
+  set(fp + '_teknisi', [...new Set((a.teknisi || []).map(t => cocokAkun_(t.nama)).filter(Boolean))].slice(0, 8).join(', '));
+  renderTeknisiChecks();
+  const mt = parseMaterial_(a.material);
+  if(mt.adaptor) set(fp + '_adaptor', mt.adaptor);
+  if(mt.patchcore) set(fp + '_patchcore', mt.patchcore);
+  if(mt.barrel) set(fp + '_barrel', mt.barrel);
+  if(mt.stok && !/^[-\s]*$/.test(mt.stok)){ const st = document.getElementById(fp + '_stok'); set(fp + '_stok', cocokAkun_(mt.stok) || mt.stok); if(st) st.dataset.auto = ''; }
+  // Saran dari teks material Excel: hanya diisi kalau cocok dengan TEPAT SATU pilihan, selain itu dipilih manual
+  const saran = [];
+  const pilihOpsi = (selId, kata) => {
+    const sel = document.getElementById(selId); if(!sel || !kata) return false;
+    const k = String(kata).toLowerCase(), c = [...sel.options].filter(o => o.value && o.value.toLowerCase().includes(k));
+    if(c.length !== 1) return false;
+    sel.value = c[0].value; sel.dispatchEvent(new Event('change')); return true;
+  };
+  const satuSatunya = selId => { const sel = document.getElementById(selId); const c = sel ? [...sel.options].filter(o => o.value) : []; return c.length === 1 ? c[0].value : ''; };
+  if(mt.modemTipe && pilihOpsi(fp + '_jmodem', mt.modemTipe)){ set(fp + '_modem', mt.modem || 1); saran.push('modem ' + mt.modemTipe); }
+  if(mt.kabelTipe && pilihOpsi(fp + '_jeniskabel', mt.kabelTipe)){ if(Number(mt.kabel) > 0) set(fp + '_kabel', mt.kabel); saran.push('kabel ' + mt.kabelTipe.toUpperCase()); }
+  if(mt.splitterRasio && Number(mt.splitterQty) > 0 && pilihOpsi(fp + '_jsplitter', mt.splitterRasio)){ set(fp + '_splitter', mt.splitterQty); saran.push('splitter ' + mt.splitterRasio); }
+  if(Number(mt.boxodp) > 0){ const v = satuSatunya(fp + '_jboxodp'); if(v){ const sel = document.getElementById(fp + '_jboxodp'); sel.value = v; sel.dispatchEvent(new Event('change')); set(fp + '_boxodp', mt.boxodp); saran.push('box ODP'); } }
+  const rb = document.getElementById(fp + '_redamanBox');
+  if(rb && /^-?\d+([.,]\d+)?$/.test(String(a.redaman || '').trim())){
+    rb.innerHTML = ''; tambahRedaman_(fp);
+    rb.firstElementChild.querySelector('.rdm-val').value = String(a.redaman).trim().replace(',', '.');
+  }
+  const ket = a.jenis === 'Pemasangan' ? [a.area, a.pay ? 'Pembayar: ' + a.pay : ''].filter(Boolean).join(' • ')
+    : `Keterangan: ${[a.kendala, a.diagnosa].filter(Boolean).join(' — ')}${a.area ? ' (' + a.area + ')' : ''}\nHandling: ${a.handling || ''}`;
+  set(fp + '_ket', ket + (ketKelompok_(a) ? '\n' + ketKelompok_(a) : ''));
+  if(fp === 'm' && jamAs_(a.jamLaporan)) set('m_jamlaporan', jamAs_(a.jamLaporan));
+  if(a.jenis === 'Backbone'){ const d = document.querySelector('.bb-opsi'); if(d) d.open = true; }
+  if(USER && USER.role === 'Admin' && a.tanggal && (a.status === 'Selesai' ? a.tanggal <= hariIniKey_() : a.tanggal < hariIniKey_())){     // tanggal lampau: isi sebagai input susulan (susulan hanya boleh Admin)
+    document.getElementById(fp + '_susulan').checked = true; toggleSusulan(fp);
+    set(fp + '_tglmanual', a.tanggal);
+    set(fp + '_jammulai', jamAs_(a.jamDitangani) || jamAs_(a.jamLaporan) || '');
+    set(fp + '_jamselesaim', jamAs_(a.jamSelesai) || '');
+  }
+  const cari = document.getElementById('as_cari_' + pre); if(cari) cari.value = a.nama;
+  const ban = document.getElementById('as_banner_' + pre);
+  if(ban){
+    const tek = (a.teknisi || []).map(t => esc(t.nama) + (t.piket ? ' (P)' : '')).join(', ');
+    ban.innerHTML = `📦 <b>${esc(a.nama)}</b> (${esc([a.jenis, a.status, a.tanggal ? tglIndo_(a.tanggal) : ''].filter(Boolean).join(' • '))}) <button type="button" class="btn btn-outline" onclick="batalAsset_()">✕ Lepas</button>`
+      + (tek ? `<br>Teknisi di Excel: ${tek}` : '') + (a.material ? `<br>Material di Excel: ${esc(String(a.material).replace(/\s+/g, ' '))}` : '')
+      + (a.kelompok ? `<br>👥 ${esc(ketKelompok_(a))}` : '')
+      + ((a.ssid || a.passWifi) ? `<br>📶 WiFi: <b>${esc(a.ssid || '-')}</b> / ${esc(a.passWifi || '-')}` : '')
+      + (a.mapsLink ? '<br>' + mapsBtn_(a.mapsLink) : '') + '<br>' + (saran.length ? 'Terisi otomatis dari Excel: ' + saran.join(', ') + ' (periksa lagi). ' : '') + 'Jenis modem dan kabel yang belum terisi dipilih manual di form. Lengkapi jam selesai, lalu kirim.';
+    ban.classList.remove('hide');
+  }
+  toast('📦 Data asset dimuat ke form');
+}
+
 function renderPeta(){
+
   const box = document.getElementById('mapView');
   if(!box || typeof L === 'undefined') return;
   if(!mapObj){
@@ -3164,13 +4173,14 @@ function renderPeta(){
     const color = STATUS_COLOR[x.status] || '#93A9C4';
     const icon = L.divIcon({
       className:'', iconSize:[16,16],
-      html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(18,48,107,.45);${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484DAA,0 1px 4px rgba(18,48,107,.45);':''}"></div>`
+      html:`<div style="width:14px;height:14px;border-radius:${String(x.jenis).startsWith('Asset') ? '3px' : '50%'};background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(18,48,107,.45);${x.jenis==='Tiket'?'box-shadow:0 0 0 3px #E5484DAA,0 1px 4px rgba(18,48,107,.45);':''}"></div>`
     });
     const marker = L.marker([parseFloat(x.lat), parseFloat(x.lng)], { icon }).addTo(mapObj);
     marker.bindPopup(`<b>${x.jenis}: ${esc(x.judul)}</b><br>${esc(x.sub)}<br>${esc(x.info)}<br>Status: ${esc(x.status)}${x.riwayat ? `<br><span style="color:#5B7699;">+${x.riwayat} riwayat di lokasi ini</span>` : ''}${x.maps?`<br><a href="${esc(x.maps)}" target="_blank" style="color:#4FA3E3;">🗺️ Buka di Google Maps</a>`:''}<br><a href="${esc(ruteUrl_(x.lat, x.lng))}" target="_blank" style="color:#2ECC71;font-weight:700;">🧭 Rute ke sini</a>`);
     mapMarkers.push(marker);
   });
   gambarOdp_();
+  gambarBackbone_();
   mapObj.invalidateSize();
   if((pts.length || mapMarkers.length) && mapNeedFit){
     const group = L.featureGroup(mapMarkers);
@@ -3234,19 +4244,20 @@ function tandaiPenangan_(pre, nama){
   const hid = document.getElementById(pre + '_teknisi');
   const ada = (hid.value || '').split(',').map(x => x.trim()).filter(Boolean);
   if(!ada.includes(nama)) ada.unshift(nama);
-  hid.value = ada.slice(0, 4).join(', ');
+  hid.value = ada.slice(0, 8).join(', ');
   renderTeknisiChecks();
 }
 function pilihTeknisi(pre, cb){
   const box = document.getElementById(pre + '_teknisiBox');
   const hid = document.getElementById(pre + '_teknisi');
   const terpilih = [...box.querySelectorAll('input[type=checkbox]:checked')];
-  if(terpilih.length > 4){
+  if(terpilih.length > 8){
     cb.checked = false;
-    toast('Maksimal 4 teknisi per pekerjaan');
+    toast('Maksimal 8 teknisi per pekerjaan');
     return;
   }
   hid.value = terpilih.map(c => c.value).join(', ');
+  isiStokOtomatis_(pre);
 }
 
 // Material dengan pilihan jenis (dari daftar master, bisa diubah di tab Pengguna)
@@ -3525,10 +4536,13 @@ function titikPeta_(){
   const semua = [
     ...hidup_(STATE.pendaftaran).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Pemasangan', judul:x.nama, lat:x.lat, lng:x.lng,
       sub:x.alamatPasang||'', info:x.paket||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) })),
-    ...hidup_(STATE.maintenance).flatMap(m => pelangganOdpList_(m).filter(x => x.la && x.ln).map(x => ({ jenis:'Maintenance', judul:x.n, lat:Number(x.la), lng:Number(x.ln),
+    ...hidup_(STATE.maintenance).flatMap(m => pelangganOdpList_(m).filter(x => x.la && x.ln && !koordPelangganNama_(x.n)).map(x => ({ jenis:'Maintenance', judul:x.n, lat:Number(x.la), lng:Number(x.ln),
       sub:x.a||'', info:'Ikut terdampak' + (m.noOdp ? ' • ' + m.noOdp : ''), status:'Maintenance', waktu:String(m.timestamp||''), maps: x.m || coordLink_(x.la, x.ln) }))),
     ...hidup_(STATE.tiket).filter(x=>x.lat && x.lng).map(x=>({ jenis:'Tiket', judul:x.namaPelanggan, lat:x.lat, lng:x.lng,
       sub:x.alamat||'', info:x.kendala||'', status:x.status, waktu:String(x.timestamp||''), maps: coordLink_(x.lat,x.lng) }))
+    ,
+    ...(STATE.asset || []).filter(a => a.lat && a.lng).map(a => ({ jenis:'Asset ' + a.jenis, judul:a.nama, lat:Number(a.lat), lng:Number(a.lng),
+      sub:a.alamat||'', info:[a.paket, a.isp].filter(Boolean).join(' • '), status:a.status, waktu:String(a.tanggal||''), maps: a.mapsLink || coordLink_(a.lat, a.lng) }))
   ];
   // Lokasi yang sama (±1 m) jadi satu titik: yang terbaru yang tampil, sisanya dihitung sebagai riwayat
   const grup = {};
@@ -3609,6 +4623,8 @@ function renderMasterLists(){
     const isps = STATE.master.filter(x => x.tipe === 'ISP');
     boxIsp.innerHTML = isps.length ? isps.map(chip).join('') : `<div class="mini-note">Belum ada ISP.</div>`;
   }
+  const boxMat = document.getElementById('master_material');
+  if(boxMat){ const it = STATE.master.filter(x => x.tipe === 'Material'); boxMat.innerHTML = it.length ? it.map(chip).join('') : `<div class="mini-note">Belum ada material lain.</div>`; }
   MAT.forEach(m => {
     const box = document.getElementById('master_' + m.key);
     if(!box) return;
@@ -3780,12 +4796,13 @@ function resetSusulan_(p){
 }
 
 async function submitRealisasiPemasangan(){
-  const linkId = val('rp_link');
-  if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang'); return; }
+  const dariAsset = !val('rp_link') && ASSET_AKTIF && ASSET_AKTIF.jenis === 'Pemasangan';
+  const linkId = val('rp_link') || (dariAsset ? ASSET_AKTIF.id : '');
+  if(!linkId){ toast('Pilih dulu pendaftaran yang mau dipasang, atau pilih dari Database Asset'); return; }
   const payload = {
-    linkId, client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'), isTest: document.getElementById('rp_test').checked,
+    linkId, assetId: dariAsset ? ASSET_AKTIF.id : '', client: val('rp_client'), stts: val('rp_stts'), isp: val('rp_isp'), isTest: document.getElementById('rp_test').checked,
     teknisi: val('rp_teknisi'), stok: val('rp_stok'), noOdp: val('rp_odp'), redaman: redamanPayload_('rp'),
-    ...matPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
+    ...matPayload_('rp'), materialLain: matLainPayload_('rp'), adaptor: val('rp_adaptor'), patchcore: val('rp_patchcore'),
     barrel: val('rp_barrel'), jenisKabel: val('rp_jeniskabel'), kabel: val('rp_jeniskabel') ? val('rp_kabel') : 0, keterangan: val('rp_ket'),
     files: filesPayload('pasang'), ...susulanPayload_('rp')
   };
@@ -3798,13 +4815,14 @@ async function submitRealisasiPemasangan(){
     renderTeknisiChecks(); resetRedaman_('rp');
     ['rp_modem','rp_splitter','rp_closure','rp_boxodp','rp_adaptor','rp_patchcore','rp_barrel','rp_kabel'].forEach(id=>document.getElementById(id).value='0');
     MAT.forEach(m=>document.getElementById('rp_j'+m.key).value='');
+    resetMatLain_('rp');
     renderMatOptions();
     document.getElementById('rp_jeniskabel').value=''; toggleMeter('rp');
     document.getElementById('rp_link').value='';
     document.getElementById('rp_isp').value=''; document.getElementById('rp_test').checked=false;
     document.getElementById('rp_client').value='';
     resetSusulan_('rp'); kotakMikrotik_('rp_link','rp_mikrotikInfo','');
-    FILES.pasang = []; renderFiles('pasang');
+    FILES.pasang = []; renderFiles('pasang'); batalAsset_();
     loadAll();
   }
 }
@@ -3814,15 +4832,17 @@ async function submitMaintenance(){
     ticketId: val('m_ticket'), isTest: document.getElementById('m_test').checked,
     client: val('m_client'), isp: val('m_isp'), stts: val('m_stts'),
     teknisi: val('m_teknisi'), stok: val('m_stok'), redaman: redamanPayload_('m'),
-    ...matPayload_('m'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
+    ...matPayload_('m'), materialLain: matLainPayload_('m'), adaptor: val('m_adaptor'), patchcore: val('m_patchcore'),
     barrel: val('m_barrel'), jenisKabel: val('m_jeniskabel'), kabel: val('m_jeniskabel') ? val('m_kabel') : 0, keterangan: val('m_ket'),
     noOdp: val('m_odp'), tipeOdp: val('m_tipeodp'), jumlahTerdampak: val('m_jmlterdampak'),
+    assetId: (ASSET_AKTIF && ASSET_AKTIF.jenis !== 'Pemasangan') ? ASSET_AKTIF.id : '', backboneId: val('bm_jalur'), jenisBackbone: val('bm_jalur') ? val('bm_jenis') : '', backboneSelesai: document.getElementById('bm_selesai').checked,
     jamLaporan: val('m_jamlaporan'), jamSelesai: val('m_jamselesai'),
     files: filesPayload('maint'), ...susulanPayload_('m')
   };
   if(payload.susulan && !susulanValid_(payload)) return;
   if(!payload.client && payload.noOdp) payload.client = odpNama_(payload.noOdp);   // laporan khusus ODP
-  if(!payload.client){ toast('Isi Nama Client atau Nama ODP dulu'); const d = document.querySelector('.odp-opsi'); if(d) d.open = true; return; }
+  if(!payload.client && payload.backboneId){ const bb = (STATE.backbone || []).find(x => x.id === payload.backboneId); if(bb) payload.client = 'Backbone ' + nodeNama_(bb.dari) + ' ↔ ' + nodeNama_(bb.ke); }
+  if(!payload.client){ toast('Isi Nama Client, Nama ODP, atau pilih jalur backbone dulu'); const d = document.querySelector('.odp-opsi'); if(d) d.open = true; return; }
   if(!handlingDariKet_(payload.keterangan).length){ toast('Isi bagian Handling: dulu (apa yang dikerjakan)'); return; }
   const extra = payload.ticketId ? tiketLainTerpilih_() : [];
   const namaBaru = namaTambahan_(payload.client);
@@ -3859,9 +4879,10 @@ async function submitMaintenance(){
     renderTeknisiChecks(); resetRedaman_('m');
     document.getElementById('m_ket').value = KET_MAINT_;
     document.getElementById('m_odp').value = ''; document.getElementById('m_tipeodp').value = ''; document.getElementById('m_jmlterdampak').value = '';
-    isiOpsiTerdampak_(); document.getElementById('m_tambahBox').innerHTML = ''; document.getElementById('m_pisah').checked = false;
+    isiOpsiTerdampak_(); document.getElementById('m_tambahBox').innerHTML = ''; document.getElementById('m_pisah').checked = false; document.getElementById('bm_jalur').value = ''; document.getElementById('bm_jenis').value = 'Perbaikan'; document.getElementById('bm_selesai').checked = true; batalAsset_();
     ['m_modem','m_splitter','m_closure','m_boxodp','m_adaptor','m_patchcore','m_barrel','m_kabel'].forEach(id=>document.getElementById(id).value='0');
     MAT.forEach(m=>document.getElementById('m_j'+m.key).value='');
+    resetMatLain_('m');
     renderMatOptions();
     document.getElementById('m_jeniskabel').value=''; toggleMeter('m');
     document.getElementById('m_ticket').value='';
@@ -3889,24 +4910,36 @@ function renderUsers(){
     <div class="user-row">
       <div class="u-info">
         <b>${esc(u.nama)}</b>
-        <span class="${u.status==='Nonaktif'?'tag-off':''}">${esc(u.role)} • ${esc(u.status)}</span>
+        <span class="${u.status==='Nonaktif'?'tag-off':''}">${esc(u.jabatan || u.role)} • ${esc(u.status)}</span>
       </div>
       <div class="u-actions">
         <button onclick="promptResetPassword('${esc(u.nama)}')">🔑 Reset</button>
         <button onclick="promptChangeRole('${esc(u.nama)}')">🔄 Role</button>
         <button onclick="toggleUserStatus('${esc(u.nama)}','${u.status==='Nonaktif'?'Aktif':'Nonaktif'}')">${u.status==='Nonaktif'?'✅ Aktifkan':'🚫 Nonaktifkan'}</button>
+        ${u.role === 'Admin' ? '' : `<button onclick="hapusAkun('${esc(u.nama)}')">🗑️ Hapus</button>`}
       </div>
     </div>`).join('');
 }
 async function submitAddUser(){
-  const nama = val('u_nama'), password = val('u_pass'), role = document.getElementById('u_role').value;
+  const nama = val('u_nama'), password = val('u_pass'), pilih = document.getElementById('u_role').value;
   if(!nama || !password){ toast('Isi nama dan password akun'); return; }
-  const data = await apiCall('addUser', { nama, password, role });
-  if(data && data.ok){
+  const p = rolePilihanAkun_(pilih);
+  try{
+    let r = await ACT.addUser({ nama, password, role: p.role });
+    let perluAtur = false;
+    // Edge Function lama kadang menolak sebagian role: buat sebagai Teknisi dulu, lalu role diatur lewat database
+    if(r && r.ok === false && /role tidak valid/i.test(r.error || '') && p.role !== 'Teknisi'){
+      r = await ACT.addUser({ nama, password, role: 'Teknisi' }); perluAtur = true;
+    }
+    if(!r || r.ok === false){ toast('❌ ' + ((r && r.error) || 'Gagal menambah akun')); return; }
+    if(perluAtur || p.jabatan){
+      const t = await ACT.setRoleAkun({ nama, role: p.role, jabatan: p.jabatan });
+      if(t.ok === false){ toast('⚠️ Akun dibuat sebagai Teknisi, role belum bisa diatur: ' + t.error); loadUsers(); return; }
+    }
     toast('✅ Akun ditambahkan');
-    document.getElementById('u_nama').value=''; document.getElementById('u_pass').value='';
+    document.getElementById('u_nama').value = ''; document.getElementById('u_pass').value = '';
     loadUsers();
-  }
+  }catch(e){ toast('❌ Gagal terhubung ke server'); }
 }
 async function promptResetPassword(nama){
   const pass = prompt('Password baru untuk '+nama+':');
@@ -3914,13 +4947,37 @@ async function promptResetPassword(nama){
   const data = await apiCall('updateUser', { nama, newPassword: pass });
   if(data && data.ok) toast('✅ Password direset');
 }
-async function promptChangeRole(nama){
-  const input = prompt('Role baru untuk '+nama+' (CS, Marketing, Sales, Teknisi, Admin Server, Office):');
-  if(!input) return;
-  const role = ['CS','Marketing','Sales','Teknisi','Admin Server','Office'].find(r => r.toLowerCase() === input.trim().toLowerCase());
-  if(!role){ toast('Role tidak dikenal. Pilih salah satu dari daftar.'); return; }
-  const data = await apiCall('updateUser', { nama, newRole: role });
-  if(data && data.ok){ toast('✅ Role diubah'); loadUsers(); }
+const ROLE_PILIHAN_ = ['CS','Marketing','Sales','Teknisi','PKL','Admin Server','Office'];
+// PKL = hak akses Teknisi, hanya nama jabatannya berbeda
+const rolePilihanAkun_ = r => r === 'PKL' ? { role:'Teknisi', jabatan:'PKL' } : { role:r, jabatan:null };
+function tutupPilihRole_(){ const o = document.getElementById('roleOv'); if(o) o.remove(); }
+function promptChangeRole(nama){
+  tutupPilihRole_();
+  const u = (STATE.users || []).find(x => x.nama === nama), cur = u ? (u.jabatan || u.role) : '';
+  const ov = document.createElement('div');
+  ov.id = 'roleOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,30,55,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;';
+  ov.innerHTML = `<div class="form-card" style="width:100%;max-width:360px;margin:0;">
+      <h3>Ubah role: ${esc(nama)}</h3>
+      <div class="field"><label>Role</label><select id="roleOvSel">${ROLE_PILIHAN_.map(r => `<option ${r === cur ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="mini-note" style="margin:0 0 10px;">PKL memiliki hak akses yang sama dengan Teknisi, hanya namanya berbeda.</div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="tutupPilihRole_()">Batal</button>
+        <button type="button" class="btn btn-primary" style="flex:1" id="roleOvSimpan">Simpan</button>
+      </div></div>`;
+  ov.addEventListener('click', e => { if(e.target === ov) tutupPilihRole_(); });
+  document.body.appendChild(ov);
+  document.getElementById('roleOvSimpan').onclick = async () => {
+    const pilih = document.getElementById('roleOvSel').value, p = rolePilihanAkun_(pilih);
+    tutupPilihRole_();
+    const data = await apiCall('setRoleAkun', { nama, role: p.role, jabatan: p.jabatan });
+    if(data && data.ok){ toast('✅ Role diubah ke ' + pilih); loadUsers(); }
+  };
+}
+async function hapusAkun(nama){
+  if(!confirm('Hapus akun "' + nama + '" secara permanen?\n\nNama ini bisa dipakai lagi untuk akun baru (misalnya dengan role lain). Riwayat laporan dan tiket atas nama ini tetap ada. Tidak bisa dibatalkan.')) return;
+  const data = await apiCall('hapusAkun', { nama });
+  if(data && data.ok){ toast('🗑️ Akun dihapus'); loadUsers(); }
 }
 async function toggleUserStatus(nama, newStatus){
   const data = await apiCall('updateUser', { nama, newStatus });
@@ -3960,14 +5017,14 @@ function exportExcel(){
   setTimeout(() => unduhCsv_(perbaikan, 'laporan-maintenance-aisnet.csv'), 400);
 }
 function barisLaporan_(list){
-  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Laporan (Server)','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual','Nama ODP','Tipe ODP','Jumlah Terdampak','Pelanggan Satu ODP (semua)',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual'])]];
+  const rows = [['Client','Alamat','Link Maps','ISP','STTS','Teknisi','Stok','Redaman','Modem','Jenis Modem','Splitter','Jenis Splitter','Closure','Jenis Closure','Box ODP','Jenis Box ODP','Adaptor','Patchcore','Barrel','Jenis Kabel','Kabel(m)','Jam Laporan','Jam Laporan (Server)','Jam Selesai','Durasi','Keterangan','Diinput oleh','Waktu Input','Tgl Daftar/Lapor (sistem)','Tgl Diambil (sistem)','Tgl Dikerjakan (sistem)','Piket (P)','Susulan','Tgl Manual','Nama ODP','Tipe ODP','Jumlah Terdampak','Pelanggan Satu ODP (semua)','Pekerjaan Backbone',...(ROLE_EXPORT_.includes(USER.role) ? ['Jam Mulai Manual','Jam Selesai Manual','Material Lain','SSID','Password WiFi','Mikrotik User','Mikrotik Password'] : ['Jam Mulai Manual','Jam Selesai Manual','Material Lain'])]];
   list.forEach(m => {
     const lok = lokasiMaintenance_(m);
     const td = tanggalAsal_(m);
     rows.push([m.client, lok.alamat, {link: mapsUrl_(lok.mapsLink, lok.alamat, lok.lat, lok.lng)}, m.isp, m.stts, teknisiTampil_(m), m.stok, m.redaman||'',
       m.modem, m.jenisModem||'', m.splitter, m.jenisSplitter||'', m.closure, m.jenisClosure||'', m.boxOdp, m.jenisBoxOdp||'',
       m.adaptor, m.patchcore, m.barrel, m.jenisKabel||'', m.kabel, m.jamLaporan, m.jamLaporanServer||'', m.jamSelesai, m.durasi, m.keterangan,
-      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai), m.isPiket ? 'P' : '', m.susulan ? 'SUSULAN' : '', m.tglKerjaManual||'', m.noOdp||'', m.tipeOdp||'', m.jumlahTerdampak||'', pelangganOdpTeks_(m), m.jamMulaiManual||'', m.jamSelesaiManual||'', ...(ROLE_EXPORT_.includes(USER.role) ? kolomKred_(m) : [])]);
+      m.diinputOleh||'', m.timestamp, fmtTs_(td.lapor), fmtTs_(td.diambil), fmtTs_(td.selesai), m.isPiket ? 'P' : '', m.susulan ? 'SUSULAN' : '', m.tglKerjaManual||'', m.noOdp||'', m.tipeOdp||'', m.jumlahTerdampak||'', pelangganOdpTeks_(m), labelBackbone_(m.backboneId, m.jenisBackbone), m.jamMulaiManual||'', m.jamSelesaiManual||'', teksMatLain_(m), ...(ROLE_EXPORT_.includes(USER.role) ? kolomKred_(m) : [])]);
   });
   return rows;
 }
@@ -4033,13 +5090,13 @@ function exportPendaftaran(fmt){
 }
 function exportTiket(fmt){
   if(!USER || !ROLE_EXPORT_.includes(USER.role)){ toast('Role Anda tidak bisa export data ini'); return; }
-  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','ISP','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Sumber Mikrotik','Tgl Didaftarkan di Server','Mikrotik User','Mikrotik Password','Nama ODP','Pelanggan Terdampak','Tipe ODP','Jumlah Terdampak']];
+  const rows = [['ID','Nama Pelanggan','No HP','No HP Cadangan','Alamat','Link Maps','Kendala','ISP','Status','Waktu Lapor Pelanggan','Waktu Dicatat Sistem','Ditangani oleh','Tgl Diambil (sistem)','Minta Mikrotik','Catatan Mikrotik','Mikrotik oleh','Tgl Mikrotik','Diinput oleh','Sumber Mikrotik','Tgl Didaftarkan di Server','Mikrotik User','Mikrotik Password','Nama ODP','Pelanggan Terdampak','Tipe ODP','Jumlah Terdampak','ODP Terdampak']];
   hidup_(STATE.tiket).forEach(t => {
     rows.push([t.id, t.namaPelanggan, {tel:t.noHp}, {tel:t.noHpCadangan}, t.alamat,
       {link: mapsUrl_(t.mapsLink, t.alamat, t.lat, t.lng)}, t.kendala, t.isp||'', t.status, fmtTs_(t.timestamp), fmtTs_(t.dibuatServer || t.timestamp),
       t.teknisiHandling||'', t.diambilServer ? fmtTs_(t.diambilServer) : (t.tglDitangani||''),
       t.mikrotikReq||'', t.mikrotikCatatan||'', t.mikrotikOleh||'', t.tglMikrotik||'', t.diinputOleh||'', t.mikrotikSumber||'', t.tglMikrotikServer||'',
-      { teks:t.mikrotikUser||'' }, { teks:t.mikrotikPass||'' }, t.noOdp||'', t.pelangganTerdampak||'', t.tipeOdp||'', t.jumlahTerdampak||'']);
+      { teks:t.mikrotikUser||'' }, { teks:t.mikrotikPass||'' }, t.noOdp||'', t.pelangganTerdampak||'', t.tipeOdp||'', t.jumlahTerdampak||'', t.odpTerdampak||'']);
   });
   logAksi_('export data tiket', `${fmt || 'csv'}${fmt === 'pdf' ? '' : ' (memuat password Mikrotik)'} • ${rows.length - 1} baris`);
   if(fmt === 'xlsx' || fmt === 'pdf'){
@@ -4072,7 +5129,7 @@ function chipPeran_(r){ return r ? `<span class="peran peran-${slugPeran_(r)}">$
 function peranPengirim_(){
   const map = {};
   (STATE.pesan || []).forEach(m => { if(m.peran && !map[m.pengirim]) map[m.pengirim] = m.peran; });   // data terbaru lebih dulu
-  if(USER) map[USER.name] = USER.role;
+  if(USER) map[USER.name] = USER.jabatan || USER.role;
   return map;
 }
 function pesertaChat_(){
@@ -4445,7 +5502,7 @@ function exportDashboard(fmt){
     ['Pemasangan selesai', document.getElementById('actPasang').textContent],
     ['Maintenance', document.getElementById('actMaint').textContent],
     ['Tiket masuk', document.getElementById('actTiket').textContent]] }];
-  [['Per Teknisi','#dashTeknisi'], ['Piket per Teknisi','#dashPiket'], ['Jenis Penanganan Maintenance','#dashPenanganan'], ['Tiket per ISP','#dashTiketIsp'], ['Pemasangan Harian per ISP','#dashIspHarian'], ['Market ISP','#dashMarket']].forEach(([judul, sel]) => {
+  [['Per Teknisi','#dashTeknisi'], ['Piket per Teknisi','#dashPiket'], ['Jenis Penanganan Maintenance','#dashPenanganan'], ['Tiket per ISP','#dashTiketIsp'], ['Material Terpakai per Teknisi','#dashMaterial'], ['Total Material Terpakai','#dashMaterialTotal'], ['Pemasangan Harian per ISP','#dashIspHarian'], ['Market ISP','#dashMarket']].forEach(([judul, sel]) => {
     const t = tabelDom_(sel); if(t) sections.push({ judul, kolom:t.kolom, baris:t.baris });
   });
   eksporTabel_({ judul:'Dashboard AIS.NET', subjudul:'Periode: ' + periode, sections, namaFile:'dashboard-aisnet-' + hariIniKey_(), format:fmt });
